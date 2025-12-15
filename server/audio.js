@@ -4,7 +4,7 @@ export async function initializeAudio() {
     audioContext = new AudioContext();
     await audioContext.audioWorklet.addModule('wasm-worklet.js');
 
-    const wasmResponse = await fetch("audio.wasm");
+    const wasmResponse = await fetch("audio_backend.wasm");
     const wasmBytes = await wasmResponse.arrayBuffer();
 
     const node = new AudioWorkletNode(audioContext, 'wasm-processor', {

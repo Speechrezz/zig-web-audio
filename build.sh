@@ -1,2 +1,4 @@
-zig build-exe src/audio.zig -target wasm32-freestanding -rdynamic -fno-entry
-mv audio.wasm server/
+cd wasm_backend
+zig build
+cd ../
+mv wasm_backend/zig-out/bin/*.wasm server/

@@ -33,7 +33,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
     initWasm(bytes) {
         const importObject = {
             env: {
-                consoleLogImpl: (ptr, len) => {
+                consoleLogBinding: (ptr, len) => {
                     const mem = new Uint8Array(this.instance.exports.memory.buffer, ptr, len);
                     console.log(decodeUtf8(mem));
                 }
@@ -58,8 +58,6 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
         out[0].set(wasmOutL);
         out[1].set(wasmOutR);
-
-        console.log("out:", out);
 
         return true;
     }
