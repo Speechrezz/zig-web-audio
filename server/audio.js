@@ -7,7 +7,7 @@ export async function initializeAudio() {
     const wasmResponse = await fetch("audio.wasm");
     const wasmBytes = await wasmResponse.arrayBuffer();
 
-    node = new AudioWorkletNode(audioContext, 'wasm-processor', {
+    const node = new AudioWorkletNode(audioContext, 'wasm-processor', {
         numberOfOutputs: 1,
         outputChannelCount: [2],
         processorOptions: {

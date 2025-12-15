@@ -6,6 +6,8 @@ function decodeUtf8(mem) {
     return s;
 }
 
+const BLOCK_SIZE = 128;
+
 class WasmWorkletProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super();
@@ -25,8 +27,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
         const sampleRate = options.processorOptions.sampleRate;
         const numChannels = options.outputChannelCount[0];
-        const blockSize = 128;
-        this.instance.exports.prepareAudio(sampleRate, numChannels, blockSize);
+        this.instance.exports.prepareAudio(sampleRate, numChannels, BLOCK_SIZE);
     }
 
     initWasm(bytes) {
@@ -41,12 +42,26 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
         const module = new WebAssembly.Module(bytes);
         this.instance = new WebAssembly.Instance(module, importObject);
+        console.log("WASM initialized - exports:", this.instance.exports);
     }
 
     process(inputs, outputs) {
-        console.log("Outputs:", outputs);
+        const out = outputs[0];
+        const blockSize = out[0].length; // Typically 128
 
-        return false;
+        if (!this.instance.exports.processAudio(blockSize))
+            return false;
+
+        const exports = this.instance.exports;
+        const wasmOutL = new Float32Array(exports.memory.buffer, exports.getOutputChannel(0), blockSize);
+        const wasmOutR = new Float32Array(exports.memory.buffer, exports.getOutputChannel(1), blockSize);
+
+        out[0].set(wasmOutL);
+        out[1].set(wasmOutR);
+
+        console.log("out:", out);
+
+        return true;
     }
 }
 
