@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<script defer type="module">
+  import { initializeAudio, toggleAudioContext } from "./audio.js"
+  import { initializeMIDI } from "./midi.js"
+
+  initializeAudio();
+  initializeMIDI();
+
+  const startButton = document.getElementById("start-audio-button");
+  startButton.onclick = () => {
+    toggleAudioContext();
+  }
+</script>
+
+<body id="body">
+  <div id="header-container">
+    <h1>Xylo synth test</h1>
+  </div>
+  <div id="main-container">
+    <input id="start-audio-button" type="button" value="Start">
+  </div>
+</body>
+
+</html>
