@@ -40,6 +40,10 @@ const ProcessSpec = struct {
     block_size: u32,
 };
 
+const AudioView = struct {
+    // TODO
+};
+
 const AudioBuffer = struct {
     buffer: std.ArrayList(f32),
     channels: std.ArrayList([]f32),
@@ -70,6 +74,37 @@ const AudioBuffer = struct {
     pub fn getChannel(self: *@This(), channel_index: usize) []f32 {
         return self.channels.items[channel_index];
     }
+
+    pub fn getNumSamples(self: @This()) usize {
+        return self.channels.items[0].len;
+    }
+
+    pub fn getNumChannels(self: @This()) usize {
+        return self.channels.items.len;
+    }
+};
+
+const AudioBufferWebWrapper = struct {
+    buffer: AudioBuffer = undefined,
+    channels: std.ArrayList([*]f32) = .empty,
+
+    pub fn init(self: *@This()) void {
+        self.* = .{};
+    }
+
+    pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+        self.buffer.deinit(allocator);
+        self.channels.deinit(allocator);
+    }
+
+    pub fn resize(self: *@This(), allocator: std.mem.Allocator, num_channels: usize, num_samples: usize) !void {
+        try self.buffer.resize(allocator, num_channels, num_samples);
+        try self.channels.resize(allocator, num_channels);
+
+        for (0..num_channels) |channel_index| {
+            self.channels.items[channel_index] = self.buffer.channels.items[channel_index].ptr;
+        }
+    }
 };
 
 const AudioProcessor = struct {
@@ -94,11 +129,13 @@ const AudioProcessor = struct {
 
 const AudioProcessorWeb = struct {
     processor: AudioProcessor = undefined,
+    audio_buffer: AudioBufferWebWrapper = undefined,
 
     pub fn init(self: *@This()) void {
         self.* = .{};
 
         self.processor.init();
+        self.audio_buffer.init();
     }
 
     pub fn deinit(self: *@This()) void {
@@ -107,10 +144,17 @@ const AudioProcessorWeb = struct {
 
     pub fn prepare(self: *@This(), spec: ProcessSpec) bool {
         consoleLogDebug("[AudioProcessorWeb.prepare()] spec: {}", .{spec});
+
+        self.audio_buffer.resize(wasm_allcator, spec.num_channels, spec.block_size) catch |err| {
+            consoleLogDebug("ERROR in AudioProcessorWeb.prepare(): {}", .{err});
+            return false;
+        };
+
         self.processor.prepare(wasm_allcator, spec) catch |err| {
             consoleLogDebug("ERROR in AudioProcessorWeb.prepare(): {}", .{err});
             return false;
         };
+
         return true;
     }
 
