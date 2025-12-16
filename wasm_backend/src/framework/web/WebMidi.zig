@@ -24,7 +24,7 @@ pub fn append(self: *@This(), event: MidiEvent) void {
     self.events.appendAssumeCapacity(event);
 }
 
-pub fn appendPacked(self: *@This(), packed_event: u32, sample_position: usize) void {
+pub fn appendPacked(self: *@This(), packed_event: u32, sample_position: u64) void {
     const midi_event = MidiEvent.initFromPacked(
         packed_event,
         sample_position,
