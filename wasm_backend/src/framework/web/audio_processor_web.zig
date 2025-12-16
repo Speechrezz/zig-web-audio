@@ -19,7 +19,7 @@ pub fn AudioProcessorWeb(comptime AudioProcessor: type) type {
         }
 
         pub fn deinit(self: *@This()) void {
-            self.processor.init();
+            self.processor.deinit(wasm_allocator);
             self.audio_buffer.deinit(wasm_allocator);
             self.midi_buffer.deinit(wasm_allocator);
         }
@@ -29,8 +29,8 @@ pub fn AudioProcessorWeb(comptime AudioProcessor: type) type {
 
             self.audio_buffer.resize(
                 wasm_allocator,
-                @intCast(spec.num_channels),
-                @intCast(spec.block_size),
+                spec.num_channels,
+                spec.block_size,
             ) catch |err| {
                 logging.logDebug("[AudioProcessorWeb.prepare()] ERROR allocating audio buffer: {}", .{err});
                 return false;

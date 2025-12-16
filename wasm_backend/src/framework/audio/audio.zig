@@ -1,7 +1,7 @@
 pub const ProcessSpec = struct {
     sample_rate: f64,
-    num_channels: u32,
-    block_size: u32,
+    num_channels: usize,
+    block_size: usize,
 };
 
 pub const AudioBuffer = @import("AudioBuffer.zig");

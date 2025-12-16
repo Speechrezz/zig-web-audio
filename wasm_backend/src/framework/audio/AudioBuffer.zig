@@ -2,11 +2,11 @@ const std = @import("std");
 const audio = @import("audio.zig");
 const AudioView = @import("AudioView.zig");
 
-const ProcessSpec = audio.ProcessSpec;
-
 buffer: std.ArrayList(f32) = .empty,
 channels: std.ArrayList([*]f32) = .empty,
 num_samples: usize = 0,
+
+pub const empty: @This() = .{};
 
 pub fn init(self: *@This()) void {
     self.* = .{};
