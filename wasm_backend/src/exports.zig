@@ -32,6 +32,6 @@ export fn getOutputChannel(channel_index: usize) [*]f32 {
     return audio_processor_web.audio_buffer.getChannel(channel_index).ptr;
 }
 
-export fn appendMidiEvent(packed_event: u32, sample_position: u64) void {
+export fn appendMidiEvent(packed_event: u32, sample_position: i64) void {
     return audio_processor_web.midi_buffer.appendPacked(packed_event, sample_position);
 }

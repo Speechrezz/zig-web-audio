@@ -10,13 +10,13 @@ pub fn noteNumberToFrequency(note_number: u32, frequency_of_a: f32) f32 {
 status: u8,
 d1: u8,
 d2: u8,
-sample_position: u64,
+sample_position: i64,
 
 pub fn asByte(v: u32) u8 {
     return @intCast(v & 0xff);
 }
 
-pub fn initFromPacked(packed_event: u32, sample_position: u64) @This() {
+pub fn initFromPacked(packed_event: u32, sample_position: i64) @This() {
     return .{
         .status = asByte(packed_event),
         .d1 = asByte(packed_event >> 8),
@@ -54,7 +54,7 @@ pub fn getVelocityFloat(self: @This()) f32 {
 
 // General functions
 
-pub fn getSamplePosition(self: @This()) u32 {
+pub fn getSamplePosition(self: @This()) i64 {
     return self.sample_position;
 }
 
