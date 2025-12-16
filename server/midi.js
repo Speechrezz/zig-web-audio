@@ -13,7 +13,8 @@ let audioWorkletNode = null;
 /**
  * @param {AudioWorkletNode} workletNode 
  */
-export function initializeMIDI() {
+export function initializeMIDI(workletNode) {
+  audioWorkletNode = workletNode;
   navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
 }
 
@@ -43,10 +44,17 @@ function startLoggingMIDIInput(midiAccess) {
  * @param {MIDIMessageEvent} e 
  */
 function onMIDIMessage(e) {
-  // if (audioWorkletNode.context.state === "running") {
-  //   const adjustedTimeStamp = midiTimestampToContextFrame(e.timeStamp);
-  //   Module.pushMidiEvent(packMidiEvent(e.data[0], e.data[1], e.data[2]), adjustedTimeStamp);
-  // }
+  if (audioWorkletNode.context.state === "running") {
+    const adjustedTimeStamp = midiTimestampToContextFrame(e.timeStamp);
+    console.log("adjustedTimeStamp:", adjustedTimeStamp);
+
+    const [status, data1, data2] = e.data;
+    audioWorkletNode.port.postMessage({
+      type: "midi",
+      data: packMidiEvent(status, data1, data2),
+      time: adjustedTimeStamp,
+    });
+  }
 
   prettyLog(e);
 }
@@ -58,6 +66,7 @@ function midiTimestampToContextFrame(timeStampMs) {
   const audioContext = audioWorkletNode.context;
 
   const { performanceTime, contextTime } = audioContext.getOutputTimestamp();
+  console.log("getOutputTimestamp():", { performanceTime, contextTime }, "timeStampMs:", timeStampMs);
   const eventCtxTimeSec = contextTime + (timeStampMs - performanceTime) * 1e-3;
 
   return Math.max(0, Math.floor(eventCtxTimeSec * audioContext.sampleRate));
@@ -88,9 +97,8 @@ function prettyLog(e) {
 
 // layout per event: [status, data1, data2, frameOffset]
 
-function packMidiEvent(status, d1, d2, frameOffset) {
+function packMidiEvent(status, d1, d2) {
   const packed =
-    ((frameOffset & 0xff) << 24) |
     ((d2 & 0xff) << 16) |
     ((d1 & 0xff) << 8)  |
     (status & 0xff);

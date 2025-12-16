@@ -7,16 +7,20 @@
   <title>Document</title>
 </head>
 <script defer type="module">
-  import { initializeAudio, toggleAudioContext } from "./audio.js"
+  import { initializeAudio, toggleAudioContext, getAudioWorkletNode } from "./audio.js"
   import { initializeMIDI } from "./midi.js"
 
-  initializeAudio();
-  initializeMIDI();
+  const initialize = async () => {
+    await initializeAudio();
+    initializeMIDI(getAudioWorkletNode());
 
-  const startButton = document.getElementById("start-audio-button");
-  startButton.onclick = () => {
-    toggleAudioContext();
-  }
+    const startButton = document.getElementById("start-audio-button");
+    startButton.onclick = () => {
+      toggleAudioContext();
+    }
+  };
+
+  initialize();
 </script>
 
 <body id="body">
