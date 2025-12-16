@@ -1,6 +1,7 @@
 const std = @import("std");
 const wasm_allocator = @import("../mem/allocator.zig").wasm_allocator;
 const externs = @import("externs.zig");
+const is_wasm = @import("config.zig").is_wasm;
 
 pub fn log(allocator: std.mem.Allocator, comptime fmt: []const u8, args: anytype) !void {
     const string = try std.fmt.allocPrint(allocator, fmt, args);
@@ -10,8 +11,12 @@ pub fn log(allocator: std.mem.Allocator, comptime fmt: []const u8, args: anytype
 }
 
 pub fn logDebug(comptime fmt: []const u8, args: anytype) void {
-    const string = std.fmt.allocPrint(wasm_allocator, fmt, args) catch unreachable;
-    defer wasm_allocator.free(string);
+    if (comptime is_wasm) {
+        const string = std.fmt.allocPrint(wasm_allocator, fmt, args) catch unreachable;
+        defer wasm_allocator.free(string);
 
-    externs.consoleLogBinding(string.ptr, string.len);
+        externs.consoleLogBinding(string.ptr, string.len);
+    } else {
+        std.debug.print(fmt ++ "\n", args);
+    }
 }

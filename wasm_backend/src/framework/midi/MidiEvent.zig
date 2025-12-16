@@ -66,7 +66,7 @@ fn getCommand(self: @This()) u8 {
     return self.status >> 4;
 }
 
-test "packed midi event test" {
+test "Packed midi event test" {
     const packed_event = 6043280;
     const midi_event = Self.initFromPacked(packed_event, 0);
 

@@ -32,6 +32,8 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
         const sampleRate = options.processorOptions.sampleRate;
         const numChannels = options.outputChannelCount[0];
         this.instance.exports.prepareAudio(sampleRate, numChannels, BLOCK_SIZE);
+
+        this.currentFrame = BigInt(0);
     }
 
     initWasm(bytes) {
@@ -40,7 +42,10 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                 consoleLogBinding: (ptr, len) => {
                     const mem = new Uint8Array(this.instance.exports.memory.buffer, ptr, len);
                     console.log(decodeUtf8(mem));
-                }
+                },
+                getCurrentFrame: () => {
+                    return this.currentFrame;
+                },
             }
         };
 
@@ -62,6 +67,8 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
         out[0].set(wasmOutL);
         out[1].set(wasmOutR);
+
+        this.currentFrame += BigInt(blockSize);
 
         return true;
     }
