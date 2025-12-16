@@ -34,8 +34,6 @@ pub fn appendPacked(self: *@This(), packed_event: u32, sample_position: i64) voi
         sample_position,
     );
 
-    logging.logDebug("[WASM] midi_event={}", .{midi_event});
-
     self.events.appendAssumeCapacity(midi_event);
 }
 
@@ -47,8 +45,6 @@ pub fn getCurrentBlockEvents(self: *@This(), block_size: u32) []MidiEvent {
 }
 
 fn getCurrentBlockEventsImpl(self: *@This(), block_size: i64, current_frame: i64) []MidiEvent {
-    logging.logDebug("block_size={}, current_frame={}", .{ block_size, current_frame });
-
     // Remove previously read events
     if (self.read_index > 0) {
         const unread_count = self.events.items.len - self.read_index;
@@ -68,7 +64,10 @@ fn getCurrentBlockEventsImpl(self: *@This(), block_size: i64, current_frame: i64
         midi_event.sample_position = sample_offset;
     }
 
-    return self.events.items[0..self.read_index];
+    const slice = self.events.items[0..self.read_index];
+    std.sort.block(MidiEvent, slice, {}, comptime MidiEvent.sortPositionAsc);
+
+    return slice;
 }
 
 test "Add and read current block midi events" {
@@ -82,8 +81,8 @@ test "Add and read current block midi events" {
 
     const packed_event = 6043280;
 
-    web_midi.appendPacked(packed_event, 0);
     web_midi.appendPacked(packed_event, 50);
+    web_midi.appendPacked(packed_event, 0);
     web_midi.appendPacked(packed_event, 100);
     web_midi.appendPacked(packed_event, 150);
     web_midi.appendPacked(packed_event, 200);

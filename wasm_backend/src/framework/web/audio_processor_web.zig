@@ -54,11 +54,11 @@ pub fn AudioProcessorWeb(comptime AudioProcessor: type) type {
 
         pub fn process(self: *@This(), block_size: u32) bool {
             self.audio_buffer.clear();
-            self.midi_buffer.clear();
 
             self.processor.process(
                 wasm_allocator,
                 self.audio_buffer.createViewWithLength(@intCast(block_size)),
+                self.midi_buffer.getCurrentBlockEvents(block_size),
             ) catch |err| {
                 logging.logDebug("[AudioProcessorWeb.process()] ERROR processing AudioProcessor: {}", .{err});
                 return false;

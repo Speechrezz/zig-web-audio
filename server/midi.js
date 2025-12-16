@@ -46,7 +46,6 @@ function startLoggingMIDIInput(midiAccess) {
 function onMIDIMessage(e) {
   if (audioWorkletNode.context.state === "running") {
     const adjustedTimeStamp = midiTimestampToContextFrame(e.timeStamp);
-    console.log("adjustedTimeStamp:", adjustedTimeStamp);
 
     const [status, data1, data2] = e.data;
     audioWorkletNode.port.postMessage({
@@ -66,7 +65,6 @@ function midiTimestampToContextFrame(timeStampMs) {
   const audioContext = audioWorkletNode.context;
 
   const { performanceTime, contextTime } = audioContext.getOutputTimestamp();
-  console.log("getOutputTimestamp():", { performanceTime, contextTime }, "timeStampMs:", timeStampMs);
   const eventCtxTimeSec = contextTime + (timeStampMs - performanceTime) * 1e-3;
 
   return Math.max(0, Math.floor(eventCtxTimeSec * audioContext.sampleRate));
