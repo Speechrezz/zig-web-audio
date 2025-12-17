@@ -108,12 +108,12 @@ pub fn noteOn(self: *@This(), midi_event: MidiEvent) void {
 pub fn noteOff(self: *@This(), midi_event: MidiEvent) void {
     const note_number = midi_event.getNoteNumber();
     const velocity = midi_event.getVelocityFloat();
-    const is_sustain_pedal_on = false;
+    const is_sustain_pedal_on = false; // TODO
 
-    if (self.active_notes.indexOfNote(note_number)) |active_index| {
-        const note = self.active_notes.get(active_index);
+    for (self.active_notes.notes.items) |*note| {
+        const is_correct_note = note_number == note.note_number;
 
-        if (note.isOn()) {
+        if (note.isOn() and is_correct_note) {
             if (is_sustain_pedal_on) {
                 note.state = .sustain;
             } else {
@@ -138,6 +138,7 @@ fn reclaimVoices(self: *@This()) void {
 }
 
 test "SynthProcessor tests" {
+    const dsp = @import("framework").dsp;
     const allocator = std.testing.allocator;
 
     const sample_rate = 48000.0;
@@ -152,6 +153,17 @@ test "SynthProcessor tests" {
         .num_channels = num_channels,
         .block_size = block_size,
     });
+
+    // Ensure notes stop instantly
+    const adsr_parameters: dsp.AdsrProcessor.Parameters = .{
+        .attack_time = 0.0,
+        .decay_time = 0.0,
+        .sustain_gain = 1.0,
+        .release_time = 0.0,
+    };
+    for (&processor.synth_voices) |*synth_voice| {
+        synth_voice.updateAdsr(adsr_parameters);
+    }
 
     var audio_buffer: audio.AudioBuffer = .empty;
     defer audio_buffer.deinit(allocator);
