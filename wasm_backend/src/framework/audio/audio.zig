@@ -6,3 +6,7 @@ pub const ProcessSpec = struct {
 
 pub const AudioBuffer = @import("AudioBuffer.zig");
 pub const AudioView = @import("AudioView.zig");
+
+test {
+    _ = @import("AudioView.zig");
+}

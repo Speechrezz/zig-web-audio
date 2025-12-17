@@ -7,4 +7,5 @@ pub const AudioProcessorWeb = @import("web/audio_processor_web.zig").AudioProces
 
 test {
     _ = @import("web/WebMidi.zig");
+    _ = @import("audio/audio.zig");
 }

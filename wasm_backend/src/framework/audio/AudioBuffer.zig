@@ -40,6 +40,13 @@ pub fn getNumChannels(self: @This()) usize {
     return self.channels.items.len;
 }
 
+pub fn createView(self: @This()) AudioView {
+    return .{
+        .channels = self.channels.items,
+        .num_samples = self.num_samples,
+    };
+}
+
 pub fn createViewWithLength(self: @This(), num_samples: usize) AudioView {
     std.debug.assert(num_samples <= self.num_samples);
 

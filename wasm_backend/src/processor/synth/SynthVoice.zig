@@ -1,8 +1,9 @@
 const std = @import("std");
 const audio = @import("framework").audio;
+const SineOscillator = @import("SineOscillator.zig");
 
 buffer: audio.AudioBuffer = .empty,
-// TODO: Osc
+osc: SineOscillator = .init,
 frequency: f32 = 0.0,
 velocity: f32 = 1.0,
 is_note_on: bool = false,
@@ -16,14 +17,17 @@ pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
 pub fn prepare(self: *@This(), allocator: std.mem.Allocator, spec: audio.ProcessSpec) !void {
     try self.buffer.resize(allocator, spec.num_channels, spec.block_size);
     self.buffer.clear();
+
+    self.osc.prepare(spec);
 }
 
 pub fn renderNextBlock(self: *@This(), output_view: audio.AudioView) void {
-    if (output_view.getNumSamples() == 0) return;
+    if (!self.isCurrentlyPlaying() or output_view.getNumSamples() == 0) return;
 
     const voice_view = self.buffer.createViewWithLength(output_view.getNumSamples());
 
-    // TODO: osc & ADSR process
+    self.osc.process(voice_view, self.frequency, self.velocity);
+    // TODO: ADSR processing
 
     output_view.addFrom(voice_view);
 }
@@ -34,7 +38,8 @@ pub fn startNote(self: *@This(), note_frequency: f32, velocity: f32, pitch_wheel
     self.frequency = note_frequency;
     self.velocity = velocity;
 
-    // TODO: osc & ADSR
+    self.osc.reset();
+    // TODO: ADSR
 
     self.is_note_on = true;
 }

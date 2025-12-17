@@ -6,7 +6,7 @@ num_samples: usize,
 
 pub fn getChannel(self: @This(), channel_index: usize) []f32 {
     std.debug.assert(channel_index < self.channels.len);
-    return self.channels[channel_index][0..self.num_samples];
+    return self.channels[channel_index][self.start_sample .. self.start_sample + self.num_samples];
 }
 
 pub fn getNumChannels(self: @This()) usize {
@@ -53,10 +53,57 @@ pub fn addFrom(self: @This(), other: @This()) void {
 
     for (0..self.getNumChannels()) |channel_index| {
         const channel_self = self.getChannel(channel_index);
-        const channel_other = self.getChannel(channel_index);
+        const channel_other = other.getChannel(channel_index);
 
         for (0..self.getNumSamples()) |i| {
             channel_self[i] += channel_other[i];
+        }
+    }
+}
+
+test "AudioView tests" {
+    const AudioBuffer = @import("AudioBuffer.zig");
+    const allocator = std.testing.allocator;
+
+    const num_channels = 2;
+    const block_size = 128;
+
+    var buffer1: AudioBuffer = .empty;
+    defer buffer1.deinit(allocator);
+    try buffer1.resize(allocator, num_channels, block_size);
+
+    var buffer2: AudioBuffer = .empty;
+    defer buffer2.deinit(allocator);
+    try buffer2.resize(allocator, num_channels, block_size);
+
+    const view1 = buffer1.createView();
+    view1.fill(1.0);
+
+    for (0..view1.getNumChannels()) |ch| {
+        const channel = view1.getChannel(ch);
+        for (channel) |sample| {
+            try std.testing.expect(sample == 1.0);
+        }
+    }
+
+    const view2 = buffer2.createView();
+    view2.fill(2.0);
+
+    view1.addFrom(view2);
+
+    for (0..view1.getNumChannels()) |ch| {
+        const channel = view1.getChannel(ch);
+        for (channel) |sample| {
+            try std.testing.expect(sample == 3.0);
+        }
+    }
+
+    view1.multiplyBy(2.0);
+
+    for (0..view1.getNumChannels()) |ch| {
+        const channel = view1.getChannel(ch);
+        for (channel) |sample| {
+            try std.testing.expect(sample == 6.0);
         }
     }
 }

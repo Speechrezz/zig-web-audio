@@ -8,7 +8,8 @@ const max_voices = 16;
 
 synth_voices: [max_voices]SynthVoice = undefined,
 active_notes: NoteList(max_voices) = undefined,
-inactive_voices: [max_voices]usize = undefined,
+inactive_voices_buffer: [max_voices]usize = undefined,
+inactive_voices: std.ArrayList(usize) = .empty,
 
 pub fn init(self: *@This()) void {
     self.* = .{};
@@ -18,9 +19,11 @@ pub fn init(self: *@This()) void {
     }
 
     self.active_notes.init();
+    self.inactive_voices = .initBuffer(&self.inactive_voices_buffer);
 
-    for (0..self.inactive_voices.len) |i| {
-        self.inactive_voices[i] = i;
+    var i = self.inactive_voices_buffer.len;
+    while (i > 0) : (i -= 1) {
+        self.inactive_voices.appendAssumeCapacity(i - 1);
     }
 }
 
@@ -85,6 +88,7 @@ pub fn noteOn(self: *@This(), midi_event: MidiEvent) void {
     self.reclaimVoices();
 
     const note_number = midi_event.getNoteNumber();
+    const frequency = midi_event.getNoteFreqeuncy();
     const channel: i32 = @intCast(midi_event.getChannel());
     const velocity = midi_event.getVelocityFloat();
 
@@ -93,28 +97,83 @@ pub fn noteOn(self: *@This(), midi_event: MidiEvent) void {
         self.active_notes.append(note_number, oldest_note.voice_index, channel);
 
         self.synth_voices[oldest_note.voice_index].stopNote(1.0, false);
-        self.synth_voices[oldest_note.voice_index].startNote(1.0, velocity, 0);
+        self.synth_voices[oldest_note.voice_index].startNote(frequency, velocity, 0);
     } else {
-        const voice_index = self.inactive_voices.popBack();
+        const voice_index = self.inactive_voices.pop().?;
         self.active_notes.append(note_number, voice_index, channel);
-        self.synth_voices[voice_index].startNote(note_number, velocity, 0);
+        self.synth_voices[voice_index].startNote(frequency, velocity, 0);
     }
 }
 
 pub fn noteOff(self: *@This(), midi_event: MidiEvent) void {
-    _ = self;
-    _ = midi_event;
+    const note_number = midi_event.getNoteNumber();
+    const velocity = midi_event.getVelocityFloat();
+    const is_sustain_pedal_on = false;
+
+    if (self.active_notes.indexOfNote(note_number)) |active_index| {
+        const note = self.active_notes.get(active_index);
+
+        if (note.isOn()) {
+            if (is_sustain_pedal_on) {
+                note.state = .sustain;
+            } else {
+                note.state = .off;
+                self.synth_voices[note.voice_index].stopNote(velocity, true);
+            }
+        }
+    }
 }
 
 fn reclaimVoices(self: *@This()) void {
     if (self.active_notes.isEmpty()) return;
 
-    var i: usize = self.active_notes.getLength();
+    var i = self.active_notes.getLength();
     while (i > 0) : (i -= 1) {
-        const note = self.active_notes.get(i);
+        const note = self.active_notes.get(i - 1);
         if (!note.isOff() or self.synth_voices[note.voice_index].isCurrentlyPlaying()) continue;
 
-        self.inactive_voices.append(note.voice_index);
-        self.active_notes.remove(i);
+        self.inactive_voices.appendAssumeCapacity(note.voice_index);
+        self.active_notes.remove(i - 1);
     }
+}
+
+test "SynthProcessor tests" {
+    const allocator = std.testing.allocator;
+
+    const sample_rate = 48000.0;
+    const num_channels = 2;
+    const block_size = 128;
+
+    var processor: @This() = undefined;
+    processor.init();
+    defer processor.deinit(allocator);
+    try processor.prepare(allocator, .{
+        .sample_rate = sample_rate,
+        .num_channels = num_channels,
+        .block_size = block_size,
+    });
+
+    var audio_buffer: audio.AudioBuffer = .empty;
+    defer audio_buffer.deinit(allocator);
+    try audio_buffer.resize(allocator, num_channels, block_size);
+
+    const packed_note_on = 6043280;
+    var midi_slice = [_]MidiEvent{.initFromPacked(packed_note_on, 10)};
+
+    try std.testing.expect(processor.active_notes.isEmpty());
+    try std.testing.expect(processor.inactive_voices.items.len == max_voices);
+
+    processor.process(audio_buffer.createView(), &midi_slice);
+
+    try std.testing.expect(processor.active_notes.getLength() == 1);
+    try std.testing.expect(processor.inactive_voices.items.len == max_voices - 1);
+
+    const packed_note_off = 7157376;
+    midi_slice[0] = MidiEvent.initFromPacked(packed_note_off, 10);
+
+    processor.process(audio_buffer.createView(), &midi_slice);
+    processor.reclaimVoices();
+
+    try std.testing.expect(processor.active_notes.getLength() == 0);
+    try std.testing.expect(processor.inactive_voices.items.len == max_voices);
 }
