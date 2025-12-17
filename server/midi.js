@@ -10,6 +10,8 @@ let midi = null; // global MIDIAccess object
  */
 let audioWorkletNode = null;
 
+const BLOCK_SIZE = 128;
+
 /**
  * @param {AudioWorkletNode} workletNode 
  */
@@ -67,7 +69,7 @@ function midiTimestampToContextFrame(timeStampMs) {
   const { performanceTime, contextTime } = audioContext.getOutputTimestamp();
   const eventCtxTimeSec = contextTime + (timeStampMs - performanceTime) * 1e-3;
 
-  return Math.max(0, Math.floor(eventCtxTimeSec * audioContext.sampleRate));
+  return Math.max(0, BLOCK_SIZE + Math.floor(eventCtxTimeSec * audioContext.sampleRate));
 }
 
 /**

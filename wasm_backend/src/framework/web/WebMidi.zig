@@ -56,8 +56,7 @@ fn getCurrentBlockEventsImpl(self: *@This(), block_size: i64, current_frame: i64
     // Figure out which events fall within the current block
     while (self.read_index < self.events.items.len) : (self.read_index += 1) {
         const midi_event = &self.events.items[self.read_index];
-        const delayed_position = midi_event.sample_position + block_size;
-        const sample_offset: i64 = @max(@as(i64, 0), delayed_position - current_frame);
+        const sample_offset: i64 = @max(@as(i64, 0), midi_event.sample_position - current_frame);
 
         if (sample_offset >= block_size) break;
 
@@ -87,20 +86,20 @@ test "Add and read current block midi events" {
     web_midi.appendPacked(packed_event, 150);
     web_midi.appendPacked(packed_event, 200);
 
-    const events_block0 = web_midi.getCurrentBlockEventsImpl(block_size, 0);
-    try std.testing.expect(events_block0.len == 0);
-    try std.testing.expect(web_midi.read_index == 0);
-    try std.testing.expect(web_midi.events.items.len == 5);
-
-    const events_block1 = web_midi.getCurrentBlockEventsImpl(block_size, block_size);
+    const events_block1 = web_midi.getCurrentBlockEventsImpl(block_size, 0);
     try std.testing.expect(events_block1.len == 3);
     try std.testing.expect(events_block1[0].sample_position == 0);
     try std.testing.expect(web_midi.read_index == 3);
     try std.testing.expect(web_midi.events.items.len == 5);
 
-    const events_block2 = web_midi.getCurrentBlockEventsImpl(block_size, block_size * 2);
+    const events_block2 = web_midi.getCurrentBlockEventsImpl(block_size, block_size);
     try std.testing.expect(events_block2.len == 2);
     try std.testing.expect(events_block2[0].sample_position == 22);
     try std.testing.expect(web_midi.read_index == 2);
     try std.testing.expect(web_midi.events.items.len == 2);
+
+    const events_block3 = web_midi.getCurrentBlockEventsImpl(block_size, block_size * 2);
+    try std.testing.expect(events_block3.len == 0);
+    try std.testing.expect(web_midi.read_index == 0);
+    try std.testing.expect(web_midi.events.items.len == 0);
 }
