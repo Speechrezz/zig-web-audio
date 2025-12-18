@@ -17,7 +17,9 @@
     const startButton = document.getElementById("start-audio-button");
     const playButton = document.getElementById("play-button");
     const stopButton = document.getElementById("stop-button");
-
+    const bpmInput = document.getElementById("bpm-input");
+    const canvasElement = document.getElementById("pianoroll");
+    
     await initializeAudio();
     initializeMIDI(getAudioWorkletNode());
 
@@ -28,7 +30,7 @@
       stopButton.disabled = !isRunning;
     }
 
-    pianoRoll = new PianoRoll(document.getElementById("pianoroll"));
+    pianoRoll = new PianoRoll(canvasElement, () => { return Number(bpmInput.value); });
     playButton.onclick = () => pianoRoll.play();
     stopButton.onclick = () => pianoRoll.stop();
   };
@@ -45,6 +47,7 @@
     <div style="margin-top: 1rem">
       <input id="play-button" type="button" value="Play" disabled>
       <input id="stop-button" type="button" value="Stop" disabled>
+      <input type="number" name="BPM" id="bpm-input" min="60" max="600" value="120">
     </div>
     <div id="pianoroll-container">
       <canvas id="pianoroll" width="1600" height="800"></canvas>

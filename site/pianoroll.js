@@ -12,7 +12,6 @@ class Note {
     }
 }
 
-const BPM = 120;
 const NUM_BEATS = 32;
 
 export class PianoRoll {
@@ -21,18 +20,23 @@ export class PianoRoll {
      */
     canvas;
 
+    bpm = 120;
     rows = 24;
     cols = NUM_BEATS;
     pitchMin = 48;
 
     notes = [];
 
+    isPlaying = false;
+
     /**
      * 
      * @param {HTMLCanvasElement} canvasElement 
+     * @param {function} getBpm 
      */
-    constructor(canvasElement) {
+    constructor(canvasElement, getBpm) {
         this.canvas = canvasElement;
+        this.getBpm = getBpm;
         this.canvas.onclick = (ev) => {
             this.onClick(ev);
         }
@@ -88,8 +92,9 @@ export class PianoRoll {
         this.currentBeat = 0;
         this.timePassedSec = 0;
         this.contextTimeStart = getContextTime();
+        this.isPlaying = true;
 
-        this.tickIntervalSec = 60 / BPM;
+        this.tickIntervalSec = 60 / this.bpm;
         console.log("Play!", this.contextTimeStart, this.tickIntervalSec);
 
         this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
@@ -98,11 +103,21 @@ export class PianoRoll {
 
     stop() {
         console.log("Stop.");
-        this.timer = clearInterval(this.timer);
+        this.isPlaying = false;
+        clearInterval(this.timer);
     }
 
     tick() {
         console.log("Tick...", this.timePassedSec, this.currentBeat);
+
+        const newBpm = this.getBpm();
+        if (Number.isFinite(newBpm) && newBpm !== this.bpm) {
+            this.bpm = newBpm;
+            this.tickIntervalSec = 60 / this.bpm;
+            clearInterval(this.timer);
+            this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
+        }
+
         const notesAtBeat = this.getNotesAtBeat(this.currentBeat);
         if (notesAtBeat.length > 0)
            console.log("noteAtBeat:", notesAtBeat);
