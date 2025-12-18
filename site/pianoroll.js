@@ -79,6 +79,13 @@ export class PianoRoll {
             gridIndex++;
         }
 
+        // Playhead
+        if (this.isPlaying) {
+            const x = this.currentBeat * noteWidth;
+            ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.15)";
+            ctx.fillRect(x, 0, noteWidth, canvas.height);
+        }
+
         // Notes
         for (const note of this.notes) {
             const x = note.x * noteWidth;
@@ -105,11 +112,10 @@ export class PianoRoll {
         console.log("Stop.");
         this.isPlaying = false;
         clearInterval(this.timer);
+        this.draw();
     }
 
     tick() {
-        console.log("Tick...", this.timePassedSec, this.currentBeat);
-
         const newBpm = this.getBpm();
         if (Number.isFinite(newBpm) && newBpm !== this.bpm) {
             this.bpm = newBpm;
@@ -125,6 +131,8 @@ export class PianoRoll {
         for (const note of notesAtBeat) {
             this.playNote(note, this.timePassedSec);
         }
+
+        this.draw();
         
         this.currentBeat = (this.currentBeat + 1) % NUM_BEATS;
         this.timePassedSec += this.tickIntervalSec;
