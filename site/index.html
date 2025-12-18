@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<script defer type="module">
+  import { initializeAudio, toggleAudioContext, getAudioWorkletNode } from "./audio.js"
+  import { initializeMIDI } from "./midi.js"
+  import { PianoRoll } from "./pianoroll.js"
+
+  let pianoRoll;
+
+  const initialize = async () => {
+    await initializeAudio();
+    initializeMIDI(getAudioWorkletNode());
+
+    const startButton = document.getElementById("start-audio-button");
+    startButton.onclick = () => {
+      toggleAudioContext();
+    }
+
+    pianoRoll = new PianoRoll(document.getElementById("pianoroll"));
+    document.getElementById("play-button").onclick = () => pianoRoll.play();
+    document.getElementById("stop-button").onclick = () => pianoRoll.stop();
+  };
+
+  initialize();
+</script>
+
+<body id="body">
+  <div id="header-container">
+    <h1>Chordic Phone (Test)</h1>
+  </div>
+  <div id="main-container">
+    <input id="start-audio-button" type="button" value="Start">
+    <div style="margin-top: 1rem">
+      <input id="play-button" type="button" value="Play">
+      <input id="stop-button" type="button" value="Stop">
+    </div>
+    <div id="pianoroll-container">
+      <canvas id="pianoroll" width="1600" height="800"></canvas>
+    </div>
+  </div>
+</body>
+
+<style>
+  #pianoroll-container {
+    width: 100%;
+    height: fit-content;
+    overflow: auto;
+    border: 1px solid oklch(92.8% 0.006 264.531);
+    margin-top: 1rem;
+  }
+  #pianoroll {
+    display: block;
+    background: white
+  }
+</style>
+
+</html>

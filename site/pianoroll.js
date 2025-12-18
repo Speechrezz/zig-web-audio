@@ -1,0 +1,222 @@
+import { getContextTime, sendMidiMessageSeconds, packMidiEvent, MidiEventType } from "./midi.js"
+
+class Note {
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} noteNumber 
+     */
+    constructor(x, noteNumber) {
+        this.x = x;
+        this.noteNumber = noteNumber;
+    }
+}
+
+const INTERVAL_MS = 100;
+const BPM = 120;
+const NUM_BEATS = 32;
+
+export class PianoRoll {
+    /**
+     * @type {HTMLCanvasElement}
+     */
+    canvas;
+
+    rows = 24;
+    cols = NUM_BEATS;
+    pitchMin = 48;
+
+    notes = [];
+
+    /**
+     * 
+     * @param {HTMLCanvasElement} canvasElement 
+     */
+    constructor(canvasElement) {
+        this.canvas = canvasElement;
+        this.canvas.onclick = (ev) => {
+            this.onClick(ev);
+        }
+
+        this.draw();
+    }
+
+    draw() {
+        const canvas = this.canvas;
+        let ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const rows = this.rows;
+        const cols = this.cols;
+
+        const pitchMin = this.pitchMin;
+        const pitchMax = pitchMin + rows - 1;
+
+        // Lanes
+        const noteHeight = canvas.height / rows;
+        for (let p = pitchMin; p <= pitchMax; p++) {
+            const y = (pitchMax - p) * noteHeight;
+            ctx.fillStyle = isBlackKey(p) ? "oklch(96.7% 0.003 264.542)" : "white";
+            ctx.fillRect(0, y, canvas.width, noteHeight);
+        }
+
+        // Grid
+        ctx.strokeStyle = "oklch(80.9% 0.105 251.813)";
+        ctx.lineWidth = 1;
+        const noteWidth = canvas.width / cols;
+        let gridIndex = 0;
+        for (let x = 0; x < canvas.width; x += noteWidth) {
+            ctx.strokeStyle = gridIndex % 4 == 0 ? "oklch(70.7% 0.165 254.624)" : "oklch(88.2% 0.059 254.128)";
+
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+
+            gridIndex++;
+        }
+
+        // Notes
+        for (const note of this.notes) {
+            const x = note.x * noteWidth;
+            const y = canvas.height - (note.noteNumber - pitchMin + 1) * noteHeight;
+            ctx.fillStyle = "oklch(70.7% 0.165 254.624)";
+            ctx.fillRect(x, y + 1, noteWidth, noteHeight - 2);
+        }
+    }
+
+    play() {
+        this.timer = setInterval(() => this.tick(), INTERVAL_MS);
+
+        this.beatsPassed = 0;
+        this.timePassedMs = 0;
+        this.contextTimeStart = getContextTime();
+        console.log("Play!", this.contextTimeStart);
+    }
+
+    stop() {
+        console.log("Stop.");
+        this.timer = clearInterval(this.timer);
+    }
+
+    tick() {
+        const BPS = BPM / 60;
+        const INTERVAL_SEC = INTERVAL_MS * 1e-3;
+        
+        let nextBeatsPassed = this.beatsPassed + BPS * INTERVAL_SEC;
+        if (nextBeatsPassed >= NUM_BEATS) {
+            nextBeatsPassed -= NUM_BEATS;
+        }
+        
+        console.log("Tick...", this.timePassedMs, this.beatsPassed, nextBeatsPassed);
+        const notesAtBeat = this.getNotesInBeatRange(this.beatsPassed, nextBeatsPassed);
+        if (notesAtBeat.length > 0)
+           console.log("noteAtBeat:", notesAtBeat);
+
+        for (const note of notesAtBeat) {
+            this.playNote(note, this.timePassedMs);
+        }
+        
+        this.beatsPassed = nextBeatsPassed;
+        this.timePassedMs += INTERVAL_MS;
+    }
+
+    playNote(note, timePassedMs) {
+        const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
+        const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
+
+        const noteOnTime = this.contextTimeStart + timePassedMs * 1e-3;
+        const noteOffTimeOffsetSec = 60 / BPM;
+
+        console.log("number:", note.noteNumber, "noteOnTime:", noteOnTime);
+
+        sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
+        sendMidiMessageSeconds(noteOffEvent, noteOnTime + noteOffTimeOffsetSec);
+    }
+
+    /**
+     * 
+     * @param {PointerEvent} ev 
+     */
+    onClick(ev) {
+        const x = this.xToGridIndex(ev.layerX);
+        const noteNumber = this.yToNoteNumber(ev.layerY);
+
+        const noteIndex = this.indexOfNote(x, noteNumber);
+        if (noteIndex === null) {
+            this.notes.push(new Note(x, noteNumber));
+        } else {
+            this.notes.splice(noteIndex, 1);
+        }
+
+        this.draw();
+    }
+
+    getNotesInBeatRange(beatStart, beatEnd) {
+        // This code is terrible, LOTS of issues with it
+        const epsilon = 1e-4; // Account for floating point math errors?
+        const beatTargetStart = Math.ceil(beatStart - epsilon);
+        const beatTargetEnd = Math.floor(beatEnd - epsilon);
+
+        if (beatTargetStart !== beatTargetEnd) return [];
+
+        return this.getNotesAtBeat(beatTargetStart);
+    }
+
+    getNotesAtBeat(beat) {
+        beat = Math.floor(beat);
+        let notesAtBeat = [];
+
+        for (let i = 0; i < this.notes.length; i++) {
+            const note = this.notes[i];
+            if (note.x == beat) {
+                notesAtBeat.push(note);
+            }
+        }
+
+        return notesAtBeat;
+    }
+
+    /**
+     * 
+     * @param {number} y 
+     * @returns {number} Midi note number
+     */
+    yToNoteNumber(y) {
+        y = this.canvas.height - y;
+        const rows = this.rows;
+
+        const pitchMin = this.pitchMin;
+        const noteHeight = this.canvas.height / rows;
+
+        return pitchMin + Math.floor(y / noteHeight);
+    }
+
+    /**
+     * 
+     * @param {number} x 
+     * @returns {number} Grid index
+     */
+    xToGridIndex(x) {
+        const cols = this.cols;
+        const noteWidth = this.canvas.width / cols;
+
+        return Math.floor(x / noteWidth);
+    }
+
+    indexOfNote(x, noteNumber) {
+        for (let i = 0; i < this.notes.length; i++) {
+            const note = this.notes[i];
+            if (note.x == x && note.noteNumber == noteNumber) {
+                return i;
+            }
+        }
+
+        return null;
+    }
+}
+
+function isBlackKey(midi) {
+    const pc = midi % 12;
+    return pc === 1 || pc === 3 || pc === 6 || pc === 8 || pc === 10;
+}
