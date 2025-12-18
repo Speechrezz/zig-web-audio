@@ -91,7 +91,8 @@ export class PianoRoll {
             const x = note.x * noteWidth;
             const y = canvas.height - (note.noteNumber - pitchMin + 1) * noteHeight;
             ctx.fillStyle = "oklch(70.7% 0.165 254.624)";
-            ctx.fillRect(x, y + 1, noteWidth, noteHeight - 2);
+            ctx.roundRect(x, y, noteWidth, noteHeight, 4);
+            ctx.fill();
         }
     }
 
