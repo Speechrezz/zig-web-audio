@@ -91,7 +91,7 @@ export class PianoRoll {
 
         this.tickIntervalSec = 60 / BPM;
         console.log("Play!", this.contextTimeStart, this.tickIntervalSec);
-        
+
         this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
         this.tick();
     }
@@ -119,7 +119,8 @@ export class PianoRoll {
         const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
         const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
 
-        const noteOnTime = this.contextTimeStart + timePassedSec;
+        const lookAheadSec = 0.1;
+        const noteOnTime = this.contextTimeStart + timePassedSec + lookAheadSec;
 
         console.log("number:", note.noteNumber, "noteOnTime:", noteOnTime);
 

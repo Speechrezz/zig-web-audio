@@ -53,6 +53,8 @@ fn getCurrentBlockEventsImpl(self: *@This(), block_size: i64, current_frame: i64
         self.read_index = 0;
     }
 
+    std.sort.block(MidiEvent, self.events.items, {}, comptime MidiEvent.sortPositionAsc);
+
     // Figure out which events fall within the current block
     while (self.read_index < self.events.items.len) : (self.read_index += 1) {
         const midi_event = &self.events.items[self.read_index];
@@ -63,10 +65,7 @@ fn getCurrentBlockEventsImpl(self: *@This(), block_size: i64, current_frame: i64
         midi_event.sample_position = sample_offset;
     }
 
-    const slice = self.events.items[0..self.read_index];
-    std.sort.block(MidiEvent, slice, {}, comptime MidiEvent.sortPositionAsc);
-
-    return slice;
+    return self.events.items[0..self.read_index];
 }
 
 test "Add and read current block midi events" {
@@ -85,12 +84,13 @@ test "Add and read current block midi events" {
     web_midi.appendPacked(packed_event, 100);
     web_midi.appendPacked(packed_event, 150);
     web_midi.appendPacked(packed_event, 200);
+    web_midi.appendPacked(packed_event, 50);
 
     const events_block1 = web_midi.getCurrentBlockEventsImpl(block_size, 0);
-    try std.testing.expect(events_block1.len == 3);
+    try std.testing.expect(events_block1.len == 4);
     try std.testing.expect(events_block1[0].sample_position == 0);
-    try std.testing.expect(web_midi.read_index == 3);
-    try std.testing.expect(web_midi.events.items.len == 5);
+    try std.testing.expect(web_midi.read_index == 4);
+    try std.testing.expect(web_midi.events.items.len == 6);
 
     const events_block2 = web_midi.getCurrentBlockEventsImpl(block_size, block_size);
     try std.testing.expect(events_block2.len == 2);

@@ -1,5 +1,6 @@
 const std = @import("std");
 const audio = @import("framework").audio;
+const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
 const NoteList = @import("note_list.zig").NoteList;
 const SynthVoice = @import("SynthVoice.zig");
