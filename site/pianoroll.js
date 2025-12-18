@@ -12,7 +12,6 @@ class Note {
     }
 }
 
-const INTERVAL_MS = 100;
 const BPM = 120;
 const NUM_BEATS = 32;
 
@@ -86,12 +85,15 @@ export class PianoRoll {
     }
 
     play() {
-        this.timer = setInterval(() => this.tick(), INTERVAL_MS);
-
-        this.beatsPassed = 0;
-        this.timePassedMs = 0;
+        this.currentBeat = 0;
+        this.timePassedSec = 0;
         this.contextTimeStart = getContextTime();
-        console.log("Play!", this.contextTimeStart);
+
+        this.tickIntervalSec = 60 / BPM;
+        console.log("Play!", this.contextTimeStart, this.tickIntervalSec);
+        
+        this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
+        this.tick();
     }
 
     stop() {
@@ -100,38 +102,29 @@ export class PianoRoll {
     }
 
     tick() {
-        const BPS = BPM / 60;
-        const INTERVAL_SEC = INTERVAL_MS * 1e-3;
-        
-        let nextBeatsPassed = this.beatsPassed + BPS * INTERVAL_SEC;
-        if (nextBeatsPassed >= NUM_BEATS) {
-            nextBeatsPassed -= NUM_BEATS;
-        }
-        
-        console.log("Tick...", this.timePassedMs, this.beatsPassed, nextBeatsPassed);
-        const notesAtBeat = this.getNotesInBeatRange(this.beatsPassed, nextBeatsPassed);
+        console.log("Tick...", this.timePassedSec, this.currentBeat);
+        const notesAtBeat = this.getNotesAtBeat(this.currentBeat);
         if (notesAtBeat.length > 0)
            console.log("noteAtBeat:", notesAtBeat);
 
         for (const note of notesAtBeat) {
-            this.playNote(note, this.timePassedMs);
+            this.playNote(note, this.timePassedSec);
         }
         
-        this.beatsPassed = nextBeatsPassed;
-        this.timePassedMs += INTERVAL_MS;
+        this.currentBeat = (this.currentBeat + 1) % NUM_BEATS;
+        this.timePassedSec += this.tickIntervalSec;
     }
 
-    playNote(note, timePassedMs) {
+    playNote(note, timePassedSec) {
         const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
         const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
 
-        const noteOnTime = this.contextTimeStart + timePassedMs * 1e-3;
-        const noteOffTimeOffsetSec = 60 / BPM;
+        const noteOnTime = this.contextTimeStart + timePassedSec;
 
         console.log("number:", note.noteNumber, "noteOnTime:", noteOnTime);
 
         sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
-        sendMidiMessageSeconds(noteOffEvent, noteOnTime + noteOffTimeOffsetSec);
+        sendMidiMessageSeconds(noteOffEvent, noteOnTime + this.tickIntervalSec);
     }
 
     /**
@@ -150,17 +143,6 @@ export class PianoRoll {
         }
 
         this.draw();
-    }
-
-    getNotesInBeatRange(beatStart, beatEnd) {
-        // This code is terrible, LOTS of issues with it
-        const epsilon = 1e-4; // Account for floating point math errors?
-        const beatTargetStart = Math.ceil(beatStart - epsilon);
-        const beatTargetEnd = Math.floor(beatEnd - epsilon);
-
-        if (beatTargetStart !== beatTargetEnd) return [];
-
-        return this.getNotesAtBeat(beatTargetStart);
     }
 
     getNotesAtBeat(beat) {

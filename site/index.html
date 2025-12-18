@@ -14,17 +14,23 @@
   let pianoRoll;
 
   const initialize = async () => {
+    const startButton = document.getElementById("start-audio-button");
+    const playButton = document.getElementById("play-button");
+    const stopButton = document.getElementById("stop-button");
+
     await initializeAudio();
     initializeMIDI(getAudioWorkletNode());
 
-    const startButton = document.getElementById("start-audio-button");
     startButton.onclick = () => {
-      toggleAudioContext();
+      const isRunning = toggleAudioContext();
+
+      playButton.disabled = !isRunning;
+      stopButton.disabled = !isRunning;
     }
 
     pianoRoll = new PianoRoll(document.getElementById("pianoroll"));
-    document.getElementById("play-button").onclick = () => pianoRoll.play();
-    document.getElementById("stop-button").onclick = () => pianoRoll.stop();
+    playButton.onclick = () => pianoRoll.play();
+    stopButton.onclick = () => pianoRoll.stop();
   };
 
   initialize();
@@ -37,8 +43,8 @@
   <div id="main-container">
     <input id="start-audio-button" type="button" value="Start">
     <div style="margin-top: 1rem">
-      <input id="play-button" type="button" value="Play">
-      <input id="stop-button" type="button" value="Stop">
+      <input id="play-button" type="button" value="Play" disabled>
+      <input id="stop-button" type="button" value="Stop" disabled>
     </div>
     <div id="pianoroll-container">
       <canvas id="pianoroll" width="1600" height="800"></canvas>

@@ -43,12 +43,15 @@ export function isAudioContextRunning() {
 
 /**
  * Toggle AudioContext state between running and suspended.
+ * @returns {boolean} Is currently running
  */
 export function toggleAudioContext() {
     if (isAudioContextRunning()) {
         audioContext.suspend();
+        return false;
     } else {
         audioContext.resume();
+        return true;
     }
 }
 
