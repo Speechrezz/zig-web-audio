@@ -125,8 +125,6 @@ export class PianoRoll {
         }
 
         const notesAtBeat = this.getNotesAtBeat(this.currentBeat);
-        if (notesAtBeat.length > 0)
-           console.log("noteAtBeat:", notesAtBeat);
 
         for (const note of notesAtBeat) {
             this.playNote(note, this.timePassedSec);
@@ -144,8 +142,6 @@ export class PianoRoll {
 
         const lookAheadSec = 0.1;
         const noteOnTime = this.contextTimeStart + timePassedSec + lookAheadSec;
-
-        console.log("number:", note.noteNumber, "noteOnTime:", noteOnTime);
 
         sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
         sendMidiMessageSeconds(noteOffEvent, noteOnTime + this.tickIntervalSec);
