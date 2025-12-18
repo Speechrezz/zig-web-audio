@@ -5,7 +5,7 @@ const State = enum { off, attack, decay, sustain, release };
 
 // In seconds
 pub const Parameters = struct {
-    attack_time: f32 = 0.0,
+    attack_time: f32 = 0.001,
     decay_time: f32 = 0.2,
     sustain_gain: f32 = 0.5,
     release_time: f32 = 0.1,
