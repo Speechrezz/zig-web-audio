@@ -1,4 +1,4 @@
-import { initializeAudio, toggleAudioContext, getAudioWorkletNode } from "./audio.js"
+import { initializeAudio, toggleAudioContext, getAudioWorkletNode, isAudioContextRunning } from "./audio.js"
 import { initializeMIDI } from "./midi.js"
 import { PianoRoll } from "./pianoroll.js"
 import { PlaybackEngine } from "./playback-engine.js"
@@ -20,14 +20,17 @@ export async function initialize() {
     const bpmInput = document.getElementById("bpm-input");
     const canvasElement = document.getElementById("pianoroll");
 
+    const audioContextStateChanged = (isRunning) => {
+        playButton.disabled = !isRunning;
+        stopButton.disabled = !isRunning;
+    };
+
     await initializeAudio();
     initializeMIDI(getAudioWorkletNode());
 
+    audioContextStateChanged(isAudioContextRunning());
     startButton.onclick = () => {
-        const isRunning = toggleAudioContext();
-
-        playButton.disabled = !isRunning;
-        stopButton.disabled = !isRunning;
+        audioContextStateChanged(toggleAudioContext());
     }
 
     pianoRoll = new PianoRoll(canvasElement, () => { return Number(bpmInput.value); });

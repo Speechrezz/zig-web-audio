@@ -153,8 +153,8 @@ export class PianoRoll {
      * @param {PointerEvent} ev 
      */
     onClick(ev) {
-        const x = this.xToGridIndex(ev.layerX);
-        const noteNumber = this.yToNoteNumber(ev.layerY);
+        const x = this.xToGridIndex(ev.offsetX);
+        const noteNumber = this.yToNoteNumber(ev.offsetY);
 
         const noteIndex = this.indexOfNote(x, noteNumber);
         if (noteIndex === null) {
