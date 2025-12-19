@@ -7,34 +7,7 @@
   <title>Document</title>
 </head>
 <script defer type="module">
-  import { initializeAudio, toggleAudioContext, getAudioWorkletNode } from "./audio.js"
-  import { initializeMIDI } from "./midi.js"
-  import { PianoRoll } from "./pianoroll.js"
-
-  let pianoRoll;
-
-  const initialize = async () => {
-    const startButton = document.getElementById("start-audio-button");
-    const playButton = document.getElementById("play-button");
-    const stopButton = document.getElementById("stop-button");
-    const bpmInput = document.getElementById("bpm-input");
-    const canvasElement = document.getElementById("pianoroll");
-    
-    await initializeAudio();
-    initializeMIDI(getAudioWorkletNode());
-
-    startButton.onclick = () => {
-      const isRunning = toggleAudioContext();
-
-      playButton.disabled = !isRunning;
-      stopButton.disabled = !isRunning;
-    }
-
-    pianoRoll = new PianoRoll(canvasElement, () => { return Number(bpmInput.value); });
-    playButton.onclick = () => pianoRoll.play();
-    stopButton.onclick = () => pianoRoll.stop();
-  };
-
+  import { initialize } from "./main.js"
   initialize();
 </script>
 
