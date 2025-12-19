@@ -119,7 +119,7 @@ export class PianoRoll {
     tick() {
         const newBpm = this.getBpm();
         if (Number.isFinite(newBpm) && newBpm !== this.bpm) {
-            this.bpm = newBpm;
+            this.bpm = Math.min(Math.max(newBpm, 60), 600);
             this.tickIntervalSec = 60 / this.bpm;
             clearInterval(this.timer);
             this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
