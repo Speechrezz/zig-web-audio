@@ -2,12 +2,24 @@ import { getContextTime, sendMidiMessageSeconds, packMidiEvent, MidiEventType } 
 
 export class Note {
     /**
-     * 
-     * @param {number} x 
-     * @param {number} noteNumber 
+     * Position of the start of the note in beats 
+     * @type {Number}
      */
-    constructor(x, noteNumber) {
-        this.x = x;
+    beatStart
+
+    /**
+     * MIDI note number
+     * @type {Number}
+     */
+    noteNumber
+
+
+    /**
+     * @param {Number} beatStart Position of note start in beats 
+     * @param {Number} noteNumber MIDI note number
+     */
+    constructor(beatStart, noteNumber) {
+        this.beatStart = beatStart;
         this.noteNumber = noteNumber;
     }
 }
@@ -55,9 +67,18 @@ export class PlaybackEngine {
     /**
      * @type {((PlayHead) => void)[]}
      */
-    playbackCallbacks = [];
+    playbackListeners = [];
+
+    /**
+     * TODO: Remove this, just needed temporarily
+     * @type {Number};
+     */
+    newBpm = 120;
 
     constructor() {
+        // TEMP:
+        this.addInstrument(0, "temp");
+
         // TODO
     }
 
@@ -92,23 +113,32 @@ export class PlaybackEngine {
      * 
      * @param {(PlayHead) => void} callback 
      */
-    addCallback(callback) {
-        this.playbackCallbacks.push(callback);
+    addListener(callback) {
+        this.playbackListeners.push(callback);
     }
 
     /**
      * 
      * @param {(PlayHead) => void} callback 
      */
-    removeCallback(callback) {
-        const index = this.playbackCallbacks.findIndex((c) => c === callback);
-        this.playbackCallbacks.splice(index, 1);
+    removeListener(callback) {
+        const index = this.playbackListeners.findIndex((c) => c === callback);
+        this.playbackListeners.splice(index, 1);
     }
 
-    notifyCallbacks() {
-        for (const callback of this.playbackCallbacks) {
+    notifyListeners() {
+        for (const callback of this.playbackListeners) {
             callback(this.playHead);
         }
+    }
+
+    /**
+     * 
+     * @param {Number} newBpm 
+     */
+    setTempo(newBpm) {
+        if (!Number.isFinite(newBpm)) return;
+        this.newBpm = Math.min(Math.max(newBpm, 60), 600);
     }
 
     play() {
@@ -131,15 +161,14 @@ export class PlaybackEngine {
         console.log("Stop.");
         playHead.isPlaying = false;
         clearInterval(this.timer);
-        this.notifyCallbacks();
+        this.notifyListeners();
     }
 
     tick() {
         const playHead = this.playHead;
         
-        const newBpm = 240; //this.getBpm(); // TODO
-        if (Number.isFinite(newBpm) && newBpm !== playHead.bpm) {
-            playHead.bpm = Math.min(Math.max(newBpm, 60), 600);
+        if (this.newBpm !== playHead.bpm) {
+            playHead.bpm = this.newBpm;
             this.tickIntervalSec = 60 / playHead.bpm;
             clearInterval(this.timer);
             this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
@@ -151,10 +180,10 @@ export class PlaybackEngine {
             this.playNote(note, playHead.timePassedSec);
         }
 
-        this.notifyCallbacks();
+        this.notifyListeners();
         
         playHead.currentBeat = (playHead.currentBeat + 1) % playHead.lengthInBeats;
-        playHead.timePassedSec += playHead.tickIntervalSec;
+        playHead.timePassedSec += this.tickIntervalSec;
     }
 
     /**
@@ -167,7 +196,7 @@ export class PlaybackEngine {
         const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
 
         const lookAheadSec = 0.1;
-        const noteOnTime = this.contextTimeStart + timePassedSec + lookAheadSec;
+        const noteOnTime = this.playHead.contextTimeStart + timePassedSec + lookAheadSec;
 
         sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
         sendMidiMessageSeconds(noteOffEvent, noteOnTime + this.tickIntervalSec);
@@ -190,7 +219,7 @@ export class PlaybackEngine {
 
         for (let i = 0; i < notes.length; i++) {
             const note = notes[i];
-            if (note.x == beat) {
+            if (note.beatStart === beat) {
                 notesAtBeat.push(note);
             }
         }

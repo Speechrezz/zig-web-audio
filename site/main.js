@@ -27,13 +27,22 @@ export async function initialize() {
 
     await initializeAudio();
     initializeMIDI(getAudioWorkletNode());
-
+    
     audioContextStateChanged(isAudioContextRunning());
     startButton.onclick = () => {
         audioContextStateChanged(toggleAudioContext());
     }
 
-    pianoRoll = new PianoRoll(canvasElement, () => { return Number(bpmInput.value); });
-    playButton.onclick = () => pianoRoll.play();
-    stopButton.onclick = () => pianoRoll.stop();
+    playbackEngine = new PlaybackEngine();
+    pianoRoll = new PianoRoll(canvasElement, playbackEngine);
+
+    playButton.onclick = () => playbackEngine.play();
+    stopButton.onclick = () => playbackEngine.stop();
+
+    bpmInput.addEventListener("change", (event) => {
+        playbackEngine.setTempo(Number(event.target.value));
+    })
+    playbackEngine.setTempo(Number(bpmInput.value));
+
+    playbackEngine.addListener(() => pianoRoll.draw());
 }

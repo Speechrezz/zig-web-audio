@@ -1,16 +1,4 @@
-import { getContextTime, sendMidiMessageSeconds, packMidiEvent, MidiEventType } from "./midi.js"
-
-class Note {
-    /**
-     * 
-     * @param {number} x 
-     * @param {number} noteNumber 
-     */
-    constructor(x, noteNumber) {
-        this.x = x;
-        this.noteNumber = noteNumber;
-    }
-}
+import { PlaybackEngine, Note } from "./playback-engine.js"
 
 const NUM_BEATS = 32;
 
@@ -20,23 +8,23 @@ export class PianoRoll {
      */
     canvas;
 
-    bpm = 120;
+    /**
+     * @type {PlaybackEngine}
+     */
+    playbackEngine;
+
     rows = 24;
     cols = NUM_BEATS;
     pitchMin = 48;
 
-    notes = [];
-
-    isPlaying = false;
-
     /**
      * 
      * @param {HTMLCanvasElement} canvasElement 
-     * @param {function} getBpm 
+     * @param {PlaybackEngine} playbackEngine 
      */
-    constructor(canvasElement, getBpm) {
+    constructor(canvasElement, playbackEngine) {
         this.canvas = canvasElement;
-        this.getBpm = getBpm;
+        this.playbackEngine = playbackEngine;
         this.canvas.onclick = (ev) => {
             this.onClick(ev);
         }
@@ -80,15 +68,16 @@ export class PianoRoll {
         }
 
         // Playhead
-        if (this.isPlaying) {
-            const x = this.currentBeat * noteWidth;
+        const playHead = this.playbackEngine.playHead;
+        if (playHead.isPlaying) {
+            const x = playHead.currentBeat * noteWidth;
             ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.15)";
             ctx.fillRect(x, 0, noteWidth, canvas.height);
         }
 
         // Notes
-        for (const note of this.notes) {
-            const x = note.x * noteWidth;
+        for (const note of this.playbackEngine.instruments[0].notes) {
+            const x = note.beatStart * noteWidth;
             const y = canvas.height - (note.noteNumber - pitchMin + 1) * noteHeight;
             ctx.fillStyle = "oklch(70.7% 0.165 254.624)";
             ctx.roundRect(x, y, noteWidth, noteHeight, 4);
@@ -96,88 +85,23 @@ export class PianoRoll {
         }
     }
 
-    play() {
-        this.currentBeat = 0;
-        this.timePassedSec = 0;
-        this.contextTimeStart = getContextTime();
-        this.isPlaying = true;
-
-        this.tickIntervalSec = 60 / this.bpm;
-        console.log("Play!", this.contextTimeStart, this.tickIntervalSec);
-
-        this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
-        this.tick();
-    }
-
-    stop() {
-        console.log("Stop.");
-        this.isPlaying = false;
-        clearInterval(this.timer);
-        this.draw();
-    }
-
-    tick() {
-        const newBpm = this.getBpm();
-        if (Number.isFinite(newBpm) && newBpm !== this.bpm) {
-            this.bpm = Math.min(Math.max(newBpm, 60), 600);
-            this.tickIntervalSec = 60 / this.bpm;
-            clearInterval(this.timer);
-            this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
-        }
-
-        const notesAtBeat = this.getNotesAtBeat(this.currentBeat);
-
-        for (const note of notesAtBeat) {
-            this.playNote(note, this.timePassedSec);
-        }
-
-        this.draw();
-        
-        this.currentBeat = (this.currentBeat + 1) % NUM_BEATS;
-        this.timePassedSec += this.tickIntervalSec;
-    }
-
-    playNote(note, timePassedSec) {
-        const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
-        const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
-
-        const lookAheadSec = 0.1;
-        const noteOnTime = this.contextTimeStart + timePassedSec + lookAheadSec;
-
-        sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
-        sendMidiMessageSeconds(noteOffEvent, noteOnTime + this.tickIntervalSec);
-    }
-
     /**
      * 
      * @param {PointerEvent} ev 
      */
     onClick(ev) {
+        const notes = this.playbackEngine.instruments[0].notes;
         const x = this.xToGridIndex(ev.offsetX);
         const noteNumber = this.yToNoteNumber(ev.offsetY);
 
         const noteIndex = this.indexOfNote(x, noteNumber);
         if (noteIndex === null) {
-            this.notes.push(new Note(x, noteNumber));
+            notes.push(new Note(x, noteNumber));
         } else {
-            this.notes.splice(noteIndex, 1);
+            notes.splice(noteIndex, 1);
         }
 
         this.draw();
-    }
-
-    getNotesAtBeat(beat) {
-        beat = Math.floor(beat);
-        let notesAtBeat = [];
-
-        for (let i = 0; i < this.notes.length; i++) {
-            const note = this.notes[i];
-            if (note.x == beat) {
-                notesAtBeat.push(note);
-            }
-        }
-
-        return notesAtBeat;
     }
 
     /**
@@ -208,9 +132,10 @@ export class PianoRoll {
     }
 
     indexOfNote(x, noteNumber) {
-        for (let i = 0; i < this.notes.length; i++) {
-            const note = this.notes[i];
-            if (note.x == x && note.noteNumber == noteNumber) {
+        const notes = this.playbackEngine.instruments[0].notes;
+        for (let i = 0; i < notes.length; i++) {
+            const note = notes[i];
+            if (note.beatStart == x && note.noteNumber == noteNumber) {
                 return i;
             }
         }
