@@ -53,7 +53,7 @@ fn getCurrentBlockEventsImpl(self: *@This(), block_size: i64, current_frame: i64
         self.read_index = 0;
     }
 
-    std.sort.block(MidiEvent, self.events.items, {}, comptime MidiEvent.sortPositionAsc);
+    std.sort.block(MidiEvent, self.events.items[self.read_index..], {}, comptime MidiEvent.sortPositionAsc);
 
     // Figure out which events fall within the current block
     while (self.read_index < self.events.items.len) : (self.read_index += 1) {
