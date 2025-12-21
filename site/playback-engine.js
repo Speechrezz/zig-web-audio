@@ -55,9 +55,24 @@ export class PlayHead {
     isPlaying = false;
 
     // ---Position info---
-    currentBeat = 0;
-    timePassedSec = 0;
-    contextTimeStart = 0;
+    positionInBeats = 0;
+    timePassedSec = 0; // Time since started playing
+    contextTimeStart = 0; // Audio context time when started playing
+
+    // ---Internal info used by PlaybackEngine---
+    timePerStepSec = 1 / 60.0;
+    anchorInSec = 0;
+    anchorInBeats = 0;
+
+    /**
+     * 
+     * @param {Number} timePassedSec 
+     * @returns 
+     */
+    getPositionInBeats(timePassedSec) {
+        const deltaTimeSec = timePassedSec - this.anchorInSec;
+        return (this.anchorInBeats + this.secondsToBeats(deltaTimeSec)) % this.lengthInBeats;
+    }
 
     /**
      * 
@@ -70,10 +85,23 @@ export class PlayHead {
     /**
      * 
      * @param {Number} beats Number of beats
-     * @returns {Number} Seconds
+     * @returns {Number} Time in seconds
      */
     beatsToSeconds(beats) {
         return beats * 60.0 / this.bpm;
+    }
+
+    /**
+     * 
+     * @param {Number} seconds Time in seconds
+     * @returns {Number} Number of beats
+     */
+    secondsToBeats(seconds) {
+        return seconds * this.bpm / 60.0;
+    }
+
+    getBeatsPerStep() {
+        return this.secondsToBeats(this.timePerStepSec);
     }
 }
 
@@ -93,11 +121,6 @@ export class PlaybackEngine {
      */
     playbackListeners = [];
 
-    /**
-     * TODO: Remove this, just needed temporarily
-     * @type {Number};
-     */
-    newBpm = 120;
 
     constructor() {
         // TEMP:
@@ -162,23 +185,31 @@ export class PlaybackEngine {
      */
     setTempo(newBpm) {
         if (!Number.isFinite(newBpm)) return;
-        this.newBpm = Math.min(Math.max(newBpm, 60), 600);
+        const newTempo = Math.min(Math.max(newBpm, 60), 600);
+        if (newTempo === this.playHead.bpm) return;
+
+        this.playHead.anchorInSec = this.playHead.timePassedSec;
+        this.playHead.anchorInBeats = this.playHead.positionInBeats;
+
+        this.playHead.bpm = newTempo;
     }
 
     play() {
         const playHead = this.playHead;
         if (playHead.isPlaying) return;
 
-        playHead.currentBeat = 0;
-        playHead.timePassedSec = 0;
+        playHead.positionInBeats = 0;
+        playHead.timePassedSec   = 0;
+        playHead.timePassedSteps = 0;
+        playHead.anchorInBeats   = 0;
+        playHead.anchorInSec     = 0;
         playHead.contextTimeStart = getContextTime();
         playHead.isPlaying = true;
 
-        this.tickIntervalSec = 60 / playHead.bpm;
-        console.log("Play!", playHead.contextTimeStart, this.tickIntervalSec);
+        console.log("Play! PlayHead:", playHead);
 
-        this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
-        this.tick();
+        this.timer = setInterval(() => this.step(), playHead.timePerStepSec * 1e3);
+        this.step();
     }
 
     stop() {
@@ -190,26 +221,21 @@ export class PlaybackEngine {
         this.notifyListeners();
     }
 
-    tick() {
+    step() {
         const playHead = this.playHead;
         
-        if (this.newBpm !== playHead.bpm) {
-            playHead.bpm = this.newBpm;
-            this.tickIntervalSec = 60 / playHead.bpm;
-            clearInterval(this.timer);
-            this.timer = setInterval(() => this.tick(), this.tickIntervalSec * 1e3);
-        }
-
-        const notesAtBeat = this.getNotesAtBeat(playHead.currentBeat);
-
+        const nextTimePassedSec = getContextTime() - playHead.contextTimeStart
+        const nextPositionInBeats = playHead.getPositionInBeats(nextTimePassedSec);
+        
+        const notesAtBeat = this.getNotesInInterval(playHead.positionInBeats, nextPositionInBeats);
         for (const note of notesAtBeat) {
             this.playNote(note);
         }
 
         this.notifyListeners();
         
-        playHead.currentBeat = (playHead.currentBeat + 1) % playHead.lengthInBeats;
-        playHead.timePassedSec += this.tickIntervalSec;
+        playHead.positionInBeats = nextPositionInBeats;
+        playHead.timePassedSec = nextTimePassedSec;
     }
 
     /**
@@ -220,10 +246,10 @@ export class PlaybackEngine {
         const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
         const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
 
-        const lookAheadSec = 0.1; // Helps remove jitter
+        const lookAheadSec = 0.1; // Helps mitigate jitter
         const playHeadTimeSec = this.playHead.getContextTimeSec() + lookAheadSec;
 
-        const noteOnBeatOffset = note.beatStart - this.playHead.currentBeat;
+        const noteOnBeatOffset = note.beatStart - this.playHead.positionInBeats;
         const noteOnTime = playHeadTimeSec + this.playHead.beatsToSeconds(noteOnBeatOffset);
         const noteOffTime = noteOnTime + this.playHead.beatsToSeconds(note.beatLength);
 
@@ -233,12 +259,11 @@ export class PlaybackEngine {
 
     /**
      * 
-     * @param {Number} beat current beat 
-     * @returns {Note[]} array of notes
+     * @param {Number} beatStart 
+     * @param {Number} beatEnd 
+     * @returns {Note[]}
      */
-    getNotesAtBeat(beat) {
-        beat = Math.floor(beat);
-
+    getNotesInInterval(beatStart, beatEnd) {
         /**
          * @type {Note[]}
          */
@@ -246,10 +271,18 @@ export class PlaybackEngine {
 
         const notes = this.instruments[0].notes; // TODO: don't hardcode like this lol
 
-        for (let i = 0; i < notes.length; i++) {
-            const note = notes[i];
-            if (note.beatStart === beat) {
-                notesAtBeat.push(note);
+        for (const note of notes) {
+            if (beatStart <= beatEnd) {
+                if (note.beatStart >= beatStart && note.beatStart < beatEnd) {
+                    notesAtBeat.push(note);
+                }
+            } else {
+                if (note.beatStart < beatEnd || note.beatStart >= beatStart) {
+                    console.log("wrapAround:", note);
+                    let adjustedNote = {...note};
+                    adjustedNote.beatStart += this.playHead.lengthInBeats;
+                    notesAtBeat.push(adjustedNote);
+                }
             }
         }
 

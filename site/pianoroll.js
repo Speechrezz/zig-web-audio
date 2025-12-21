@@ -70,9 +70,9 @@ export class PianoRoll {
         // Playhead
         const playHead = this.playbackEngine.playHead;
         if (playHead.isPlaying) {
-            const x = playHead.currentBeat * noteWidth;
-            ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.15)";
-            ctx.fillRect(x, 0, noteWidth, canvas.height);
+            const x = playHead.positionInBeats * noteWidth;
+            ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.5)";
+            ctx.fillRect(x, 0, 8, canvas.height);
         }
 
         // Notes
