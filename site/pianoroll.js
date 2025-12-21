@@ -96,7 +96,7 @@ export class PianoRoll {
 
         const noteIndex = this.indexOfNote(x, noteNumber);
         if (noteIndex === null) {
-            notes.push(new Note(x, noteNumber));
+            notes.push(new Note(x, 1, noteNumber));
         } else {
             notes.splice(noteIndex, 1);
         }

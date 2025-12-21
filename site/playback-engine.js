@@ -8,18 +8,25 @@ export class Note {
     beatStart
 
     /**
+     * Length of the note in beats
+     * @type {Number}
+     */
+    beatLength
+
+    /**
      * MIDI note number
      * @type {Number}
      */
     noteNumber
 
-
     /**
      * @param {Number} beatStart Position of note start in beats 
+     * @param {Number} beatLength Length of note in beats
      * @param {Number} noteNumber MIDI note number
      */
-    constructor(beatStart, noteNumber) {
+    constructor(beatStart, beatLength, noteNumber) {
         this.beatStart = beatStart;
+        this.beatLength = beatLength;
         this.noteNumber = noteNumber;
     }
 }
@@ -51,6 +58,23 @@ export class PlayHead {
     currentBeat = 0;
     timePassedSec = 0;
     contextTimeStart = 0;
+
+    /**
+     * 
+     * @returns {Number} Time since audio context started in seconds
+     */
+    getContextTimeSec() {
+        return this.contextTimeStart + this.timePassedSec;
+    }
+
+    /**
+     * 
+     * @param {Number} beats Number of beats
+     * @returns {Number} Seconds
+     */
+    beatsToSeconds(beats) {
+        return beats * 60.0 / this.bpm;
+    }
 }
 
 export class PlaybackEngine {
@@ -143,6 +167,8 @@ export class PlaybackEngine {
 
     play() {
         const playHead = this.playHead;
+        if (playHead.isPlaying) return;
+
         playHead.currentBeat = 0;
         playHead.timePassedSec = 0;
         playHead.contextTimeStart = getContextTime();
@@ -177,7 +203,7 @@ export class PlaybackEngine {
         const notesAtBeat = this.getNotesAtBeat(playHead.currentBeat);
 
         for (const note of notesAtBeat) {
-            this.playNote(note, playHead.timePassedSec);
+            this.playNote(note);
         }
 
         this.notifyListeners();
@@ -189,17 +215,20 @@ export class PlaybackEngine {
     /**
      * 
      * @param {Note} note 
-     * @param {Number} timePassedSec 
      */
-    playNote(note, timePassedSec) {
+    playNote(note) {
         const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
         const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
 
-        const lookAheadSec = 0.1;
-        const noteOnTime = this.playHead.contextTimeStart + timePassedSec + lookAheadSec;
+        const lookAheadSec = 0.1; // Helps remove jitter
+        const playHeadTimeSec = this.playHead.getContextTimeSec() + lookAheadSec;
+
+        const noteOnBeatOffset = note.beatStart - this.playHead.currentBeat;
+        const noteOnTime = playHeadTimeSec + this.playHead.beatsToSeconds(noteOnBeatOffset);
+        const noteOffTime = noteOnTime + this.playHead.beatsToSeconds(note.beatLength);
 
         sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
-        sendMidiMessageSeconds(noteOffEvent, noteOnTime + this.tickIntervalSec);
+        sendMidiMessageSeconds(noteOffEvent, noteOffTime);
     }
 
     /**
