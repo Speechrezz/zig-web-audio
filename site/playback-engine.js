@@ -278,7 +278,6 @@ export class PlaybackEngine {
                 }
             } else {
                 if (note.beatStart < beatEnd || note.beatStart >= beatStart) {
-                    console.log("wrapAround:", note);
                     let adjustedNote = {...note};
                     adjustedNote.beatStart += this.playHead.lengthInBeats;
                     notesAtBeat.push(adjustedNote);
