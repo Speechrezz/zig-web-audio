@@ -118,7 +118,7 @@ export class Rectangle {
      */
     contains(x, y) {
         return x >= this.x && x <= this.getRight() 
-            && y >= this.y && this.y <= this.getBottom();
+            && y >= this.y && y <= this.getBottom();
     }
 
     /**
@@ -260,7 +260,7 @@ export class Component {
      * @param {Component} childComponent 
      */
     removeChildComponent(childComponent) {
-        const index = this.childComponents.findIndex((c) => c === childComponent);
+        const index = this.childComponents.indexOf(childComponent);
         if (index === -1) return;
 
         childComponent.parentComponent = null;

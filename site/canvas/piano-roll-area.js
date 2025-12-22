@@ -1,5 +1,6 @@
 import { PlaybackEngine, Note } from "../playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
+import { NoteComponent } from "./note-component.js";
 
 const PITCH_MIN = 21;  // A0
 const PITCH_MAX = 108; // C8
@@ -14,6 +15,11 @@ export class PianoRollArea extends Component {
      * @type {PlaybackEngine}
      */
     playbackEngine;
+
+    /**
+     * @type {NoteComponent[]}
+     */
+    notes = [];
 
     /**
      * @param {PlaybackEngine} playbackEngine 
@@ -54,31 +60,45 @@ export class PianoRollArea extends Component {
             ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.5)";
             ctx.fillRect(x, 0, 8, this.bounds.height);
         }
-
-        // Notes
-        for (const note of this.playbackEngine.instruments[0].notes) {
-            const x = this.beatToX(note.beatStart);
-            const y = this.noteNumberToY(note.noteNumber);
-            ctx.fillStyle = "oklch(70.7% 0.165 254.624)";
-            ctx.roundRect(x, y, BASE_BEAT_WIDTH, BASE_BEAT_HEIGHT, 4);
-            ctx.fill();
-        }
     }
 
     mouseDown(ev) {
         const beat = Math.floor(this.xToBeat(ev.x));
         const noteNumber = this.yToNoteNumber(ev.y);
-        console.log("beat:", beat, ", noteNumber:", noteNumber);
 
-        const notes = this.playbackEngine.instruments[0].notes;
+        const note = new Note(beat, 1, noteNumber);
+        this.addNewNote(note);
+    }
 
-        const noteIndex = this.indexOfNote(beat, noteNumber);
-        if (noteIndex === null) {
-            notes.push(new Note(beat, 1, noteNumber));
-        } else {
-            notes.splice(noteIndex, 1);
-        }
+    /**
+     * @param {Note} note 
+     */
+    addNewNote(note) {
+        this.playbackEngine.instruments[0].notes.push(note);
+        const noteComponent = new NoteComponent(note, (c) => this.removeNote(c));
 
+        this.notes.push(noteComponent);
+        this.addChildComponent(noteComponent);
+
+        const x = this.beatToX(note.beatStart);
+        const y = this.noteNumberToY(note.noteNumber);
+        noteComponent.setBounds(new Rectangle(x, y, BASE_BEAT_WIDTH, BASE_BEAT_HEIGHT));
+
+        this.repaint();
+    }
+
+    /**
+     * @param {NoteComponent} noteComponent 
+     */
+    removeNote(noteComponent) {
+        const noteComponentIndex = this.notes.indexOf(noteComponent);
+        this.notes.splice(noteComponentIndex, 1);
+
+        const playbackEngineNotes = this.playbackEngine.instruments[0].notes;
+        const engineNoteIndex = playbackEngineNotes.indexOf(noteComponent.note);
+        playbackEngineNotes.splice(engineNoteIndex, 1);
+
+        this.removeChildComponent(noteComponent);
         this.repaint();
     }
 
