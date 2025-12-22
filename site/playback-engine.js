@@ -51,7 +51,7 @@ export class Instrument {
 export class PlayHead {
     // ---Project info---
     bpm = 120;
-    lengthInBeats = 32;
+    lengthInBeats = 64;
     isPlaying = false;
 
     // ---Position info---

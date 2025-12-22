@@ -1,53 +1,14 @@
 import { PlaybackEngine, Note } from "../playback-engine.js"
-import { Component, Rectangle } from "./component.js"
+import { Component, Rectangle, Point } from "./component.js"
+import { PianoRollArea } from "./piano-roll-area.js";
+import { MouseEvent } from "./mouse-event.js";
 
-const PITCH_MIN = 21;  // A0
-const PITCH_MAX = 108; // C8
-const NUM_PITCHES = PITCH_MAX - PITCH_MIN + 1;
-
-const BASE_BEAT_WIDTH = 80;
-const BASE_BEAT_HEIGHT = 32;
-const MIN_NUM_BEATS = 32;
-
-class PianoRollArea extends Component {
-    /**
-     * @type {PlaybackEngine}
-     */
-    playbackEngine;
-
-    /**
-     * @param {PlaybackEngine} playbackEngine 
-     */
-    constructor(playbackEngine) {
-        super();
-        this.playbackEngine = playbackEngine;
-
-        this.setBounds(new Rectangle(0, 0, MIN_NUM_BEATS * BASE_BEAT_WIDTH, NUM_PITCHES * BASE_BEAT_HEIGHT));
-    }
-
-    draw(ctx) {
-        // Lanes
-        for (let p = PITCH_MIN; p <= PITCH_MAX; p++) {
-            const y = (PITCH_MAX - p) * BASE_BEAT_HEIGHT;
-            ctx.fillStyle = isBlackKey(p) ? "oklch(96.7% 0.003 264.542)" : "white";
-            ctx.fillRect(0, y, this.bounds.width, BASE_BEAT_HEIGHT);
-        }
-
-        // Grid
-        ctx.lineWidth = 1;
-        let gridIndex = 0;
-        for (let x = 0; x < this.bounds.width; x += BASE_BEAT_WIDTH) {
-            ctx.strokeStyle = gridIndex % 4 == 0 ? "oklch(70.7% 0.165 254.624)" : "oklch(88.2% 0.059 254.128)";
-
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, this.bounds.height);
-            ctx.stroke();
-
-            gridIndex++;
-        }
-    }
-}
+const ClickMode = Object.freeze({
+    none: 0,
+    draw: 1,
+    drag: 2,
+    remove: 3,
+});
 
 export class PianoRoll extends Component {
     /**
@@ -60,7 +21,15 @@ export class PianoRoll extends Component {
      */
     playbackEngine;
 
-    mouseDownFlag = false;
+    clickMode = ClickMode.none;
+    mouseDownButton = 0;
+
+    beatSnapNum = 1;
+    beatSnapDen = 1;
+
+    viewOffset = new Point(0, 0);
+    viewOffsetAnchor = new Point(0, 0);
+    mouseStart = new Point(0, 0);
 
     /**
      * 
@@ -76,11 +45,13 @@ export class PianoRoll extends Component {
         this.canvas.onmousedown = (ev) => this.mouseDown(ev);
         this.canvas.onmouseup   = (ev) => this.mouseUp(ev);
         this.canvas.onmousemove = (ev) => this.mouseMoveInternal(ev);
+        this.canvas.oncontextmenu = (ev) => ev.preventDefault();
 
         this.pianoRollArea = new PianoRollArea(playbackEngine);
         this.addChildComponent(this.pianoRollArea);
 
         this.setBounds(new Rectangle(0, 0, this.canvas.width, this.canvas.height));
+        console.log("viewOffset:", this.viewOffset);
 
         this.repaint();
     }
@@ -93,27 +64,43 @@ export class PianoRoll extends Component {
      * @param {PointerEvent} ev 
      */
     mouseDown(ev) {
-        this.mouseDownFlag = true;
-        this.dragStartX = ev.offsetX;
-        this.dragStartY = ev.offsetY;
+        if (this.clickMode !== ClickMode.none) return;
+        this.canvas.setPointerCapture(ev.pointerId);
 
-        this.prevTranslationX = this.pianoRollArea.translation.x;
-        this.prevTranslationY = this.pianoRollArea.translation.y;
+        this.clickMode = ev.button + 1;
+        this.mouseDownButton = ev.button;
+
+        if (this.clickMode === ClickMode.draw) {
+            const componentWithCoords = this.getComponentAtWithCoords(ev.offsetX, ev.offsetY);
+            if (componentWithCoords === null) return;
+
+            const mouseEvent = new MouseEvent(componentWithCoords.x, componentWithCoords.y, ev.offsetX, ev.offsetY);
+            componentWithCoords.component.mouseDown(mouseEvent);
+        }
+        else if (this.clickMode === ClickMode.drag) {
+            this.mouseStart.x = ev.offsetX;
+            this.mouseStart.y = ev.offsetY;
+
+            this.viewOffsetAnchor.x = this.pianoRollArea.translation.x;
+            this.viewOffsetAnchor.y = this.pianoRollArea.translation.y;
+        }
     }
 
     /**
      * @param {PointerEvent} ev 
      */
     mouseUp(ev) {
-        console.log("mouseup")
-        this.mouseDownFlag = false;
+        if (ev.button !== this.mouseDownButton) return;
+
+        this.canvas.releasePointerCapture(ev.pointerId);
+        this.clickMode = ClickMode.none;
     }
 
     /**
      * @param {PointerEvent} ev 
      */
     mouseMoveInternal(ev) {
-        if (this.mouseDownFlag) {
+        if (this.clickMode === ClickMode.drag) {
             this.mouseDrag(ev);
         }
     }
@@ -122,20 +109,18 @@ export class PianoRoll extends Component {
      * @param {PointerEvent} ev 
      */
     mouseDrag(ev) {
-        const offsetX = ev.offsetX - this.dragStartX;
-        const offsetY = ev.offsetY - this.dragStartY;
+        const offsetX = ev.offsetX - this.mouseStart.x;
+        const offsetY = ev.offsetY - this.mouseStart.y;
 
         const maxX = this.pianoRollArea.bounds.width  - this.bounds.width;
         const maxY = this.pianoRollArea.bounds.height - this.bounds.height;
 
-        this.pianoRollArea.translation.x = Math.min(0, Math.max(-maxX, this.prevTranslationX + offsetX));
-        this.pianoRollArea.translation.y = Math.min(0, Math.max(-maxY, this.prevTranslationY + offsetY));
+        this.viewOffset.x = Math.min(0, Math.max(-maxX, this.viewOffsetAnchor.x + offsetX));
+        this.viewOffset.y = Math.min(0, Math.max(-maxY, this.viewOffsetAnchor.y + offsetY));
+
+        this.pianoRollArea.translation.set(this.viewOffset);
 
         this.repaint();
     }
 }
 
-function isBlackKey(midi) {
-    const pc = midi % 12;
-    return pc === 1 || pc === 3 || pc === 6 || pc === 8 || pc === 10;
-}

@@ -1,3 +1,5 @@
+import { MouseEvent } from "./mouse-event.js"
+
 export class Point {
     x = 0;
     y = 0;
@@ -17,6 +19,15 @@ export class Point {
      */
     eql(other) {
         return this.x === other.x && this.y === other.y;
+    }
+
+    /**
+     * Sets current Point equal to other point.
+     * @param {Point} other 
+     */
+    set(other) {
+        this.x = other.x;
+        this.y = other.y;
     }
 
     /**
@@ -130,13 +141,13 @@ export class Component {
      * Bounds, relative to parent.
      * @type {Rectangle}
      */
-    bounds = new Rectangle;
+    bounds = new Rectangle(0, 0, 0, 0);
 
     /**
      * Translation, relative to parent.
      * @type {Point}
      */
-    translation = new Point;
+    translation = new Point(0, 0);
 
     /**
      * `true` if this component should be drawn.
@@ -159,14 +170,13 @@ export class Component {
     interceptsMouseEvents = true;
 
     /**
+     * Top level component MUST implement this.
      * @type {(() => CanvasRenderingContext2D) | null}
      */
     getGraphicsContext = null;
 
-    constructor() {
-        this.bounds = new Rectangle(0, 0, 0, 0);
-        this.translation = new Point(0, 0);
-    }
+
+    // ---Virtual methods---
 
     /**
      * Destructor, call before deleting.
@@ -199,6 +209,23 @@ export class Component {
 
         return this.getLocalBounds().contains(x, y);
     }
+
+    /** @param {MouseEvent} ev */
+    mouseDown(ev) {}
+    /** @param {MouseEvent} ev */
+    mouseUp(ev) {}
+    /** @param {MouseEvent} ev */
+    mouseEnter(ev) {}
+    /** @param {MouseEvent} ev */
+    mouseExit(ev) {}
+    /** @param {MouseEvent} ev */
+    mouseDrag(ev) {}
+    /** @param {MouseEvent} ev */
+    mouseMove(ev) {}
+    /** @param {MouseEvent} ev */
+    mouseClick(ev) {}
+
+    // ---Component methods---
 
     /**
      * 
@@ -344,5 +371,26 @@ export class Component {
      */
     toParentY(y) {
         return y + this.bounds.y + this.translation.y;
+    }
+
+    /**
+     * 
+     * @param {Number} x Relative to this component
+     * @param {Number} y Relative to this component
+     * @returns {{component: Component, x: Number, y: Number} | null} Coordinates relative to target component
+     */
+    getComponentAtWithCoords(x, y) {
+        if (this.visibleFlag && this.hitTest(x, y)) {
+            for (const child of this.childComponents) {
+                const subChild = child.getComponentAtWithCoords(child.fromParentX(x), child.fromParentY(y));
+                
+                if (subChild !== null)
+                    return subChild;
+            }
+
+            return {component: this, x: x, y: y};
+        }
+
+        return null;
     }
 }
