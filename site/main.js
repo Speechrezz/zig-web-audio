@@ -1,6 +1,7 @@
 import { initializeAudio, toggleAudioContext, getAudioWorkletNode, isAudioContextRunning } from "./audio.js"
 import { initializeMIDI } from "./midi.js"
-import { PianoRoll } from "./pianoroll.js"
+//import { PianoRoll } from "./pianoroll.js"
+import { PianoRoll } from "./canvas/piano-roll.js"
 import { PlaybackEngine } from "./playback-engine.js"
 
 /**
@@ -44,5 +45,5 @@ export async function initialize() {
     })
     playbackEngine.setTempo(Number(bpmInput.value));
 
-    playbackEngine.addListener(() => pianoRoll.draw());
+    playbackEngine.addListener(() => pianoRoll.repaint());
 }

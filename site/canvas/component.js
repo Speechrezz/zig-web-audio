@@ -1,3 +1,43 @@
+export class Point {
+    x = 0;
+    y = 0;
+
+    /**
+     * 
+     * @param {Number} x 
+     * @param {Number} y 
+     */
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    /**
+     * @param {Point} other 
+     */
+    eql(other) {
+        return this.x === other.x && this.y === other.y;
+    }
+
+    /**
+     * Binary add (returns new `Point`).
+     * @param {Point} other 
+     */
+    add(other) {
+        return new Point(this.x + other.x, this.y + other.y);
+    }
+
+    /**
+     * In-place add (adds to current `Point`).
+     * @param {Point} other 
+     */
+    addFrom(other) {
+        this.x += other.x;
+        this.y += other.y;
+        return this;
+    }
+}
+
 export class Rectangle {
     x = 0;
     y = 0;
@@ -27,6 +67,24 @@ export class Rectangle {
     }
 
     /**
+     * @param {Number} x 
+     * @param {Number} y 
+     */
+    translate(x, y) {
+        this.x += x;
+        this.y += y;
+    }
+
+    /**
+     * 
+     * @param {Point} point 
+     */
+    translatePoint(point) {
+        this.x += point.x;
+        this.y += point.y;
+    }
+
+    /**
      * 
      * @param {Rectangle} other 
      */
@@ -47,9 +105,23 @@ export class Rectangle {
      * @param {Number} y 
      * @returns `true` if the point is inside the rectangle
      */
-    hitTest(x, y) {
+    contains(x, y) {
         return x >= this.x && x <= this.getRight() 
             && y >= this.y && this.y <= this.getBottom();
+    }
+
+    /**
+     * Checks whether this rectangle intersects another rectangle
+     * @param {Rectangle} other
+     * @returns {boolean}
+     */
+    intersects(other) {
+        return !(
+            this.x + this.width  <= other.x ||  // this is left of other
+            this.x >= other.x + other.width ||  // this is right of other
+            this.y + this.height <= other.y ||  // this is above other
+            this.y >= other.y + other.height    // this is below other
+        );
     }
 }
 
@@ -61,7 +133,13 @@ export class Component {
     bounds = new Rectangle;
 
     /**
-     * `true` if current component should be drawn.
+     * Translation, relative to parent.
+     * @type {Point}
+     */
+    translation = new Point;
+
+    /**
+     * `true` if this component should be drawn.
      */
     visibleFlag = true;
     
@@ -79,6 +157,25 @@ export class Component {
      * If `true`, then this component will intercept mouse events.
      */
     interceptsMouseEvents = true;
+
+    /**
+     * @type {(() => CanvasRenderingContext2D) | null}
+     */
+    getGraphicsContext = null;
+
+    constructor() {
+        this.bounds = new Rectangle(0, 0, 0, 0);
+        this.translation = new Point(0, 0);
+    }
+
+    /**
+     * Destructor, call before deleting.
+     */
+    deinit() {
+        if (this.parentComponent !== null) {
+            this.parentComponent.removeChildComponent(this);
+        }
+    }
 
     /**
      * Override to draw component.
@@ -100,7 +197,7 @@ export class Component {
     hitTest(x, y) {
         if (!this.interceptsMouseEvents) return false;
 
-        return this.getLocalBounds().hitTest(x, y);
+        return this.getLocalBounds().contains(x, y);
     }
 
     /**
@@ -110,12 +207,9 @@ export class Component {
      * @returns {Component | null}
      */
     getComponentAt(x, y) {
-        x -= this.bounds.x;
-        y -= this.bounds.y;
-
         if (this.visibleFlag && this.hitTest(x, y)) {
             for (const child of this.childComponents) {
-                const subChild = child.getComponentAt(x - child.bounds.x, y - child.bounds.y);
+                const subChild = child.getComponentAt(child.fromParentX(x), child.fromParentY(y));
                 
                 if (subChild !== null)
                     return subChild;
@@ -147,6 +241,26 @@ export class Component {
     }
 
     /**
+     * Gets top level component.
+     * @returns {Component}
+     */
+    getTopLevelComponent() {
+        if (this.parentComponent === null)
+            return this;
+
+        return this.parentComponent.getTopLevelComponent();
+    }
+
+    /**
+     * Triggers global repaint.
+     */
+    repaint() {
+        const topLevelComponent = this.getTopLevelComponent();
+        const ctx = topLevelComponent.getGraphicsContext();
+        this.getTopLevelComponent().drawInternal(ctx);
+    }
+
+    /**
      * 
      * @param {Rectangle} newBounds 
      */
@@ -175,12 +289,10 @@ export class Component {
      * @param {CanvasRenderingContext2D} ctx 
      */
     drawInternal(ctx) {
-        if (this.childComponents.length === 0) return;
-
         ctx.save();
 
         // Localize coordinate system for this component
-        ctx.translate(this.bounds.x, this.bounds.y);
+        ctx.translate(this.toParentX(0), this.toParentY(0));
 
         // Clip to the component bounds
         ctx.beginPath();
@@ -196,5 +308,41 @@ export class Component {
         }
 
         ctx.restore();
+    }
+
+    /**
+     * Converts x-coordinate from parent space to this Component's space.
+     * @param {Number} x 
+     * @returns x
+     */
+    fromParentX(x) {
+        return x - this.bounds.x - this.translation.x;
+    }
+
+    /**
+     * Converts y-coordinate from parent space to this Component's space.
+     * @param {Number} y 
+     * @returns y
+     */
+    fromParentY(y) {
+        return y - this.bounds.y - this.translation.y;
+    }
+
+    /**
+     * Converts x-coordinate to parent space from this Component's space.
+     * @param {Number} x 
+     * @returns x
+     */
+    toParentX(x) {
+        return x + this.bounds.x + this.translation.x;
+    }
+
+    /**
+     * Converts y-coordinate to parent space from this Component's space.
+     * @param {Number} y 
+     * @returns y
+     */
+    toParentY(y) {
+        return y + this.bounds.y + this.translation.y;
     }
 }
