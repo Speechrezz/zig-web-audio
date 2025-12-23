@@ -216,9 +216,13 @@ export class Component {
      * @returns MouseHandlePolicy
      */
     canHandleMouseAction(mouseAction) {
-        return mouseAction === MouseAction.draw 
-            ? MouseActionPolicy.acceptPropagate 
-            : MouseActionPolicy.ignorePropogate;
+        switch (mouseAction) {
+            case MouseAction.none:
+            case MouseAction.draw:
+                return MouseActionPolicy.acceptPropagate;
+            default:
+                return MouseActionPolicy.ignorePropogate;
+        }
     }
 
     /** @param {MouseEvent} ev */

@@ -1,7 +1,7 @@
 export const MouseAction = Object.freeze({
     none: 0,
     draw: 1,
-    drag: 2,
+    move: 2,
     remove: 3,
     select: 4,
 });

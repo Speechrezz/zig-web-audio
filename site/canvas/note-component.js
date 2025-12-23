@@ -36,12 +36,13 @@ export class NoteComponent extends Component{
      */
     canHandleMouseAction(mouseAction) {
         switch (mouseAction) {
+            case MouseAction.none:
             case MouseAction.draw:
             case MouseAction.remove:
                 return MouseActionPolicy.acceptBlock;
+            default:
+                return MouseActionPolicy.ignorePropogate;
         }
-
-        return MouseActionPolicy.ignorePropogate;
     }
 
     mouseDown(ev) {
