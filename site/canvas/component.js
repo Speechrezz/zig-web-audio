@@ -1,4 +1,4 @@
-import { MouseEvent } from "./mouse-event.js"
+import { MouseEvent, MouseAction, MouseActionPolicy } from "./mouse-event.js"
 
 export class Point {
     x = 0;
@@ -210,6 +210,17 @@ export class Component {
         return this.getLocalBounds().contains(x, y);
     }
 
+    /**
+     * Override to change mouse action handling policy
+     * @param {MouseAction} mouseAction 
+     * @returns MouseHandlePolicy
+     */
+    canHandleMouseAction(mouseAction) {
+        return mouseAction === MouseAction.draw 
+            ? MouseActionPolicy.acceptPropagate 
+            : MouseActionPolicy.ignorePropogate;
+    }
+
     /** @param {MouseEvent} ev */
     mouseDown(ev) {}
     /** @param {MouseEvent} ev */
@@ -331,7 +342,9 @@ export class Component {
 
         // Draw children (also in this local space)
         for (const child of this.childComponents) {
-            child.drawInternal(ctx);
+            if (child.visibleFlag) {
+                child.drawInternal(ctx);
+            }
         }
 
         ctx.restore();
@@ -392,5 +405,37 @@ export class Component {
         }
 
         return null;
+    }
+
+    /**
+     * @param {Number} x Relative to this component
+     * @param {Number} y Relative to this component
+     * @param {MouseAction} mouseAction 
+     * @returns {{component: Component, x: Number, y: Number} | null} Coordinates relative to target component
+     */
+    getMouseEventHandler(x, y, mouseAction) {
+        if (!this.visibleFlag || !this.hitTest(x, y)) return null;
+
+        const policy = this.canHandleMouseAction(mouseAction);
+        if (policy === MouseActionPolicy.acceptBlock) {
+            return {component: this, x: x, y: y};
+        }
+        
+        for (const child of this.childComponents) {
+            const subChild = child.getMouseEventHandler(child.fromParentX(x), child.fromParentY(y), mouseAction);
+            
+            if (subChild !== null)
+                return subChild;
+        }
+
+        if (policy === MouseActionPolicy.acceptPropagate) {
+            return {component: this, x: x, y: y};
+        }
+        if (policy === MouseActionPolicy.ignorePropogate) {
+            return null;
+        }
+
+        // Should be unreachable
+        console.error("[Component.getMouseEventHandler()] Reached unreachable code!");
     }
 }

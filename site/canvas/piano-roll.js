@@ -64,7 +64,7 @@ export class PianoRoll extends Component {
         this.mouseDownButton = ev.button;
 
         if (this.mouseAction === MouseAction.draw || this.mouseAction === MouseAction.remove) {
-            const componentWithCoords = this.getComponentAtWithCoords(ev.offsetX, ev.offsetY);
+            const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, this.mouseAction);
             if (componentWithCoords === null) return;
 
             const mouseEvent = new MouseEvent(

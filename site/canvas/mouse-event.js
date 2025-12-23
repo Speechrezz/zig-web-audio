@@ -6,6 +6,12 @@ export const MouseAction = Object.freeze({
     select: 4,
 });
 
+export const MouseActionPolicy = Object.freeze({
+    ignorePropogate: 0,  // Can NOT handle; keep searching children
+    acceptPropagate: 1,  // CAN handle, but children get priority if they can
+    acceptBlock: 2,      // CAN handle and prevents searching children
+});
+
 export class MouseEvent {
     x = 0;
     y = 0;
