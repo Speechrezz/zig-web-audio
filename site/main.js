@@ -1,6 +1,5 @@
 import { initializeAudio, toggleAudioContext, getAudioWorkletNode, isAudioContextRunning } from "./audio.js"
 import { initializeMIDI } from "./midi.js"
-//import { PianoRoll } from "./pianoroll.js"
 import { PianoRoll } from "./canvas/piano-roll.js"
 import { PlaybackEngine } from "./playback-engine.js"
 
@@ -28,7 +27,7 @@ export async function initialize() {
 
     await initializeAudio();
     initializeMIDI(getAudioWorkletNode());
-    
+
     audioContextStateChanged(isAudioContextRunning());
     startButton.onclick = () => {
         audioContextStateChanged(toggleAudioContext());

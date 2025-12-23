@@ -9,7 +9,7 @@ export class Point {
      * @param {Number} x 
      * @param {Number} y 
      */
-    constructor(x, y) {
+    constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
     }
@@ -62,7 +62,7 @@ export class Rectangle {
      * @param {Number} width 
      * @param {Number} height 
      */
-    constructor(x, y, width, height) {
+    constructor(x = 0, y = 0, width = 0, height = 0) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -169,6 +169,9 @@ export class Component {
      */
     interceptsMouseEvents = true;
 
+    mouseOverFlag = false;
+    mouseDraggingFlag = false;
+
     /**
      * Top level component MUST implement this.
      * @type {(() => CanvasRenderingContext2D) | null}
@@ -261,6 +264,14 @@ export class Component {
         }
 
         return null;
+    }
+
+    isMouseOver() {
+        return this.mouseOverFlag;
+    }
+
+    isMouseOverOrDragging() {
+        return this.mouseOverFlag || this.mouseDraggingFlag;
     }
 
     /**
@@ -391,27 +402,6 @@ export class Component {
     }
 
     /**
-     * 
-     * @param {Number} x Relative to this component
-     * @param {Number} y Relative to this component
-     * @returns {{component: Component, x: Number, y: Number} | null} Coordinates relative to target component
-     */
-    getComponentAtWithCoords(x, y) {
-        if (this.visibleFlag && this.hitTest(x, y)) {
-            for (const child of this.childComponents) {
-                const subChild = child.getComponentAtWithCoords(child.fromParentX(x), child.fromParentY(y));
-                
-                if (subChild !== null)
-                    return subChild;
-            }
-
-            return {component: this, x: x, y: y};
-        }
-
-        return null;
-    }
-
-    /**
      * @param {Number} x Relative to this component
      * @param {Number} y Relative to this component
      * @param {MouseAction} mouseAction 
@@ -441,5 +431,22 @@ export class Component {
 
         // Should be unreachable
         console.error("[Component.getMouseEventHandler()] Reached unreachable code!");
+    }
+
+    /**
+     * Returns this component's bounds relative to the top-level component.
+     * @returns Global bounds
+     */
+    getGlobalBounds() {
+        let globalBounds = this.getLocalBounds();
+        let c = this;
+
+        while (c.parentComponent !== null) {
+            globalBounds.x += c.bounds.x + c.translation.x;
+            globalBounds.y += c.bounds.y + c.translation.y;
+            c = c.parentComponent;
+        }   
+
+        return globalBounds;
     }
 }

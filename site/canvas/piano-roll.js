@@ -49,9 +49,8 @@ export class PianoRoll extends TopLevelComponent {
                 return MouseActionPolicy.acceptPropagate;
 
             case MouseAction.move:
-            case MouseAction.select:
                 return MouseActionPolicy.acceptBlock;
-
+                
             default:
                 return MouseActionPolicy.ignorePropogate;
         }
@@ -62,11 +61,19 @@ export class PianoRoll extends TopLevelComponent {
      */
     mouseDown(ev) {
         if (ev.mouseAction === MouseAction.move) {
+            document.documentElement.style.cursor = "grabbing";
+
             this.mouseStart.x = ev.x;
             this.mouseStart.y = ev.y;
 
             this.viewOffsetAnchor.x = this.pianoRollArea.translation.x;
             this.viewOffsetAnchor.y = this.pianoRollArea.translation.y;
+        }
+    }
+
+    mouseUp(ev) {
+        if (ev.mouseAction === MouseAction.move) {
+            document.documentElement.style.cursor = "auto";
         }
     }
 

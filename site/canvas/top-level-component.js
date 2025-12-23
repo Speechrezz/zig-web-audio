@@ -11,6 +11,11 @@ export class TopLevelComponent extends Component {
     mouseDownButton = 0;
 
     /**
+     * @type {Component | null}
+     */
+    selectedComponent = null;
+
+    /**
      * 
      * @param {HTMLCanvasElement} canvasElement 
      */
@@ -57,8 +62,29 @@ export class TopLevelComponent extends Component {
 
     /**
      * @param {PointerEvent} ev 
+     * @param {Component} component 
+     * @param {MouseAction} mouseAction 
+     * @returns MouseEvent
+     */
+    pointerEventToMouseEvent(ev, component, mouseAction) {
+        const globalBounds = component.getGlobalBounds();
+
+        const mouseEvent = new MouseEvent(
+            ev.offsetX - globalBounds.x, 
+            ev.offsetY - globalBounds.y, 
+            ev.offsetX, 
+            ev.offsetY,
+            mouseAction,
+        );
+
+        return mouseEvent;
+    }
+
+    /**
+     * @param {PointerEvent} ev 
      */
     mouseDownInternal(ev) {
+        ev.preventDefault();
         if (this.mouseAction !== MouseAction.none) return;
             
         this.canvas.setPointerCapture(ev.pointerId);
@@ -70,6 +96,10 @@ export class TopLevelComponent extends Component {
         const componentWithEvent = this.pointerEventToEventHandler(ev, this.mouseAction);
         if (componentWithEvent === null) return;
         
+        this.selectedComponent = componentWithEvent.component;
+        this.selectedComponent.mouseOverFlag = true;
+        this.selectedComponent.mouseDraggingFlag = true;
+
         componentWithEvent.component.mouseDown(componentWithEvent.mouseEvent);
     }
 
@@ -77,28 +107,41 @@ export class TopLevelComponent extends Component {
      * @param {PointerEvent} ev 
      */
     mouseUpInternal(ev) {
+        ev.preventDefault();
         if (ev.button !== this.mouseDownButton) return;
 
-        this.canvas.releasePointerCapture(ev.pointerId);
+        if (this.selectedComponent !== null) {
+            const mouseEvent = this.pointerEventToMouseEvent(ev, this.selectedComponent, this.mouseAction);
 
-        const componentWithEvent = this.pointerEventToEventHandler(ev, this.mouseAction);
+            this.selectedComponent.mouseDraggingFlag = false;
+            this.selectedComponent.mouseUp(mouseEvent);
+        }
+
         this.mouseAction = MouseAction.none;
-
-        if (componentWithEvent === null) return;
-        componentWithEvent.component.mouseUp(componentWithEvent.mouseEvent);
+        this.selectedComponent = null;
+        this.canvas.releasePointerCapture(ev.pointerId);
     }
 
     /**
      * @param {PointerEvent} ev 
      */
     mouseMoveInternal(ev) {
-        const componentWithEvent = this.pointerEventToEventHandler(ev, this.mouseAction);
-        if (componentWithEvent === null) return;
-        
-        if (this.mouseAction === MouseAction.none)
-            componentWithEvent.component.mouseMove(componentWithEvent.mouseEvent);
-        else
-            componentWithEvent.component.mouseDrag(componentWithEvent.mouseEvent);
+        ev.preventDefault();
+        if (this.mouseAction === MouseAction.none) {
+            const componentWithEvent = this.pointerEventToEventHandler(ev, this.mouseAction);
+            if (componentWithEvent !== null) {
+                componentWithEvent.component.mouseMove(componentWithEvent.mouseEvent);
+            }
+        }
+        else {
+            if (this.selectedComponent !== null) {
+                const componentUnderCursor = this.getComponentAt(ev.offsetX, ev.offsetY);
+                const mouseEvent = this.pointerEventToMouseEvent(ev, this.selectedComponent, this.mouseAction);
+
+                this.selectedComponent.mouseOverFlag = this.selectedComponent === componentUnderCursor;
+                this.selectedComponent.mouseDrag(mouseEvent);
+            }
+        }
     }
 }
 

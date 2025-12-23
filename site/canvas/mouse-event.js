@@ -1,3 +1,5 @@
+import { Rectangle } from "./component.js";
+
 export const MouseAction = Object.freeze({
     none: 0,
     draw: 1,

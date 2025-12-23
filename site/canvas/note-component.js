@@ -1,5 +1,4 @@
 import { Component } from "./component.js";
-import { MouseEvent, MouseAction, MouseActionPolicy } from "./mouse-event.js";
 import { Note } from "../playback-engine.js";
 
 export class NoteComponent extends Component{
@@ -9,19 +8,13 @@ export class NoteComponent extends Component{
     note
 
     /**
-     * @type {(NoteComponent) => {}}
-     */
-    onRemove
-
-    /**
      * @param {Note} note 
-     * @param {(NoteComponent) => {}} onRemove 
      */
-    constructor(note, onRemove) {
+    constructor(note) {
         super();
 
+        this.interceptsMouseEvents = false;
         this.note = note;
-        this.onRemove = onRemove;
     }
 
     draw(ctx) {
@@ -31,23 +24,7 @@ export class NoteComponent extends Component{
         ctx.fill();
     }
 
-    /**
-     * @param {MouseAction} mouseAction 
-     */
-    canHandleMouseAction(mouseAction) {
-        switch (mouseAction) {
-            case MouseAction.none:
-            case MouseAction.draw:
-            case MouseAction.remove:
-                return MouseActionPolicy.acceptBlock;
-            default:
-                return MouseActionPolicy.ignorePropogate;
-        }
-    }
-
-    mouseDown(ev) {
-        if (ev.mouseAction === MouseAction.remove) {
-            this.onRemove(this);
-        }
+    clone() {
+        return {...this};
     }
 }

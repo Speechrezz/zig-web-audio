@@ -29,6 +29,10 @@ export class Note {
         this.beatLength = beatLength;
         this.noteNumber = noteNumber;
     }
+
+    clone() {
+        return {...this};
+    }
 }
 
 export class Instrument {
@@ -206,8 +210,6 @@ export class PlaybackEngine {
         playHead.contextTimeStart = getContextTime();
         playHead.isPlaying = true;
 
-        console.log("Play! PlayHead:", playHead);
-
         this.timer = setInterval(() => this.step(), playHead.timePerStepSec * 1e3);
         this.step();
     }
@@ -215,7 +217,6 @@ export class PlaybackEngine {
     stop() {
         const playHead = this.playHead;
 
-        console.log("Stop.");
         playHead.isPlaying = false;
         clearInterval(this.timer);
         this.notifyListeners();

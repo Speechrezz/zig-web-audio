@@ -1,6 +1,7 @@
 import { PlaybackEngine, Note } from "../playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
 import { NoteComponent } from "./note-component.js";
+import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
 
 const PITCH_MIN = 21;  // A0
 const PITCH_MAX = 108; // C8
@@ -9,6 +10,13 @@ const NUM_PITCHES = PITCH_MAX - PITCH_MIN + 1;
 const BASE_BEAT_WIDTH = 32;
 const BASE_BEAT_HEIGHT = 24;
 const MIN_NUM_BEATS = 64;
+
+const InteractionType = Object.freeze({
+    none: 0, // NOT dragging
+    moveNote: 1, // Moving note around
+    adjustNoteStart: 2, // Adjust length of note from start
+    adjustNoteEnd: 3,   // Adjust length of note from end
+});
 
 export class PianoRollArea extends Component {
     /**
@@ -19,7 +27,18 @@ export class PianoRollArea extends Component {
     /**
      * @type {NoteComponent[]}
      */
-    notes = [];
+    noteComponents = [];
+
+    interactionType = InteractionType.none;
+    interactionAnchor = new Point();
+    interactionAnchorNote = new Note(0, 0, 0);
+    
+    /**
+     * @type {NoteComponent | null}
+     */
+    selectedNote = null;
+
+    lastBeatLength = 1;
 
     /**
      * @param {PlaybackEngine} playbackEngine 
@@ -62,37 +81,147 @@ export class PianoRollArea extends Component {
         }
     }
 
-    mouseDown(ev) {
-        const beat = Math.floor(this.xToBeat(ev.x));
-        const noteNumber = this.yToNoteNumber(ev.y);
+    /**
+     * Override to change mouse action handling policy
+     * @param {MouseAction} mouseAction 
+     * @returns MouseHandlePolicy
+     */
+    canHandleMouseAction(mouseAction) {
+        switch (mouseAction) {
+            case MouseAction.none:
+            case MouseAction.draw:
+            case MouseAction.remove:
+                return MouseActionPolicy.acceptPropagate;
 
-        const note = new Note(beat, 1, noteNumber);
-        this.addNewNote(note);
+            case MouseAction.select:
+                return MouseActionPolicy.acceptBlock;
+
+            default:
+                return MouseActionPolicy.ignorePropogate;
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    mouseMove(ev) {
+        this.updateMouseHighlightCursor(ev);
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    mouseDown(ev) {
+        if (ev.mouseAction === MouseAction.draw) {
+            const existingNote = this.findNoteAt(ev.x, ev.y);
+            if (existingNote === null) {
+                this.addNoteAt(ev.x, ev.y);
+            }
+            else {
+                this.adjustNoteBegin(ev, existingNote);
+            }
+        }
+        else if (ev.mouseAction === MouseAction.remove) {
+            this.removeNoteAt(ev.x, ev.y);
+            document.documentElement.style.cursor = "not-allowed";
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    mouseDrag(ev) {
+        if (ev.mouseAction === MouseAction.remove) {
+            this.removeNoteAt(ev.x, ev.y);
+        }
+        else {
+            this.adjustNoteStep(ev);
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    mouseUp(ev) {
+        if (ev.mouseAction === MouseAction.draw) {
+            this.adjustNoteEnd(ev);
+        }
+
+        this.updateMouseHighlightCursor(ev);
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    updateMouseHighlightCursor(ev) {
+        const existingNote = this.findNoteAt(ev.x, ev.y);
+        if (existingNote === null) {
+            document.documentElement.style.cursor = "auto";
+        } else {
+            switch (this.getGrabType(ev, existingNote)) {
+                case InteractionType.moveNote:
+                    document.documentElement.style.cursor = "grab";
+                    break;
+
+                case InteractionType.adjustNoteStart:
+                case InteractionType.adjustNoteEnd:
+                    document.documentElement.style.cursor = "ew-resize";
+                    break;
+            }
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     * @param {NoteComponent} noteComponent 
+     * @returns InteractionType
+     */
+    getGrabType(ev, noteComponent) {
+        const margin = 6;
+
+        const x = noteComponent.bounds.x;
+        const width = noteComponent.bounds.width;
+
+        if (ev.x - x >= width - margin)
+            return InteractionType.adjustNoteEnd;
+        if (ev.x - x <= margin)
+            return InteractionType.adjustNoteStart;
+        return InteractionType.moveNote;
     }
 
     /**
      * @param {Note} note 
      */
-    addNewNote(note) {
+    addNote(note) {
         this.playbackEngine.instruments[0].notes.push(note);
         const noteComponent = new NoteComponent(note, (c) => this.removeNote(c));
 
-        this.notes.push(noteComponent);
+        this.noteComponents.push(noteComponent);
         this.addChildComponent(noteComponent);
 
-        const x = this.beatToX(note.beatStart);
-        const y = this.noteNumberToY(note.noteNumber);
-        noteComponent.setBounds(new Rectangle(x, y, BASE_BEAT_WIDTH, BASE_BEAT_HEIGHT));
+        this.updateNoteBounds(noteComponent);
 
         this.repaint();
+    }
+
+    /**
+     * @param {Number} x relative to this component
+     * @param {Number} y relative to this component
+     */
+    addNoteAt(x, y) {
+        const beat = Math.floor(this.xToBeat(x));
+        const noteNumber = this.yToNoteNumber(y);
+
+        const note = new Note(beat, this.lastBeatLength, noteNumber);
+        this.addNote(note);
     }
 
     /**
      * @param {NoteComponent} noteComponent 
      */
     removeNote(noteComponent) {
-        const noteComponentIndex = this.notes.indexOf(noteComponent);
-        this.notes.splice(noteComponentIndex, 1);
+        const noteComponentIndex = this.noteComponents.indexOf(noteComponent);
+        this.noteComponents.splice(noteComponentIndex, 1);
 
         const playbackEngineNotes = this.playbackEngine.instruments[0].notes;
         const engineNoteIndex = playbackEngineNotes.indexOf(noteComponent.note);
@@ -100,6 +229,99 @@ export class PianoRollArea extends Component {
 
         this.removeChildComponent(noteComponent);
         this.repaint();
+    }
+
+    /**
+     * @param {Number} x relative to this component
+     * @param {Number} y relative to this component
+     */
+    removeNoteAt(x, y) {
+        const noteComponent = this.findNoteAt(x, y);
+        if (noteComponent !== null) {
+            this.removeNote(noteComponent);
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     * @param {NoteComponent} noteComponent 
+     */
+    adjustNoteBegin(ev, noteComponent) {
+        this.interactionType = this.getGrabType(ev, noteComponent);
+        this.interactionAnchor.x = ev.x - noteComponent.bounds.x;
+        this.interactionAnchor.y = ev.y - noteComponent.bounds.y;
+        this.interactionAnchorNote = noteComponent.note.clone();
+        this.selectedNote = noteComponent;
+
+        if (this.interactionType === InteractionType.moveNote) {
+            document.documentElement.style.cursor = "grabbing";
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    adjustNoteStep(ev) {
+        if (this.interactionType === InteractionType.none) return;
+
+        const mouseOffsetCoeff = 0.5;
+        const offsetX = ev.x - this.interactionAnchor.x + mouseOffsetCoeff * BASE_BEAT_WIDTH;
+        const offsetY = ev.y - this.interactionAnchor.y + mouseOffsetCoeff * BASE_BEAT_HEIGHT;
+
+        const beat = this.xToBeat(offsetX);
+        const noteNumber = this.yToNoteNumber(offsetY);
+
+        switch (this.interactionType) {
+            case InteractionType.moveNote: {
+                this.selectedNote.note.beatStart = Math.floor(beat);
+                this.selectedNote.note.noteNumber = noteNumber;
+                break;
+            }
+            case InteractionType.adjustNoteEnd: {
+                const beatLength = this.interactionAnchorNote.beatLength + Math.floor(beat - this.selectedNote.note.beatStart);
+                this.selectedNote.note.beatLength = Math.max(1, beatLength);
+                break;
+            }
+            case InteractionType.adjustNoteStart: {
+                const anchorNote = this.interactionAnchorNote;
+                const minBeatStart = anchorNote.beatStart + anchorNote.beatLength - 1;
+                
+                const beatStart = Math.min(minBeatStart, Math.floor(beat));
+                const beatLength = anchorNote.beatStart - beatStart + anchorNote.beatLength;
+
+                this.selectedNote.note.beatStart = beatStart;
+                this.selectedNote.note.beatLength = beatLength;
+                break;
+            }
+        }
+
+        this.updateNoteBounds(this.selectedNote);
+        this.repaint();
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    adjustNoteEnd(ev) {
+        if (this.interactionType === InteractionType.none) return;
+
+        this.lastBeatLength = this.selectedNote.note.beatLength;
+        document.documentElement.style.cursor = "auto";
+        this.interactionType = InteractionType.none;
+    }
+
+    /**
+     * @param {Number} x relative to this component
+     * @param {Number} y relative to this component
+     */
+    findNoteAt(x, y) {
+        for (const noteComponent of this.noteComponents) {
+            if (noteComponent.bounds.contains(x, y)) {
+                return noteComponent;
+            }
+        }
+
+        return null;
     }
 
     beatToX(beat) {
@@ -117,6 +339,16 @@ export class PianoRollArea extends Component {
     yToNoteNumber(y) {
         y = this.bounds.height - y;
         return PITCH_MIN + Math.floor(y / BASE_BEAT_HEIGHT);
+    }
+
+    /**
+     * 
+     * @param {NoteComponent} noteComponent 
+     */
+    updateNoteBounds(noteComponent) {
+        const x = this.beatToX(noteComponent.note.beatStart);
+        const y = this.noteNumberToY(noteComponent.note.noteNumber);
+        noteComponent.setBounds(new Rectangle(x, y, BASE_BEAT_WIDTH * noteComponent.note.beatLength, BASE_BEAT_HEIGHT));
     }
 
     indexOfNote(x, noteNumber) {
