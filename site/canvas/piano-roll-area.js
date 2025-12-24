@@ -115,10 +115,13 @@ export class PianoRollArea extends Component {
         if (ev.mouseAction === MouseAction.draw) {
             const existingNote = this.findNoteAt(ev.x, ev.y);
             if (existingNote === null) {
-                this.addNoteAt(ev.x, ev.y);
+                const newNote = this.addNoteAt(ev.x, ev.y);
+                this.adjustNoteBegin(ev, newNote, InteractionType.adjustNoteEnd);
+                document.documentElement.style.cursor = "ew-resize";
             }
             else {
-                this.adjustNoteBegin(ev, existingNote);
+                const grabType = this.getGrabType(ev, existingNote);
+                this.adjustNoteBegin(ev, existingNote, grabType);
             }
         }
         else if (ev.mouseAction === MouseAction.remove) {
@@ -200,8 +203,9 @@ export class PianoRollArea extends Component {
         this.addChildComponent(noteComponent);
 
         this.updateNoteBounds(noteComponent);
-
         this.repaint();
+
+        return noteComponent;
     }
 
     /**
@@ -213,7 +217,7 @@ export class PianoRollArea extends Component {
         const noteNumber = this.yToNoteNumber(y);
 
         const note = new Note(beat, this.lastBeatLength, noteNumber);
-        this.addNote(note);
+        return this.addNote(note);
     }
 
     /**
@@ -245,9 +249,10 @@ export class PianoRollArea extends Component {
     /**
      * @param {MouseEvent} ev 
      * @param {NoteComponent} noteComponent 
+     * @param {Number} grabType
      */
-    adjustNoteBegin(ev, noteComponent) {
-        this.interactionType = this.getGrabType(ev, noteComponent);
+    adjustNoteBegin(ev, noteComponent, grabType) {
+        this.interactionType = grabType;
         this.interactionAnchor.x = ev.x - noteComponent.bounds.x;
         this.interactionAnchor.y = ev.y - noteComponent.bounds.y;
         this.interactionAnchorNote = noteComponent.note.clone();
@@ -285,7 +290,7 @@ export class PianoRollArea extends Component {
             case InteractionType.adjustNoteStart: {
                 const anchorNote = this.interactionAnchorNote;
                 const minBeatStart = anchorNote.beatStart + anchorNote.beatLength - 1;
-                
+
                 const beatStart = Math.min(minBeatStart, Math.floor(beat));
                 const beatLength = anchorNote.beatStart - beatStart + anchorNote.beatLength;
 
