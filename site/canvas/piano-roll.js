@@ -4,6 +4,7 @@ import { TopLevelComponent } from "./top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";
 import { PianoComponent } from "./piano-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
+import { Config } from "../app/config.js";
 
 export class PianoRoll extends TopLevelComponent {
     /**
@@ -15,6 +16,11 @@ export class PianoRoll extends TopLevelComponent {
      * @type {PianoRollView}
      */
     pianoRollView;
+
+    /**
+     * @type {Config}
+     */
+    config;
 
     /**
      * @type {PianoComponent}
@@ -32,15 +38,17 @@ export class PianoRoll extends TopLevelComponent {
      * 
      * @param {HTMLCanvasElement} canvasElement 
      * @param {PlaybackEngine} playbackEngine 
+     * @param {Config} config 
      */
-    constructor(canvasElement, playbackEngine) {
+    constructor(canvasElement, playbackEngine, config) {
         super(canvasElement);
         this.playbackEngine = playbackEngine;
+        this.config = config;
 
-        this.pianoRollView = new PianoRollView(playbackEngine);
+        this.pianoRollView = new PianoRollView(playbackEngine, config);
         this.addChildComponent(this.pianoRollView);
 
-        this.pianoComponent = new PianoComponent();
+        this.pianoComponent = new PianoComponent(config);
         this.addChildComponent(this.pianoComponent);
 
         this.canvasResized();
@@ -54,12 +62,12 @@ export class PianoRoll extends TopLevelComponent {
     resize() {
         this.updateViewOffset(this.viewOffset.x, this.viewOffset.y);
 
-        const pianoWidth = 128;
+        const pianoWidth = 96;
 
         const bounds = this.getLocalBounds();
         const pianoBounds = bounds.removeFromLeft(pianoWidth);
         this.pianoRollView.setBounds(bounds.clone());
-        this.pianoComponent.setBounds(pianoBounds);
+        this.pianoComponent.setBounds(new Rectangle(pianoBounds.x, pianoBounds.y, pianoBounds.width, this.pianoComponent.bounds.height));
     }
 
     /**
@@ -122,6 +130,7 @@ export class PianoRoll extends TopLevelComponent {
         this.viewOffset.y = Math.min(0, Math.max(-maxY, y));
 
         this.pianoRollView.pianoRollArea.translation.set(this.viewOffset);
+        this.pianoComponent.translation.y = this.viewOffset.y;
         this.repaint();
     }
 }

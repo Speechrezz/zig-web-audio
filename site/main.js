@@ -2,6 +2,7 @@ import { initializeAudio, toggleAudioContext, getAudioWorkletNode, isAudioContex
 import { initializeMIDI } from "./midi.js"
 import { PianoRoll } from "./canvas/piano-roll.js"
 import { PlaybackEngine } from "./playback-engine.js"
+import { Config } from "./app/config.js"
 
 /**
  * @type {PlaybackEngine | undefined}
@@ -12,6 +13,8 @@ let playbackEngine = undefined;
  * @type {PianoRoll | undefined}
  */
 let pianoRoll = undefined;
+
+let config = new Config();
 
 export async function initialize() {
     const startButton = document.getElementById("start-audio-button");
@@ -34,7 +37,7 @@ export async function initialize() {
     }
 
     playbackEngine = new PlaybackEngine();
-    pianoRoll = new PianoRoll(canvasElement, playbackEngine);
+    pianoRoll = new PianoRoll(canvasElement, playbackEngine, config);
 
     playButton.onclick = () => playbackEngine.play();
     stopButton.onclick = () => playbackEngine.stop();

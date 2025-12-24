@@ -327,8 +327,10 @@ export class Component {
      */
     repaint() {
         const topLevelComponent = this.getTopLevelComponent();
-        const ctx = topLevelComponent.getGraphicsContext();
-        this.getTopLevelComponent().drawInternal(ctx);
+        if (topLevelComponent.getGraphicsContext) {
+            const ctx = topLevelComponent.getGraphicsContext();
+            topLevelComponent.drawInternal(ctx);
+        }
     }
 
     /**

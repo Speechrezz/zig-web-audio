@@ -2,14 +2,7 @@ import { PlaybackEngine, Note } from "../playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
 import { NoteComponent } from "./note-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
-
-const PITCH_MIN = 21;  // A0
-const PITCH_MAX = 108; // C8
-const NUM_PITCHES = PITCH_MAX - PITCH_MIN + 1;
-
-const BASE_BEAT_WIDTH = 32;
-const BASE_BEAT_HEIGHT = 24;
-const MIN_NUM_BEATS = 64;
+import { Config } from "../app/config.js";
 
 const InteractionType = Object.freeze({
     none: 0, // NOT dragging
@@ -23,6 +16,11 @@ export class PianoRollArea extends Component {
      * @type {PlaybackEngine}
      */
     playbackEngine;
+
+    /**
+     * @type {Config}
+     */
+    config;
 
     /**
      * @type {NoteComponent[]}
@@ -42,26 +40,29 @@ export class PianoRollArea extends Component {
 
     /**
      * @param {PlaybackEngine} playbackEngine 
+     * @param {Config} config 
      */
-    constructor(playbackEngine) {
+    constructor(playbackEngine, config) {
         super();
         this.playbackEngine = playbackEngine;
+        this.config = config;
 
-        this.setBounds(new Rectangle(0, 0, MIN_NUM_BEATS * BASE_BEAT_WIDTH, NUM_PITCHES * BASE_BEAT_HEIGHT));
+        this.config.addZoomListener(() => this.zoomChanged());
+        this.zoomChanged();
     }
 
     draw(ctx) {
         // Lanes
-        for (let p = PITCH_MIN; p <= PITCH_MAX; p++) {
-            const y = (PITCH_MAX - p) * BASE_BEAT_HEIGHT;
-            ctx.fillStyle = isBlackKey(p) ? "oklch(96.7% 0.003 264.542)" : "white";
-            ctx.fillRect(0, y, this.bounds.width, BASE_BEAT_HEIGHT);
+        for (let p = this.config.pitchMin; p <= this.config.pitchMax; p++) {
+            const y = (this.config.pitchMax - p) * this.config.noteHeight;
+            ctx.fillStyle = this.config.isBlackKey(p) ? "oklch(96.7% 0.003 264.542)" : "white";
+            ctx.fillRect(0, y, this.bounds.width, this.config.noteHeight);
         }
 
         // Grid
         ctx.lineWidth = 1;
         let gridIndex = 0;
-        for (let x = 0; x < this.bounds.width; x += BASE_BEAT_WIDTH) {
+        for (let x = 0; x < this.bounds.width; x += this.config.beatWidth) {
             ctx.strokeStyle = gridIndex % 4 == 0 ? "oklch(70.7% 0.165 254.624)" : "oklch(88.2% 0.059 254.128)";
 
             ctx.beginPath();
@@ -75,7 +76,7 @@ export class PianoRollArea extends Component {
         // Playhead
         const playHead = this.playbackEngine.playHead;
         if (playHead.isPlaying) {
-            const x = playHead.positionInBeats * BASE_BEAT_WIDTH;
+            const x = playHead.positionInBeats * this.config.beatWidth;
             ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.5)";
             ctx.fillRect(x, 0, 8, this.bounds.height);
         }
@@ -270,8 +271,8 @@ export class PianoRollArea extends Component {
         if (this.interactionType === InteractionType.none) return;
 
         const mouseOffsetCoeff = 0.5;
-        const offsetX = ev.x - this.interactionAnchor.x + mouseOffsetCoeff * BASE_BEAT_WIDTH;
-        const offsetY = ev.y - this.interactionAnchor.y + mouseOffsetCoeff * BASE_BEAT_HEIGHT;
+        const offsetX = ev.x - this.interactionAnchor.x + mouseOffsetCoeff * this.config.beatWidth;
+        const offsetY = ev.y - this.interactionAnchor.y + mouseOffsetCoeff * this.config.noteHeight;
 
         const beat = this.xToBeat(offsetX);
         const noteNumber = this.yToNoteNumber(offsetY);
@@ -330,20 +331,20 @@ export class PianoRollArea extends Component {
     }
 
     beatToX(beat) {
-        return beat * BASE_BEAT_WIDTH;
+        return beat * this.config.beatWidth;
     }
 
     xToBeat(x) {
-        return x / BASE_BEAT_WIDTH;
+        return x / this.config.beatWidth;
     }
 
     noteNumberToY(noteNumber) {
-        return this.bounds.height - (noteNumber - PITCH_MIN + 1) * BASE_BEAT_HEIGHT;
+        return this.bounds.height - (noteNumber - this.config.pitchMin + 1) * this.config.noteHeight;
     }
 
     yToNoteNumber(y) {
         y = this.bounds.height - y;
-        return PITCH_MIN + Math.floor(y / BASE_BEAT_HEIGHT);
+        return this.config.pitchMin + Math.floor(y / this.config.noteHeight);
     }
 
     /**
@@ -353,7 +354,7 @@ export class PianoRollArea extends Component {
     updateNoteBounds(noteComponent) {
         const x = this.beatToX(noteComponent.note.beatStart);
         const y = this.noteNumberToY(noteComponent.note.noteNumber);
-        noteComponent.setBounds(new Rectangle(x, y, BASE_BEAT_WIDTH * noteComponent.note.beatLength, BASE_BEAT_HEIGHT));
+        noteComponent.setBounds(new Rectangle(x, y, this.config.beatWidth * noteComponent.note.beatLength, this.config.noteHeight));
     }
 
     indexOfNote(x, noteNumber) {
@@ -367,9 +368,14 @@ export class PianoRollArea extends Component {
 
         return null;
     }
-}
 
-export function isBlackKey(midi) {
-    const pc = midi % 12;
-    return pc === 1 || pc === 3 || pc === 6 || pc === 8 || pc === 10;
+    zoomChanged() {
+        this.setBounds(new Rectangle(0, 0, this.config.calculateWidth(), this.config.calculateHeight()));
+
+        for (const note of this.noteComponents) {
+            this.updateNoteBounds(this.selectedNote);
+        }
+
+        this.repaint();
+    }
 }

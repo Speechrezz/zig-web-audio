@@ -23,7 +23,7 @@ export class NoteComponent extends Component{
      */
     draw(ctx) {
         ctx.fillStyle = "oklch(70.7% 0.165 254.624)";
-        ctx.strokeStyle = "oklch(54.6% 0.245 262.881)";
+        ctx.strokeStyle = "oklch(62.3% 0.214 259.815)";
         ctx.lineWidth = 1;
 
         const offset = ctx.lineWidth * 0.5;
