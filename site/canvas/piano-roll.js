@@ -60,7 +60,6 @@ export class PianoRoll extends TopLevelComponent {
         const pianoBounds = bounds.removeFromLeft(pianoWidth);
         this.pianoRollView.setBounds(bounds.clone());
         this.pianoComponent.setBounds(pianoBounds);
-        console.log("pianoBounds:", pianoBounds);
     }
 
     /**

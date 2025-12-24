@@ -374,7 +374,8 @@ export class Component {
         this.draw(ctx);
 
         // Draw children (also in this local space)
-        for (const child of this.childComponents) {
+        for (let i = this.childComponents.length - 1; i >=0; i--) {
+            const child = this.childComponents[i];
             if (child.visibleFlag) {
                 child.drawInternal(ctx);
             }
