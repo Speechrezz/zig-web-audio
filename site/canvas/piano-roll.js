@@ -1,7 +1,8 @@
-import { PlaybackEngine, Note } from "../playback-engine.js"
+import { PlaybackEngine } from "../playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
 import { TopLevelComponent } from "./top-level-component.js";
-import { PianoRollArea } from "./piano-roll-area.js";
+import { PianoRollView } from "./piano-roll-view.js";
+import { PianoComponent } from "./piano-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
 
 export class PianoRoll extends TopLevelComponent {
@@ -9,6 +10,16 @@ export class PianoRoll extends TopLevelComponent {
      * @type {PlaybackEngine}
      */
     playbackEngine;
+
+    /**
+     * @type {PianoRollView}
+     */
+    pianoRollView;
+
+    /**
+     * @type {PianoComponent}
+     */
+    pianoComponent;
 
     beatSnapNum = 1;
     beatSnapDen = 1;
@@ -26,14 +37,30 @@ export class PianoRoll extends TopLevelComponent {
         super(canvasElement);
         this.playbackEngine = playbackEngine;
 
-        this.pianoRollArea = new PianoRollArea(playbackEngine);
-        this.addChildComponent(this.pianoRollArea);
+        this.pianoRollView = new PianoRollView(playbackEngine);
+        this.addChildComponent(this.pianoRollView);
 
+        this.pianoComponent = new PianoComponent();
+        this.addChildComponent(this.pianoComponent);
+
+        this.canvasResized();
         this.repaint();
     }
 
     draw(ctx) {
         ctx.clearRect(0, 0, this.bounds.width, this.bounds.height);
+    }
+
+    resize() {
+        this.updateViewOffset(this.viewOffset.x, this.viewOffset.y);
+
+        const pianoWidth = 128;
+
+        const bounds = this.getLocalBounds();
+        const pianoBounds = bounds.removeFromLeft(pianoWidth);
+        this.pianoRollView.setBounds(bounds.clone());
+        this.pianoComponent.setBounds(pianoBounds);
+        console.log("pianoBounds:", pianoBounds);
     }
 
     /**
@@ -66,8 +93,7 @@ export class PianoRoll extends TopLevelComponent {
             this.mouseStart.x = ev.x;
             this.mouseStart.y = ev.y;
 
-            this.viewOffsetAnchor.x = this.pianoRollArea.translation.x;
-            this.viewOffsetAnchor.y = this.pianoRollArea.translation.y;
+            this.viewOffsetAnchor.set(this.pianoRollView.pianoRollArea.translation);
         }
     }
 
@@ -85,16 +111,19 @@ export class PianoRoll extends TopLevelComponent {
             const offsetX = ev.x - this.mouseStart.x;
             const offsetY = ev.y - this.mouseStart.y;
 
-            const maxX = this.pianoRollArea.bounds.width  - this.bounds.width;
-            const maxY = this.pianoRollArea.bounds.height - this.bounds.height;
-
-            this.viewOffset.x = Math.min(0, Math.max(-maxX, this.viewOffsetAnchor.x + offsetX));
-            this.viewOffset.y = Math.min(0, Math.max(-maxY, this.viewOffsetAnchor.y + offsetY));
-
-            this.pianoRollArea.translation.set(this.viewOffset);
-
-            this.repaint();
+            this.updateViewOffset(this.viewOffsetAnchor.x + offsetX, this.viewOffsetAnchor.y + offsetY);
         }
+    }
+
+    updateViewOffset(x, y) {
+        const maxX = this.pianoRollView.pianoRollArea.bounds.width  - this.bounds.width;
+        const maxY = this.pianoRollView.pianoRollArea.bounds.height - this.bounds.height;
+
+        this.viewOffset.x = Math.min(0, Math.max(-maxX, x));
+        this.viewOffset.y = Math.min(0, Math.max(-maxY, y));
+
+        this.pianoRollView.pianoRollArea.translation.set(this.viewOffset);
+        this.repaint();
     }
 }
 

@@ -23,8 +23,4 @@ export class NoteComponent extends Component{
         ctx.roundRect(0, 0, this.bounds.width, this.bounds.height, 4);
         ctx.fill();
     }
-
-    clone() {
-        return {...this};
-    }
 }

@@ -29,8 +29,6 @@ export class TopLevelComponent extends Component {
         this.canvas.onpointermove = (ev) => this.mouseMoveInternal(ev);
 
         this.canvas.oncontextmenu = (ev) => ev.preventDefault();
-
-        this.setBounds(new Rectangle(0, 0, this.canvas.width, this.canvas.height));
     }
 
     canvasResized() {

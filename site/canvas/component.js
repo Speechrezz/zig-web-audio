@@ -97,6 +97,24 @@ export class Rectangle {
 
     /**
      * 
+     * @param {Number} x 
+     */
+    removeFromLeft(x) {
+        const removed = new Rectangle(
+            this.x,
+            this.y,
+            x,
+            this.height,
+        );
+
+        this.x += x;
+        this.width -= x;
+
+        return removed;
+    }
+
+    /**
+     * 
      * @param {Rectangle} other 
      */
     eql(other) {
