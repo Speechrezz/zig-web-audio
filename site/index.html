@@ -16,28 +16,58 @@
     <h1>Chordic Phone (Test)</h1>
   </div>
   <div id="main-container">
-    <input id="start-audio-button" type="button" value="Start">
     <div style="margin-top: 1rem">
-      <input id="play-button" type="button" value="Play" disabled>
-      <input id="stop-button" type="button" value="Stop" disabled>
-      <input type="number" name="BPM" id="bpm-input" min="60" max="600" value="120">
+      <div>
+        <input id="start-audio-button" type="button" value="Start">
+      </div>
+      <div style="margin-top: 1rem">
+        <input id="play-button" type="button" value="Play" disabled>
+        <input id="stop-button" type="button" value="Stop" disabled>
+        <input type="number" name="BPM" id="bpm-input" min="60" max="600" value="120">
+      </div>
     </div>
     <div id="pianoroll-container">
-      <canvas id="pianoroll" width="1600" height="800"></canvas>
+      <canvas id="pianoroll" width="100" height="100"></canvas>
     </div>
   </div>
 </body>
 
 <style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  body {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #header-container {
+    flex: 0 0 auto;
+  }
+
+  #main-container {
+    flex: 1 1 auto;      /* take remaining height */
+    display: flex;
+    flex-direction: column;
+    min-height: 0;       /* IMPORTANT: allows children to shrink */
+    padding: 0 0;        /* optional */
+  }
+
   #pianoroll-container {
+    flex: 1 1 auto;      /* fill remaining space inside main */
+    min-height: 0;       /* IMPORTANT for overflow/100% height children */
+    margin-top: 1rem;
+    position: relative;
+  }
+
+  #pianoroll {
+    display: block;
     width: 100%;
     height: 100%;
-    border: 1px solid oklch(92.8% 0.006 264.531);
-    margin-top: 1rem;
-    box-sizing: border-box;
-  }
-  #pianoroll {
-    background: white;
   }
 </style>
 

@@ -45,4 +45,20 @@ export async function initialize() {
     playbackEngine.setTempo(Number(bpmInput.value));
 
     playbackEngine.addListener(() => pianoRoll.repaint());
+
+    function resizeCanvas() {
+        const rect = canvasElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        
+        canvasElement.width  = Math.round(rect.width * dpr);
+        canvasElement.height = Math.round(rect.height * dpr);
+
+        const ctx = canvasElement.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        pianoRoll.canvasResized();
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", () => resizeCanvas());
 }

@@ -33,6 +33,17 @@ export class TopLevelComponent extends Component {
         this.setBounds(new Rectangle(0, 0, this.canvas.width, this.canvas.height));
     }
 
+    canvasResized() {
+        // TODO: This is a hacky way to workaround canvas getting all weird when zooming in/out.
+        // There must be a better way...
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.round(this.canvas.width / dpr);
+        const height = Math.round(this.canvas.height / dpr);
+
+        this.setBounds(new Rectangle(0, 0, width, height))
+        this.repaint();
+    }
+
     /**
      * @param {PointerEvent} ev 
      */
