@@ -123,8 +123,8 @@ export class PianoRoll extends TopLevelComponent {
     }
 
     updateViewOffset(x, y) {
-        const maxX = this.pianoRollView.pianoRollArea.bounds.width  - this.bounds.width;
-        const maxY = this.pianoRollView.pianoRollArea.bounds.height - this.bounds.height;
+        const maxX = this.pianoRollView.pianoRollArea.bounds.width  - this.pianoRollView.bounds.width;
+        const maxY = this.pianoRollView.pianoRollArea.bounds.height - this.pianoRollView.bounds.height;
 
         this.viewOffset.x = Math.min(0, Math.max(-maxX, x));
         this.viewOffset.y = Math.min(0, Math.max(-maxY, y));
