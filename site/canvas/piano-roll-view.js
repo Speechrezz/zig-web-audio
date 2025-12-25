@@ -1,5 +1,5 @@
 import { Component, Rectangle, Point } from "./component.js";
-import { PlaybackEngine } from "../playback-engine.js"
+import { PlaybackEngine } from "../audio/playback-engine.js"
 import { PianoRollArea } from "./piano-roll-area.js";
 import { Config } from "../app/config.js";
 

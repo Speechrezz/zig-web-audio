@@ -1,4 +1,4 @@
-import { PlaybackEngine, Note } from "../playback-engine.js"
+import { PlaybackEngine, Note } from "../audio/playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
 import { NoteComponent } from "./note-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";

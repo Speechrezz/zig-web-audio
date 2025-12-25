@@ -1,4 +1,4 @@
-import { PlaybackEngine } from "../playback-engine.js"
+import { PlaybackEngine } from "../audio/playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
 import { TopLevelComponent } from "./top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";

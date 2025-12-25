@@ -1,7 +1,7 @@
-import { initializeAudio, toggleAudioContext, getAudioWorkletNode, isAudioContextRunning } from "./audio.js"
-import { initializeMIDI } from "./midi.js"
+import { initializeAudio, toggleAudioContext, getAudioWorkletNode, isAudioContextRunning } from "./audio/audio.js"
+import { initializeMIDI } from "./audio/midi.js"
+import { PlaybackEngine } from "./audio/playback-engine.js"
 import { PianoRoll } from "./canvas/piano-roll.js"
-import { PlaybackEngine } from "./playback-engine.js"
 import { Config } from "./app/config.js"
 
 /**
