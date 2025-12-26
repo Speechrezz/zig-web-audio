@@ -289,7 +289,7 @@ export class PianoRollArea extends Component {
                 break;
             }
             case InteractionType.adjustNoteEnd: {
-                const beatLength = this.interactionAnchorNote.beatLength + Math.floor(beat - this.selectedNote.note.beatStart);
+                const beatLength = Math.round(this.xToBeat(ev.x) - this.selectedNote.note.beatStart);
                 this.selectedNote.note.beatLength = Math.max(1, beatLength);
                 break;
             }
