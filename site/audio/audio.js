@@ -10,6 +10,8 @@ let audioContext = null;
  */
 let audioWorkletNode = null;
 
+const BLOCK_SIZE = 128;
+
 /**
  * Initializes audio context, audio worklet, and loads WASM.
  */
@@ -69,4 +71,37 @@ export function getAudioContext() {
  */
 export function getAudioWorkletNode() {
     return audioWorkletNode;
+}
+
+/**
+ * @returns Block size of audio
+ */
+export function getBlockSize() {
+    return BLOCK_SIZE;
+}
+
+/**
+ * @returns Audio context time (is offset by a block)
+ */
+export function getContextTime() {
+    const { performanceTime, contextTime } = audioContext.getOutputTimestamp();
+    return contextTime + getBlockSize() / audioContext.sampleRate;
+}
+
+/**
+ * @param {Number} timestampMs Relative to the window (like `window.performance.now()`)
+ * @returns The audio time being heard at `timestampMs` (in seconds)
+ */
+export function toAudibleTime(timestampMs) {
+    const { contextTime, performanceTime } = audioContext.getOutputTimestamp();
+
+    return contextTime + (timestampMs - performanceTime) * 1e-3;
+}
+
+/**
+ * "What audio time is being heard right now?"
+ * @returns The audio time being heard right now (in seconds)
+ */
+export function toAudibleTimeNow() {
+    return toAudibleTime(window.performance.now());
 }

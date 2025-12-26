@@ -121,6 +121,7 @@ export class PianoRollArea extends Component {
                 document.documentElement.style.cursor = "ew-resize";
             }
             else {
+                this.playbackEngine.sendPreviewMidiNote(existingNote.note.noteNumber);
                 const grabType = this.getGrabType(ev, existingNote);
                 this.adjustNoteBegin(ev, existingNote, grabType);
             }
@@ -197,6 +198,7 @@ export class PianoRollArea extends Component {
      * @param {Note} note 
      */
     addNote(note) {
+        this.playbackEngine.sendPreviewMidiNote(note.noteNumber);
         this.playbackEngine.instruments[0].notes.push(note);
         const noteComponent = new NoteComponent(note, (c) => this.removeNote(c));
 
@@ -280,7 +282,10 @@ export class PianoRollArea extends Component {
         switch (this.interactionType) {
             case InteractionType.moveNote: {
                 this.selectedNote.note.beatStart = Math.floor(beat);
-                this.selectedNote.note.noteNumber = noteNumber;
+                if (this.selectedNote.note.noteNumber !== noteNumber) {
+                    this.selectedNote.note.noteNumber = noteNumber;
+                    this.playbackEngine.sendPreviewMidiNote(noteNumber);
+                }
                 break;
             }
             case InteractionType.adjustNoteEnd: {

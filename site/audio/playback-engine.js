@@ -1,4 +1,5 @@
-import { getContextTime, sendMidiMessageSeconds, packMidiEvent, MidiEventType } from "./midi.js"
+import { sendMidiMessageSeconds, sendMidiMessageSamples, packMidiEvent, MidiEventType } from "./midi.js"
+import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
 
 export class Note {
     /**
@@ -125,6 +126,11 @@ export class PlaybackEngine {
      */
     playbackListeners = [];
 
+    /**
+     * Helps mitigate jitter
+     */
+    lookAheadSec = 0.1;
+
 
     constructor() {
         // TEMP:
@@ -247,8 +253,7 @@ export class PlaybackEngine {
         const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
         const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
 
-        const lookAheadSec = 0.1; // Helps mitigate jitter
-        const playHeadTimeSec = this.playHead.getContextTimeSec() + lookAheadSec;
+        const playHeadTimeSec = this.playHead.getContextTimeSec() + this.lookAheadSec;
 
         const noteOnBeatOffset = note.beatStart - this.playHead.positionInBeats;
         const noteOnTime = playHeadTimeSec + this.playHead.beatsToSeconds(noteOnBeatOffset);
@@ -287,5 +292,40 @@ export class PlaybackEngine {
         }
 
         return notesAtBeat;
+    }
+
+    /**
+     * @param {Number} packedEvent Packed MIDI event
+     * @param {Number} timestampMs MIDI event timestamp
+     */
+    sendMidiMessageFromDevice(packedEvent, timestampMs) {
+        if (!isAudioContextRunning()) return;
+
+        const sampleRate = getAudioContext().sampleRate;
+        const audibleTimeSec = toAudibleTime(timestampMs);
+        const blockSize = getBlockSize();
+        const adjustedTimestamp = Math.max(0, blockSize + Math.floor(audibleTimeSec * sampleRate));
+
+        sendMidiMessageSamples(packedEvent, adjustedTimestamp);
+    }
+
+    /**
+     * Used to let user preview a note (i.e. when they are drawing a note in the piano roll).
+     * @param {Number} noteNumber MIDI note number
+     */
+    sendPreviewMidiNote(noteNumber) {
+        if (!isAudioContextRunning() || this.playHead.isPlaying) return;
+
+        const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  noteNumber, 60, 0);
+        const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, noteNumber, 60, 0);
+
+        const playHeadTimeSec = getContextTime() + this.lookAheadSec;
+
+        const lengthInSec = 0.15;
+        const noteOnTime = playHeadTimeSec;
+        const noteOffTime = noteOnTime + lengthInSec;
+
+        sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
+        sendMidiMessageSeconds(noteOffEvent, noteOffTime);
     }
 }

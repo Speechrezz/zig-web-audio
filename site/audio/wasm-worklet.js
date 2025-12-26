@@ -1,3 +1,5 @@
+import { WorkletMessageType } from "./worklet-message.js";
+
 function decodeUtf8(mem) {
     let s = "";
     for (let i = 0; i < mem.length; i++) {
@@ -18,9 +20,10 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
         this.port.onmessage = (event) => {
             const msg = event.data;
 
-            if (msg.type === 'midi') {
+            if (msg.type === WorkletMessageType.midi) {
                 this.instance.exports.appendMidiEvent(msg.data, BigInt(msg.time));
-            } else{
+            } 
+            else {
                 console.log("[WasmProcessor] onmessage:", msg); // TODO
             }
         };
