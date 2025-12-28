@@ -1,4 +1,4 @@
-import { sendMidiMessageSeconds, sendMidiMessageSamples, packMidiEvent, MidiEventType } from "./midi.js"
+import { sendMidiMessageSeconds, sendMidiMessageSamples, MidiEventType, MidiEvent } from "./midi.js"
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
 
 export class Note {
@@ -38,9 +38,16 @@ export class Note {
 
 export class Instrument {
     /**
+     * All the drawn/saved MIDI notes
      * @type {Note[]}
      */
     notes = [];
+
+    /**
+     * Currently playing MIDI notes
+     * @type {Note[]}
+     */
+    activeNotes = [];
 
     /**
      * 
@@ -130,6 +137,11 @@ export class PlaybackEngine {
      * Helps mitigate jitter
      */
     lookAheadSec = 0.1;
+
+    /**
+     * Currently selected instrument index, used for 
+     */
+    selectedInstrumentIndex = 0;
 
 
     constructor() {
@@ -250,8 +262,8 @@ export class PlaybackEngine {
      * @param {Note} note 
      */
     playNote(note) {
-        const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
-        const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
+        const noteOnEvent  = MidiEvent.newEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
+        const noteOffEvent = MidiEvent.newEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
 
         const playHeadTimeSec = this.playHead.getContextTimeSec() + this.lookAheadSec;
 
@@ -295,10 +307,10 @@ export class PlaybackEngine {
     }
 
     /**
-     * @param {Number} packedEvent Packed MIDI event
+     * @param {MidiEvent} midiEvent MIDI event
      * @param {Number} timestampMs MIDI event timestamp
      */
-    sendMidiMessageFromDevice(packedEvent, timestampMs) {
+    sendMidiMessageFromDevice(midiEvent, timestampMs) {
         if (!isAudioContextRunning()) return;
 
         const sampleRate = getAudioContext().sampleRate;
@@ -306,7 +318,7 @@ export class PlaybackEngine {
         const blockSize = getBlockSize();
         const adjustedTimestamp = Math.max(0, blockSize + Math.floor(audibleTimeSec * sampleRate));
 
-        sendMidiMessageSamples(packedEvent, adjustedTimestamp);
+        sendMidiMessageSamples(midiEvent, adjustedTimestamp);
     }
 
     /**
@@ -316,8 +328,8 @@ export class PlaybackEngine {
     sendPreviewMidiNote(noteNumber) {
         if (!isAudioContextRunning() || this.playHead.isPlaying) return;
 
-        const noteOnEvent  = packMidiEvent(MidiEventType.NoteOn,  noteNumber, 60, 0);
-        const noteOffEvent = packMidiEvent(MidiEventType.NoteOff, noteNumber, 60, 0);
+        const noteOnEvent  = MidiEvent.newEvent(MidiEventType.NoteOn,  noteNumber, 60, 0);
+        const noteOffEvent = MidiEvent.newEvent(MidiEventType.NoteOff, noteNumber, 60, 0);
 
         const playHeadTimeSec = getContextTime() + this.lookAheadSec;
 

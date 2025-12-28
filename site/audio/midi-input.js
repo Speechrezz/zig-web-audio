@@ -1,5 +1,5 @@
 import { PlaybackEngine } from "./playback-engine.js";
-import { prettyLogMidiEvent, repackMidiEvent } from "./midi.js";
+import { prettyLogMidiEvent, MidiEvent } from "./midi.js";
 
 export class MidiInput {
     /**
@@ -47,7 +47,7 @@ export class MidiInput {
      */
     onMidiMessage(e) {
         const [status, data1, data2] = e.data;
-        this.playbackEngine.sendMidiMessageFromDevice(repackMidiEvent(status, data1, data2), e.timeStamp);
+        this.playbackEngine.sendMidiMessageFromDevice(new MidiEvent(status, data1, data2), e.timeStamp);
 
         if (this.debugPrintFlag) {
             prettyLogMidiEvent(e);
