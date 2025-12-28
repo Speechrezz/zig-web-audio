@@ -199,7 +199,7 @@ export class PianoRollArea extends Component {
      */
     addNote(note) {
         this.playbackEngine.sendPreviewMidiNote(note.noteNumber);
-        this.playbackEngine.instruments[0].notes.push(note);
+        this.playbackEngine.getSelectedInstrument().notes.push(note);
         const noteComponent = new NoteComponent(note, (c) => this.removeNote(c));
 
         this.noteComponents.push(noteComponent);
@@ -230,7 +230,7 @@ export class PianoRollArea extends Component {
         const noteComponentIndex = this.noteComponents.indexOf(noteComponent);
         this.noteComponents.splice(noteComponentIndex, 1);
 
-        const playbackEngineNotes = this.playbackEngine.instruments[0].notes;
+        const playbackEngineNotes = this.playbackEngine.getSelectedInstrument().notes;
         const engineNoteIndex = playbackEngineNotes.indexOf(noteComponent.note);
         playbackEngineNotes.splice(engineNoteIndex, 1);
 
@@ -363,7 +363,7 @@ export class PianoRollArea extends Component {
     }
 
     indexOfNote(x, noteNumber) {
-        const notes = this.playbackEngine.instruments[0].notes;
+        const notes = this.playbackEngine.getSelectedInstrument().notes;
         for (let i = 0; i < notes.length; i++) {
             const note = notes[i];
             if (note.beatStart == x && note.noteNumber == noteNumber) {

@@ -21,14 +21,22 @@ export class Note {
     noteNumber
 
     /**
+     * MIDI channel
+     * @type {Number}
+     */
+    channel = 0;
+
+    /**
      * @param {Number} beatStart Position of note start in beats 
      * @param {Number} beatLength Length of note in beats
      * @param {Number} noteNumber MIDI note number
+     * @param {Number} channel MIDI channel
      */
-    constructor(beatStart, beatLength, noteNumber) {
+    constructor(beatStart, beatLength, noteNumber, channel = 0) {
         this.beatStart = beatStart;
         this.beatLength = beatLength;
         this.noteNumber = noteNumber;
+        this.channel = channel;
     }
 
     clone() {
@@ -36,16 +44,34 @@ export class Note {
     }
 }
 
+export class NoteNumberAndChannel {
+    noteNumber = 0;
+    channel = 0;
+
+    constructor(noteNumber, channel = 0) {
+        this.noteNumber = noteNumber;
+        this.channel = channel;
+    }
+
+    /**
+     * @param {NoteNumberAndChannel} other 
+     */
+    eql(noteNumber, channel = 0) {
+        return this.noteNumber === noteNumber
+            && this.channel === channel;
+    }
+}
+
 export class Instrument {
     /**
-     * All the drawn/saved MIDI notes
+     * All the drawn/saved notes
      * @type {Note[]}
      */
     notes = [];
 
     /**
-     * Currently playing MIDI notes
-     * @type {Note[]}
+     * Currently playing notes
+     * @type {NoteNumberAndChannel[]}
      */
     activeNotes = [];
 
@@ -57,6 +83,27 @@ export class Instrument {
     constructor(id, name) {
         this.id = id;
         this.name = name;
+    }
+
+    noteStart(noteNumber, channel) {
+        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
+        if (index === -1) {
+            this.activeNotes.push(new NoteNumberAndChannel(noteNumber, channel));
+        }
+        console.log(`noteStart(${noteNumber}, ${channel}): activeNotes:`, this.activeNotes);
+    }
+
+    noteStop(noteNumber, channel) {
+        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
+        if (index >= 0) {
+            this.activeNotes.splice(index, 1);
+        }
+        console.log(`noteStop(${noteNumber}, ${channel}): activeNotes:`, this.activeNotes);
+    }
+
+    isNotePlaying(noteNumber, channel) {
+        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
+        return index >= 0;
     }
 }
 
@@ -176,6 +223,10 @@ export class PlaybackEngine {
      */
     getInstrument(id) {
         return this.instruments.find((instrument) => instrument.id == id);
+    }
+
+    getSelectedInstrument() {
+        return this.instruments[this.selectedInstrumentIndex];
     }
 
     /**
@@ -319,6 +370,15 @@ export class PlaybackEngine {
         const adjustedTimestamp = Math.max(0, blockSize + Math.floor(audibleTimeSec * sampleRate));
 
         sendMidiMessageSamples(midiEvent, adjustedTimestamp);
+
+        if (midiEvent.isNoteOn()) {
+            const selectedInstrument = this.getSelectedInstrument();
+            selectedInstrument.noteStart(midiEvent.getNoteNumber(), midiEvent.getChannel());
+        }
+        else if (midiEvent.isNoteOff()) {
+            const selectedInstrument = this.getSelectedInstrument();
+            selectedInstrument.noteStop(midiEvent.getNoteNumber(), midiEvent.getChannel());
+        }
     }
 
     /**
