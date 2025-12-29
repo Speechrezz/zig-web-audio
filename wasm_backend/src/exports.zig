@@ -35,3 +35,7 @@ export fn getOutputChannel(channel_index: usize) [*]f32 {
 export fn appendMidiEvent(packed_event: u32, sample_position: i64) void {
     return audio_processor_web.midi_buffer.appendPacked(packed_event, sample_position);
 }
+
+export fn stopAllNotes(allow_tail_off: bool) void {
+    audio_processor_web.processor.stopAllNotes(allow_tail_off);
+}

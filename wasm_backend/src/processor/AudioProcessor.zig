@@ -26,6 +26,10 @@ pub fn process(self: *@This(), allocator: std.mem.Allocator, audio_view: audio.A
     audio_view.multiplyBy(0.15); // Reduce volume
 }
 
+pub fn stopAllNotes(self: *@This(), allow_tail_off: bool) void {
+    self.synth_processor.stopAllNotes(allow_tail_off);
+}
+
 test "AudioProcessor tests" {
     const allocator = std.testing.allocator;
 

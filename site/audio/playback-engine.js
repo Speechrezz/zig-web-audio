@@ -1,4 +1,4 @@
-import { sendMidiMessageSeconds, sendMidiMessageSamples, MidiEventType, MidiEvent } from "./midi.js"
+import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
 
 export class Note {
@@ -60,6 +60,24 @@ export class Note {
     }
 }
 
+export class NoteNumberAndChannel {
+    noteNumber = 0;
+    channel = 0;
+
+    constructor(noteNumber, channel = 0) {
+        this.noteNumber = noteNumber;
+        this.channel = channel;
+    }
+
+    /**
+     * @param {NoteNumberAndChannel} other 
+     */
+    eql(noteNumber, channel = 0) {
+        return this.noteNumber === noteNumber
+            && this.channel === channel;
+    }
+}
+
 class NoteEvent {
     noteNumber = 0;
     velocity = 0;
@@ -92,6 +110,12 @@ export class Instrument {
     notes = [];
 
     /**
+     * Currently playing notes
+     * @type {NoteNumberAndChannel[]}
+     */
+    activeNotes = [];
+
+    /**
      * Note stop events that need to be processed
      * @type {NoteEvent[]}
      */
@@ -107,13 +131,22 @@ export class Instrument {
         this.name = name;
     }
 
-    /**
-     * @param {Number} noteNumber MIDI note number
-     * @param {Number} channel MIDI channel
-     * @returns 
-     */
+    noteStart(noteNumber, channel) {
+        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
+        if (index === -1) {
+            this.activeNotes.push(new NoteNumberAndChannel(noteNumber, channel));
+        }
+    }
+
+    noteStop(noteNumber, channel) {
+        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
+        if (index >= 0) {
+            this.activeNotes.splice(index, 1);
+        }
+    }
+
     isNotePlaying(noteNumber, channel) {
-        const index = this.queuedNoteEvents.findIndex((v) => v.noteNumber === noteNumber && v.channel === channel);
+        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
         return index >= 0;
     }
 }
@@ -298,8 +331,11 @@ export class PlaybackEngine {
         const playHead = this.playHead;
 
         for (const instrument of this.instruments) {
+            instrument.activeNotes.length = 0;
             instrument.queuedNoteEvents.length = 0;
         }
+
+        sendStopAllNotes();
 
         playHead.isPlaying = false;
         clearInterval(this.timer);
@@ -337,8 +373,15 @@ export class PlaybackEngine {
         const beatOffset = noteEvent.timestampBeats - this.playHead.positionInBeats;
         const eventTimeSec = playHeadTimeSec + this.playHead.beatsToSeconds(beatOffset);
 
-        const eventType = noteEvent.isNoteOn ? MidiEventType.NoteOn : MidiEventType.NoteOff;
-        const midiEvent = MidiEvent.newNote(eventType, noteEvent.noteNumber, noteEvent.getMidiVelocity(), noteEvent.channel);
+        let midiEvent;
+        if (noteEvent.isNoteOn) {
+            midiEvent = MidiEvent.newNote(MidiEventType.NoteOn, noteEvent.noteNumber, noteEvent.getMidiVelocity(), noteEvent.channel);
+            instrument.noteStart(noteEvent.noteNumber, noteEvent.channel);
+        } 
+        else {
+            midiEvent = MidiEvent.newNote(MidiEventType.NoteOff, noteEvent.noteNumber, noteEvent.getMidiVelocity(), noteEvent.channel);
+            instrument.noteStop(noteEvent.noteNumber, noteEvent.channel);
+        }
 
         sendMidiMessageSeconds(midiEvent, eventTimeSec);
     }

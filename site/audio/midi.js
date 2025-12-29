@@ -22,6 +22,13 @@ export function sendMidiMessageSamples(midiEvent, timeStampSamples) {
     });
 }
 
+export function sendStopAllNotes(allowTailOff = true) {
+    getAudioWorkletNode().port.postMessage({
+        type: WorkletMessageType.stopAllNotes,
+        allowTailOff: allowTailOff,
+    });
+}
+
 // MIDI Channel Voice event type nibbles
 export const MidiEventType = Object.freeze({
     NoteOff: 0x8, // 0x8n

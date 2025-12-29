@@ -125,9 +125,15 @@ pub fn noteOff(self: *@This(), midi_event: MidiEvent) void {
     }
 }
 
-fn reclaimVoices(self: *@This()) void {
-    if (self.active_notes.isEmpty()) return;
+pub fn stopAllNotes(self: *@This(), allow_tail_off: bool) void {
+    for (self.active_notes.notes.items) |*note| {
+        if (note.isOn()) {
+            self.synth_voices[note.voice_index].stopNote(1.0, allow_tail_off);
+        }
+    }
+}
 
+fn reclaimVoices(self: *@This()) void {
     var i = self.active_notes.getLength();
     while (i > 0) : (i -= 1) {
         const note = self.active_notes.get(i - 1);
