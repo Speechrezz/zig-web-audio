@@ -65,7 +65,7 @@ export class MidiEvent {
      * @param {Number} channel - 0..15 (MIDI channels 1..16 correspond to 0..15)
      * @returns packed 32-bit unsigned int
      */
-    static newEvent(eventTypeNibble, noteNumberOrData1, velocityOrData2, channel) {
+    static newNote(eventTypeNibble, noteNumberOrData1, velocityOrData2, channel) {
         const status = ((eventTypeNibble & 0x0F) << 4) | (channel & 0x0F);
         const data1 = noteNumberOrData1 & 0x7F;
 

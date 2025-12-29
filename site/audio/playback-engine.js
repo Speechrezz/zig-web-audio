@@ -6,59 +6,81 @@ export class Note {
      * Position of the start of the note in beats 
      * @type {Number}
      */
-    beatStart
+    beatStart;
 
     /**
      * Length of the note in beats
      * @type {Number}
      */
-    beatLength
+    beatLength;
 
     /**
      * MIDI note number
      * @type {Number}
      */
-    noteNumber
+    noteNumber;
+
+    /**
+     * Velocity (normalized 0..1)
+     * @type {Number}
+     */
+    velocity;
 
     /**
      * MIDI channel
      * @type {Number}
      */
-    channel = 0;
+    channel;
 
     /**
      * @param {Number} beatStart Position of note start in beats 
      * @param {Number} beatLength Length of note in beats
      * @param {Number} noteNumber MIDI note number
+     * @param {Number} velocity MIDI velocity 0..127
      * @param {Number} channel MIDI channel
      */
-    constructor(beatStart, beatLength, noteNumber, channel = 0) {
+    constructor(beatStart, beatLength, noteNumber, velocity = 100, channel = 0) {
         this.beatStart = beatStart;
         this.beatLength = beatLength;
         this.noteNumber = noteNumber;
+        this.velocity = velocity / 127.0; // Normalize
         this.channel = channel;
     }
 
     clone() {
         return {...this};
     }
-}
 
-export class NoteNumberAndChannel {
-    noteNumber = 0;
-    channel = 0;
-
-    constructor(noteNumber, channel = 0) {
-        this.noteNumber = noteNumber;
-        this.channel = channel;
+    getMidiVelocity() {
+        return this.velocity * 127.0;
     }
 
-    /**
-     * @param {NoteNumberAndChannel} other 
-     */
-    eql(noteNumber, channel = 0) {
-        return this.noteNumber === noteNumber
-            && this.channel === channel;
+    getBeatStop() {
+        return this.beatStart + this.beatLength;
+    }
+}
+
+class NoteEvent {
+    noteNumber = 0;
+    velocity = 0;
+    channel = 0;
+    timestampBeats = 0;
+    isNoteOn = true;
+
+    constructor(timestampBeats, isNoteOn, noteNumber, velocity, channel = 0) {
+        this.noteNumber = noteNumber;
+        this.velocity = velocity;
+        this.channel = channel;
+        this.timestampBeats = timestampBeats;
+        this.isNoteOn = isNoteOn;
+    }
+
+    getMidiVelocity() {
+        return this.velocity * 127.0;
+    }
+
+    clone() {
+        return {...this};
     }
 }
 
@@ -70,10 +92,10 @@ export class Instrument {
     notes = [];
 
     /**
-     * Currently playing notes
-     * @type {NoteNumberAndChannel[]}
+     * Note stop events that need to be processed
+     * @type {NoteEvent[]}
      */
-    activeNotes = [];
+    queuedNoteEvents = [];
 
     /**
      * 
@@ -85,24 +107,13 @@ export class Instrument {
         this.name = name;
     }
 
-    noteStart(noteNumber, channel) {
-        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
-        if (index === -1) {
-            this.activeNotes.push(new NoteNumberAndChannel(noteNumber, channel));
-        }
-        console.log(`noteStart(${noteNumber}, ${channel}): activeNotes:`, this.activeNotes);
-    }
-
-    noteStop(noteNumber, channel) {
-        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
-        if (index >= 0) {
-            this.activeNotes.splice(index, 1);
-        }
-        console.log(`noteStop(${noteNumber}, ${channel}): activeNotes:`, this.activeNotes);
-    }
-
+    /**
+     * @param {Number} noteNumber MIDI note number
+     * @param {Number} channel MIDI channel
+     * @returns 
+     */
     isNotePlaying(noteNumber, channel) {
-        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
+        const index = this.queuedNoteEvents.findIndex((v) => v.noteNumber === noteNumber && v.channel === channel);
         return index >= 0;
     }
 }
@@ -286,6 +297,10 @@ export class PlaybackEngine {
     stop() {
         const playHead = this.playHead;
 
+        for (const instrument of this.instruments) {
+            instrument.queuedNoteEvents.length = 0;
+        }
+
         playHead.isPlaying = false;
         clearInterval(this.timer);
         this.notifyListeners();
@@ -297,9 +312,13 @@ export class PlaybackEngine {
         const nextTimePassedSec = getContextTime() - playHead.contextTimeStart
         const nextPositionInBeats = playHead.getPositionInBeats(nextTimePassedSec);
         
-        const notesAtBeat = this.getNotesInInterval(playHead.positionInBeats, nextPositionInBeats);
-        for (const note of notesAtBeat) {
-            this.playNote(note);
+        const instrument = this.getSelectedInstrument();
+        const noteEvents = this.getNoteStartInInterval(instrument, playHead.positionInBeats, nextPositionInBeats);
+        noteEvents.push(...this.getNoteStopInInterval(instrument, playHead.positionInBeats, nextPositionInBeats));
+        noteEvents.sort((a, b) => a.timestampBeats - b.timestampBeats); // Ascending
+
+        for (const noteEvent of noteEvents) {
+            this.sendNoteEvent(instrument, noteEvent);
         }
 
         this.notifyListeners();
@@ -309,52 +328,93 @@ export class PlaybackEngine {
     }
 
     /**
-     * 
-     * @param {Note} note 
+     * @param {Instrument} instrument 
+     * @param {NoteEvent} noteEvent 
      */
-    playNote(note) {
-        const noteOnEvent  = MidiEvent.newEvent(MidiEventType.NoteOn,  note.noteNumber, 100, 0);
-        const noteOffEvent = MidiEvent.newEvent(MidiEventType.NoteOff, note.noteNumber, 100, 0);
-
+    sendNoteEvent(instrument, noteEvent) {
         const playHeadTimeSec = this.playHead.getContextTimeSec() + this.lookAheadSec;
 
-        const noteOnBeatOffset = note.beatStart - this.playHead.positionInBeats;
-        const noteOnTime = playHeadTimeSec + this.playHead.beatsToSeconds(noteOnBeatOffset);
-        const noteOffTime = noteOnTime + this.playHead.beatsToSeconds(note.beatLength);
+        const beatOffset = noteEvent.timestampBeats - this.playHead.positionInBeats;
+        const eventTimeSec = playHeadTimeSec + this.playHead.beatsToSeconds(beatOffset);
 
-        sendMidiMessageSeconds(noteOnEvent,  noteOnTime);
-        sendMidiMessageSeconds(noteOffEvent, noteOffTime);
+        const eventType = noteEvent.isNoteOn ? MidiEventType.NoteOn : MidiEventType.NoteOff;
+        const midiEvent = MidiEvent.newNote(eventType, noteEvent.noteNumber, noteEvent.getMidiVelocity(), noteEvent.channel);
+
+        sendMidiMessageSeconds(midiEvent, eventTimeSec);
     }
 
     /**
-     * 
+     * @param {Instrument} instrument 
      * @param {Number} beatStart 
      * @param {Number} beatEnd 
-     * @returns {Note[]}
+     * @returns {NoteEvent[]}
      */
-    getNotesInInterval(beatStart, beatEnd) {
+    getNoteStartInInterval(instrument, beatStart, beatEnd) {
         /**
-         * @type {Note[]}
+         * @type {NoteEvent[]}
          */
-        let notesAtBeat = [];
+        let noteEvents = [];
 
-        const notes = this.instruments[0].notes; // TODO: don't hardcode like this lol
+        const notes = instrument.notes;
+        const queuedEvents = instrument.queuedNoteEvents;
 
         for (const note of notes) {
+            const noteStop = note.getBeatStop();
             if (beatStart <= beatEnd) {
                 if (note.beatStart >= beatStart && note.beatStart < beatEnd) {
-                    notesAtBeat.push(note);
+                    noteEvents.push(new NoteEvent(note.beatStart, true, note.noteNumber, note.velocity, note.channel));
+                    queuedEvents.push(new NoteEvent(noteStop, false, note.noteNumber, note.velocity, note.channel));
                 }
             } else {
                 if (note.beatStart < beatEnd || note.beatStart >= beatStart) {
-                    let adjustedNote = {...note};
-                    adjustedNote.beatStart += this.playHead.lengthInBeats;
-                    notesAtBeat.push(adjustedNote);
+                    const adjustedNoteStart = note.beatStart + this.playHead.lengthInBeats;
+                    noteEvents.push(new NoteEvent(adjustedNoteStart, true, note.noteNumber, note.velocity, note.channel));
+                    queuedEvents.push(new NoteEvent(noteStop, false, note.noteNumber, note.velocity, note.channel));
                 }
             }
         }
 
-        return notesAtBeat;
+        return noteEvents;
+    }
+
+    /**
+     * @param {Instrument} instrument 
+     * @param {Number} beatStart 
+     * @param {Number} beatEnd 
+     * @returns {NoteEvent[]}
+     */
+    getNoteStopInInterval(instrument, beatStart, beatEnd) {
+        /**
+         * @type {NoteEvent[]}
+         */
+        let noteEvents = [];
+
+        const queuedEvents = instrument.queuedNoteEvents;
+
+        let i = 0;
+        while (i < queuedEvents.length) {
+            const noteEvent = queuedEvents[i];
+            const noteStop = noteEvent.timestampBeats % this.playHead.lengthInBeats;
+
+            if (beatStart <= beatEnd) {
+                if (noteStop >= beatStart && noteStop < beatEnd) {
+                    noteEvents.push(noteEvent);
+                    queuedEvents.splice(i, 1);
+                    continue;
+                }
+            } else {
+                if (noteStop < beatEnd || noteStop >= beatStart) {
+                    noteEvent.timestampBeats += this.playHead.lengthInBeats;
+                    noteEvents.push(noteEvent);
+                    queuedEvents.splice(i, 1);
+                    continue;
+                }
+            }
+
+            i++;
+        }
+
+        return noteEvents;
     }
 
     /**
@@ -388,8 +448,8 @@ export class PlaybackEngine {
     sendPreviewMidiNote(noteNumber) {
         if (!isAudioContextRunning() || this.playHead.isPlaying) return;
 
-        const noteOnEvent  = MidiEvent.newEvent(MidiEventType.NoteOn,  noteNumber, 60, 0);
-        const noteOffEvent = MidiEvent.newEvent(MidiEventType.NoteOff, noteNumber, 60, 0);
+        const noteOnEvent  = MidiEvent.newNote(MidiEventType.NoteOn,  noteNumber, 60, 0);
+        const noteOffEvent = MidiEvent.newNote(MidiEventType.NoteOff, noteNumber, 60, 0);
 
         const playHeadTimeSec = getContextTime() + this.lookAheadSec;
 
