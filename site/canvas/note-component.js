@@ -3,9 +3,15 @@ import { Note } from "../audio/playback-engine.js";
 
 export class NoteComponent extends Component{
     /**
+     * Note data
      * @type {Note}
      */
-    note
+    note;
+
+    /**
+     * Used for adjusting note
+     */
+    noteAnchor = new Note(0, 0, 0);
 
     /**
      * @param {Note} note 
@@ -31,5 +37,11 @@ export class NoteComponent extends Component{
         ctx.roundRect(offset, offset, this.bounds.width - ctx.lineWidth, this.bounds.height - ctx.lineWidth, 4);
         ctx.fill();
         ctx.stroke();
+    }
+
+    updateNoteAnchor() {
+        this.noteAnchor.beatStart = this.note.beatStart;
+        this.noteAnchor.beatLength = this.note.beatLength;
+        this.noteAnchor.noteNumber = this.note.noteNumber;
     }
 }
