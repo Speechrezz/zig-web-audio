@@ -66,5 +66,10 @@ pub fn AudioProcessorWeb(comptime AudioProcessor: type) type {
 
             return true;
         }
+
+        pub fn stopAllNotes(self: *@This(), allow_tail_off: bool) void {
+            self.midi_buffer.clear();
+            self.processor.stopAllNotes(allow_tail_off);
+        }
     };
 }
