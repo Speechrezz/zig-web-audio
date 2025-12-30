@@ -9,6 +9,7 @@ pub fn AudioProcessorWeb(comptime AudioProcessor: type) type {
         processor: AudioProcessor = undefined,
         audio_buffer: audio.AudioBuffer = undefined,
         midi_buffer: WebMidi = undefined,
+        stop_all_notes_flag: WebMidi.StopAllNotesFlag = .none,
 
         pub fn init(self: *@This()) void {
             self.* = .{};
@@ -53,6 +54,11 @@ pub fn AudioProcessorWeb(comptime AudioProcessor: type) type {
         }
 
         pub fn process(self: *@This(), block_size: u32) bool {
+            if (self.stop_all_notes_flag != .none) {
+                self.stopAllNotes(self.stop_all_notes_flag == .stopWithTail);
+                self.stop_all_notes_flag = .none;
+            }
+
             self.audio_buffer.clear();
 
             self.processor.process(
@@ -70,6 +76,10 @@ pub fn AudioProcessorWeb(comptime AudioProcessor: type) type {
         pub fn stopAllNotes(self: *@This(), allow_tail_off: bool) void {
             self.midi_buffer.clear();
             self.processor.stopAllNotes(allow_tail_off);
+        }
+
+        pub fn onStopAllNotesMessage(self: *@This(), allow_tail_off: bool) void {
+            self.stop_all_notes_flag = if (allow_tail_off) .stopWithTail else .stopImmediately;
         }
     };
 }

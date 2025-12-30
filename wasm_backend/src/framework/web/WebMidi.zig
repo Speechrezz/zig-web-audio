@@ -5,6 +5,8 @@ const externs = @import("externs.zig");
 
 const Self = @This();
 
+pub const StopAllNotesFlag = enum { none, stopWithTail, stopImmediately };
+
 events: std.ArrayList(MidiEvent) = .empty,
 read_index: usize = 0,
 
@@ -21,6 +23,7 @@ pub fn resize(self: *@This(), allocator: std.mem.Allocator, max_size: usize) !vo
 }
 
 pub fn clear(self: *@This()) void {
+    self.read_index = 0;
     self.events.clearRetainingCapacity();
 }
 

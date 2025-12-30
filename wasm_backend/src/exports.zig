@@ -37,5 +37,5 @@ export fn appendMidiEvent(packed_event: u32, sample_position: i64) void {
 }
 
 export fn stopAllNotes(allow_tail_off: bool) void {
-    audio_processor_web.stopAllNotes(allow_tail_off);
+    audio_processor_web.onStopAllNotesMessage(allow_tail_off);
 }
