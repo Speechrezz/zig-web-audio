@@ -40,7 +40,7 @@ export async function initialize() {
         audioContextStateChanged(toggleAudioContext());
     }
 
-    playbackEngine = new PlaybackEngine();
+    playbackEngine = new PlaybackEngine(config);
     midiInput = new MidiInput(playbackEngine);
     pianoRoll = new PianoRoll(canvasElement, playbackEngine, config);
 

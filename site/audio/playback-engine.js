@@ -1,3 +1,4 @@
+import { Config } from "../app/config.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
 
@@ -152,9 +153,11 @@ export class Instrument {
 }
 
 export class PlayHead {
+    /** @type {Config} */
+    config;
+
     // ---Project info---
     bpm = 120;
-    lengthInBeats = 64;
     isPlaying = false;
 
     // ---Position info---
@@ -168,13 +171,20 @@ export class PlayHead {
     anchorInBeats = 0;
 
     /**
+     * @param {Config} config 
+     */
+    constructor(config) {
+        this.config = config;
+    }
+
+    /**
      * 
      * @param {Number} timePassedSec 
      * @returns 
      */
     getPositionInBeats(timePassedSec) {
         const deltaTimeSec = timePassedSec - this.anchorInSec;
-        return (this.anchorInBeats + this.secondsToBeats(deltaTimeSec)) % this.lengthInBeats;
+        return (this.anchorInBeats + this.secondsToBeats(deltaTimeSec)) % this.config.lengthInBeats;
     }
 
     /**
@@ -210,9 +220,14 @@ export class PlayHead {
 
 export class PlaybackEngine {
     /**
+     * @type {Config}
+     */
+    config;
+
+    /**
      * @type {PlayHead}
      */
-    playHead = new PlayHead();
+    playHead;
 
     /**
      * @type {Instrument[]}
@@ -235,7 +250,13 @@ export class PlaybackEngine {
     selectedInstrumentIndex = 0;
 
 
-    constructor() {
+    /**
+     * @param {Config} config 
+     */
+    constructor(config) {
+        this.config = config;
+        this.playHead = new PlayHead(config);
+
         // TEMP:
         this.addInstrument(0, "temp");
 
@@ -349,8 +370,9 @@ export class PlaybackEngine {
         const nextPositionInBeats = playHead.getPositionInBeats(nextTimePassedSec);
         
         const instrument = this.getSelectedInstrument();
-        const noteEvents = this.getNoteStartInInterval(instrument, playHead.positionInBeats, nextPositionInBeats);
-        noteEvents.push(...this.getNoteStopInInterval(instrument, playHead.positionInBeats, nextPositionInBeats));
+        const noteStartEvents = this.getNoteStartInInterval(instrument, playHead.positionInBeats, nextPositionInBeats);
+        const noteEvents = this.getNoteStopInInterval(instrument, playHead.positionInBeats, nextPositionInBeats);
+        noteEvents.push(...noteStartEvents);
         noteEvents.sort((a, b) => a.timestampBeats - b.timestampBeats); // Ascending
 
         for (const noteEvent of noteEvents) {
@@ -410,7 +432,7 @@ export class PlaybackEngine {
                 }
             } else {
                 if (note.beatStart < beatEnd || note.beatStart >= beatStart) {
-                    const adjustedNoteStart = note.beatStart + this.playHead.lengthInBeats;
+                    const adjustedNoteStart = note.beatStart + this.config.lengthInBeats;
                     noteEvents.push(new NoteEvent(adjustedNoteStart, true, note.noteNumber, note.velocity, note.channel));
                     queuedEvents.push(new NoteEvent(noteStop, false, note.noteNumber, note.velocity, note.channel));
                 }
@@ -437,17 +459,18 @@ export class PlaybackEngine {
         let i = 0;
         while (i < queuedEvents.length) {
             const noteEvent = queuedEvents[i];
-            const noteStop = noteEvent.timestampBeats % this.playHead.lengthInBeats;
+            const noteStop = noteEvent.timestampBeats % this.config.lengthInBeats;
 
             if (beatStart <= beatEnd) {
                 if (noteStop >= beatStart && noteStop < beatEnd) {
+                    noteEvent.timestampBeats = noteStop;
                     noteEvents.push(noteEvent);
                     queuedEvents.splice(i, 1);
                     continue;
                 }
             } else {
                 if (noteStop < beatEnd || noteStop >= beatStart) {
-                    noteEvent.timestampBeats += this.playHead.lengthInBeats;
+                    noteEvent.timestampBeats = noteStop + this.config.lengthInBeats;
                     noteEvents.push(noteEvent);
                     queuedEvents.splice(i, 1);
                     continue;
