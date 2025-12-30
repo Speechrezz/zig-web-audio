@@ -47,6 +47,13 @@ export class TopLevelComponent extends Component {
      */
     pointerEventToMouseAction(ev) {
         if (ev.buttons === 0) return MouseAction.none;
+
+        if (ev.button === 0) {
+            if (ev.ctrlKey) {
+                return MouseAction.select;
+            }
+        }
+
         return ev.button + 1;
     }
 

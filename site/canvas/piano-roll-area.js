@@ -37,6 +37,9 @@ export class PianoRollArea extends Component {
     interactionType = InteractionType.none;
     /** Initial position of mouse when beginning to interact */
     interactionAnchor = new Point();
+
+    /** @type {Rectangle | null} */
+    selectionBounds = null;
     
     /**
      * The main `NoteComponent` being edited/moved
@@ -65,6 +68,9 @@ export class PianoRollArea extends Component {
         this.zoomChanged();
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx 
+     */
     draw(ctx) {
         // Lanes
         for (let p = this.config.pitchMin; p <= this.config.pitchMax; p++) {
@@ -85,6 +91,15 @@ export class PianoRollArea extends Component {
             ctx.stroke();
 
             gridIndex++;
+        }
+
+        // Selection bounds
+        if (this.selectionBounds !== null) {
+            ctx.fillStyle = "oklch(88.2% 0.059 254.128/0.25)";
+            ctx.fillRect(this.selectionBounds.x, this.selectionBounds.y, this.selectionBounds.width, this.selectionBounds.height);
+
+            ctx.strokeStyle = "oklch(70.7% 0.165 254.624)";
+            ctx.strokeRect(this.selectionBounds.x, this.selectionBounds.y, this.selectionBounds.width, this.selectionBounds.height);
         }
 
         // Playhead
@@ -137,11 +152,13 @@ export class PianoRollArea extends Component {
             }
         }
         else if (ev.mouseAction === MouseAction.remove) {
-            this.removeNoteAt(ev.x, ev.y);
             document.documentElement.style.cursor = "not-allowed";
+            this.clearSelection();
+            this.repaint();
+            this.removeNoteAt(ev.x, ev.y);
         }
         else if (ev.mouseAction === MouseAction.select) {
-            document.documentElement.style.cursor = "crosshair";
+            this.selectionBegin(ev);
         }
     }
 
@@ -149,11 +166,14 @@ export class PianoRollArea extends Component {
      * @param {MouseEvent} ev 
      */
     mouseDrag(ev) {
-        if (ev.mouseAction === MouseAction.remove) {
+        if (ev.mouseAction === MouseAction.draw) {
+            this.adjustNoteStep(ev);
+        }
+        else if (ev.mouseAction === MouseAction.remove) {
             this.removeNoteAt(ev.x, ev.y);
         }
-        else {
-            this.adjustNoteStep(ev);
+        else if (ev.mouseAction === MouseAction.select) {
+            this.selectionUpdate(ev);
         }
     }
 
@@ -163,6 +183,9 @@ export class PianoRollArea extends Component {
     mouseUp(ev) {
         if (ev.mouseAction === MouseAction.draw) {
             this.adjustNoteEnd(ev);
+        }
+        else if (ev.mouseAction === MouseAction.select) {
+            this.selectionEnd(ev);
         }
 
         this.updateMouseHighlightCursor(ev);
@@ -224,7 +247,6 @@ export class PianoRollArea extends Component {
         this.addChildComponent(noteComponent);
 
         this.updateNoteBounds(noteComponent);
-        this.repaint();
 
         return noteComponent;
     }
@@ -275,14 +297,20 @@ export class PianoRollArea extends Component {
     adjustNoteBegin(ev, noteComponent, interactionType) {
         this.playbackEngine.sendPreviewMidiNote(noteComponent.note.noteNumber);
 
+        if (this.selectedNoteMain !== null) {
+            this.selectedNoteMain.isSelected = false;
+        }
+
         this.interactionType = interactionType;
         this.interactionAnchor.x = ev.x;
         this.interactionAnchor.y = ev.y;
         this.selectedNoteMain = noteComponent;
-
+        
+        this.selectedNoteMain.isSelected = true;
         this.selectedNoteMain.updateNoteAnchor();
         
         document.documentElement.style.cursor = this.interactionTypeToCursor(interactionType);
+        this.repaint();
     }
 
     /**
@@ -359,6 +387,66 @@ export class PianoRollArea extends Component {
 
         this.selectedNoteMain.offsetBeats = 0;
         this.selectedNoteMain.offsetPitch = 0;
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    selectionBegin(ev) {
+        this.clearSelection();
+        document.documentElement.style.cursor = "crosshair";
+        this.interactionAnchor.x = ev.x;
+        this.interactionAnchor.y = ev.y;
+        this.selectionBounds = new Rectangle();
+        this.selectionUpdate(ev);
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    selectionUpdate(ev) {
+        const bounds = this.selectionBounds;
+
+        if (ev.x >= this.interactionAnchor.x) {
+            bounds.x = this.interactionAnchor.x;
+            bounds.width = ev.x - this.interactionAnchor.x;
+        }
+        else {
+            bounds.x = ev.x;
+            bounds.width = this.interactionAnchor.x - ev.x;
+        }
+
+        if (ev.y >= this.interactionAnchor.y) {
+            bounds.y = this.interactionAnchor.y;
+            bounds.height = ev.y - this.interactionAnchor.y;
+        }
+        else {
+            bounds.y = ev.y;
+            bounds.height = this.interactionAnchor.y - ev.y;
+        }
+
+        this.repaint();
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    selectionEnd(ev) {
+        this.selectionBounds = null;
+        this.repaint();
+    }
+
+    clearSelection() {
+        if (this.selectedNoteMain !== null) {
+            this.selectedNoteMain.isSelected = false; // TODO: Remove this
+        }
+
+        for (const selectedNote of this.selectedNotes) {
+            selectedNote.isSelected = false;
+        }
+
+        this.selectedNoteMain = null;
+        this.selectedNotes.length = 0;
     }
 
     /**

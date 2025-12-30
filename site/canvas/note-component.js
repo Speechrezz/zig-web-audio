@@ -13,6 +13,8 @@ export class NoteComponent extends Component{
      */
     noteAnchor = new Note(0, 0, 0);
 
+    isSelected = false;
+
     /**
      * @param {Note} note 
      */
@@ -28,7 +30,7 @@ export class NoteComponent extends Component{
      * @param {CanvasRenderingContext2D} ctx 
      */
     draw(ctx) {
-        ctx.fillStyle = "oklch(70.7% 0.165 254.624)";
+        ctx.fillStyle = this.isSelected ? "oklch(80.9% 0.105 251.813)" : "oklch(70.7% 0.165 254.624)";
         ctx.strokeStyle = "oklch(62.3% 0.214 259.815)";
         ctx.lineWidth = 1;
 
