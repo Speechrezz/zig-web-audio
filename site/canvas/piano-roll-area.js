@@ -297,17 +297,20 @@ export class PianoRollArea extends Component {
     adjustNoteBegin(ev, noteComponent, interactionType) {
         this.playbackEngine.sendPreviewMidiNote(noteComponent.note.noteNumber);
 
-        if (this.selectedNoteMain !== null) {
-            this.selectedNoteMain.isSelected = false;
+        if (!this.isNoteSelected(noteComponent)) {
+            this.clearSelection();
+            this.selectedNotes.push(noteComponent);
+            noteComponent.isSelected = true;
         }
 
+        for (const selectedNote of this.selectedNotes) {
+            selectedNote.updateNoteAnchor();
+        }
+
+        this.selectedNoteMain = noteComponent;
         this.interactionType = interactionType;
         this.interactionAnchor.x = ev.x;
         this.interactionAnchor.y = ev.y;
-        this.selectedNoteMain = noteComponent;
-        
-        this.selectedNoteMain.isSelected = true;
-        this.selectedNoteMain.updateNoteAnchor();
         
         document.documentElement.style.cursor = this.interactionTypeToCursor(interactionType);
         this.repaint();
@@ -318,9 +321,6 @@ export class PianoRollArea extends Component {
      */
     adjustNoteStep(ev) {
         if (this.interactionType === InteractionType.none) return;
-
-        const noteMain = this.selectedNoteMain.note;
-        const noteAnchor = this.selectedNoteMain.noteAnchor;
         
         switch (this.interactionType) {
             case InteractionType.newNote: {
@@ -333,46 +333,84 @@ export class PianoRollArea extends Component {
                 }
                 break;
             }
-            case InteractionType.moveNote: {
-                const offsetX = ev.x - this.interactionAnchor.x;
-                const offsetY = ev.y - this.interactionAnchor.y;
-
-                const offsetBeats  = Math.round(this.xToBeat(offsetX));
-                const offsetPitch = Math.round(-offsetY / this.config.noteHeight);
-
-                let newBeatStart = noteAnchor.beatStart + offsetBeats;
-                let newNoteNumber = noteAnchor.noteNumber + offsetPitch;
-
-                newBeatStart  = Math.max(0, Math.min(this.config.lengthInBeats - noteMain.beatLength, newBeatStart));
-                newNoteNumber = Math.max(this.config.pitchMin, Math.min(this.config.pitchMax, newNoteNumber));
-
-                if (newNoteNumber !== noteMain.noteNumber) {
-                    this.playbackEngine.sendPreviewMidiNote(newNoteNumber);
-                }
-
-                noteMain.beatStart = newBeatStart;
-                noteMain.noteNumber = newNoteNumber;
+            case InteractionType.moveNote:
+                this.adjustNoteStepMoveNote(ev);
                 break;
-            }
-            case InteractionType.adjustNoteEnd: {
-                const beatLength = Math.round(this.xToBeat(ev.x) - noteMain.beatStart);
-                noteMain.beatLength = Math.max(1, beatLength);
+            case InteractionType.adjustNoteEnd:
+                this.adjustNoteStepNoteEnd(ev);
                 break;
-            }
-            case InteractionType.adjustNoteStart: {
-                const beatStop = noteAnchor.getBeatStop();
-
-                let offsetBeats = Math.round(this.xToBeat(ev.x) - noteAnchor.beatStart);
-                offsetBeats = Math.min(offsetBeats, noteAnchor.beatLength - 1);
-
-                noteMain.beatStart = noteAnchor.beatStart + offsetBeats;
-                noteMain.beatLength = beatStop - noteMain.beatStart;
+            case InteractionType.adjustNoteStart:
+                this.adjustNoteStepNoteStart(ev);
                 break;
+        }
+
+        for (const selectedNote of this.selectedNotes) {
+            this.updateNoteBounds(selectedNote);
+        }
+        this.repaint();
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    adjustNoteStepMoveNote(ev) {
+        const offsetX = ev.x - this.interactionAnchor.x;
+        const offsetY = ev.y - this.interactionAnchor.y;
+
+        const offsetBeats = Math.round(this.xToBeat(offsetX));
+        const offsetPitch = Math.round(-offsetY / this.config.noteHeight);
+
+        const oldNoteNumber = this.selectedNoteMain.note.noteNumber;
+
+        for (const selectedNote of this.selectedNotes) {
+            selectedNote.note.beatStart  = selectedNote.noteAnchor.beatStart + offsetBeats;
+            selectedNote.note.noteNumber = selectedNote.noteAnchor.noteNumber + offsetPitch;
+        }
+
+        if (this.selectedNoteMain.note.noteNumber !== oldNoteNumber) {
+            this.playbackEngine.sendPreviewMidiNote(this.selectedNoteMain.note.noteNumber);
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    adjustNoteStepNoteEnd(ev) {
+        const shortestLength = this.findShortestNoteInSelection();
+
+        let beatLengthOffset = Math.round(this.xToBeat(ev.x) - this.selectedNoteMain.noteAnchor.getBeatStop());
+        beatLengthOffset = Math.max(1 - shortestLength, beatLengthOffset);
+
+        for (const selectedNote of this.selectedNotes) {
+            selectedNote.note.beatLength = selectedNote.noteAnchor.beatLength + beatLengthOffset;
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    adjustNoteStepNoteStart(ev) {
+        const shortestLength = this.findShortestNoteInSelection();
+
+        let beatStartOffset = Math.round(this.xToBeat(ev.x) - this.selectedNoteMain.noteAnchor.beatStart);
+        beatStartOffset = Math.min(beatStartOffset, shortestLength - 1);
+
+        for (const selectedNote of this.selectedNotes) {
+            const beatStop = selectedNote.noteAnchor.getBeatStop();
+            selectedNote.note.beatStart = selectedNote.noteAnchor.beatStart + beatStartOffset;
+            selectedNote.note.beatLength = beatStop - selectedNote.note.beatStart;
+        }
+    }
+
+    findShortestNoteInSelection() {
+        let shortestLength = this.selectedNotes[0].noteAnchor.beatLength;
+        for (const selectedNote of this.selectedNotes) {
+            if (selectedNote.noteAnchor.beatLength < shortestLength) {
+                shortestLength = selectedNote.noteAnchor.beatLength;
             }
         }
 
-        this.updateNoteBounds(this.selectedNoteMain);
-        this.repaint();
+        return shortestLength;
     }
 
     /**
@@ -384,9 +422,6 @@ export class PianoRollArea extends Component {
         this.lastBeatLength = this.selectedNoteMain.note.beatLength;
         document.documentElement.style.cursor = "auto";
         this.interactionType = InteractionType.none;
-
-        this.selectedNoteMain.offsetBeats = 0;
-        this.selectedNoteMain.offsetPitch = 0;
     }
 
     /**
@@ -425,6 +460,18 @@ export class PianoRollArea extends Component {
             bounds.height = this.interactionAnchor.y - ev.y;
         }
 
+        for (const selectedNote of this.selectedNotes) {
+            selectedNote.isSelected = false;
+        }
+        this.selectedNotes.length = 0;
+
+        for (const noteComponent of this.noteComponents) {
+            if (noteComponent.bounds.intersects(bounds)) {
+                this.selectedNotes.push(noteComponent);
+                noteComponent.isSelected = true;
+            }
+        }
+
         this.repaint();
     }
 
@@ -447,6 +494,10 @@ export class PianoRollArea extends Component {
 
         this.selectedNoteMain = null;
         this.selectedNotes.length = 0;
+    }
+
+    isNoteSelected(noteComponent) {
+        return this.selectedNotes.indexOf(noteComponent) >= 0;
     }
 
     /**
