@@ -44,17 +44,14 @@ export class KeyboardListener {
         if (this.isPrimaryModifierDown(e)) {
             switch (key) {
                 case 'c':
-                    console.log("copy!");
                     return AppCommand.copy;
                 case 'v':
-                    console.log("paste!");
                     return AppCommand.paste;
             }
         }
         else {
             switch (key) {
                 case 'delete':
-                    console.log("delete!");
                     return AppCommand.delete;
             }
         }
