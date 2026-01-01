@@ -1,21 +1,22 @@
 import { Component, Rectangle, Point } from "./component.js";
 import { Config } from "../app/config.js";
+import { ComponentContext } from "./component-context.js";
 
 export class PianoComponent extends Component {
     /**
-     * @type {Config}
+     * @type {ComponentContext}
      */
-    config;
+    context;
 
     /**
      * 
-     * @param {Config} config 
+     * @param {ComponentContext} context 
      */
-    constructor(config) {
+    constructor(context) {
         super();
-        this.config = config;
+        this.context = context;
 
-        this.config.addZoomListener(() => this.zoomChanged());
+        this.context.config.addZoomListener(() => this.zoomChanged());
         this.zoomChanged();
     }
 
@@ -24,6 +25,8 @@ export class PianoComponent extends Component {
      * @param {CanvasRenderingContext2D} ctx 
      */
     draw(ctx) {
+        const config = this.context.config;
+
         ctx.fillStyle = "oklch(96.7% 0.003 264.542)";
         ctx.fillRect(0, 0, this.bounds.width, this.bounds.height);
 
@@ -39,17 +42,17 @@ export class PianoComponent extends Component {
         ctx.lineTo(this.bounds.width - 0.5, this.bounds.height);
         ctx.stroke();
 
-        for (let p = this.config.pitchMin; p <= this.config.pitchMax; p++) {
-            const y = (this.config.pitchMax - p) * this.config.noteHeight;
+        for (let p = config.pitchMin; p <= config.pitchMax; p++) {
+            const y = (config.pitchMax - p) * config.noteHeight;
 
-            if (this.config.isBlackKey(p)) {
-                const separatorY = y + this.config.noteHeight * 0.5;
+            if (config.isBlackKey(p)) {
+                const separatorY = y + config.noteHeight * 0.5;
                 ctx.beginPath()
                 ctx.moveTo(blackNoteWidth, separatorY);
                 ctx.lineTo(this.bounds.width, separatorY);
                 ctx.stroke();
 
-                ctx.fillRect(0, y, blackNoteWidth, this.config.noteHeight);
+                ctx.fillRect(0, y, blackNoteWidth, config.noteHeight);
             } else if (p % 12 === 4 || p % 12 === 11) {
                 ctx.beginPath()
                 ctx.moveTo(0, y);
@@ -62,7 +65,7 @@ export class PianoComponent extends Component {
     }
 
     zoomChanged() {
-        this.setBounds(new Rectangle(0, 0, this.bounds.width, this.config.calculateHeight()));
+        this.setBounds(new Rectangle(0, 0, this.bounds.width, this.context.config.calculateHeight()));
         console.log("piano bounds:", this.bounds);
     }
 }

@@ -3,8 +3,9 @@ import { initializeAudio, toggleAudioContext, isAudioContextRunning } from "../a
 import { MidiInput } from "../audio/midi-input.js"
 import { PlaybackEngine } from "../audio/playback-engine.js"
 import { PianoRoll } from "../canvas/piano-roll.js"
-import { EventRouter } from "./event-router.js"
 import { KeyboardListener } from "./keyboard-listener.js"
+import { AppEventRouter } from "./app-event-router.js"
+import { ComponentContext } from "../canvas/component-context.js"
 
 export class App {
     /**
@@ -23,7 +24,7 @@ export class App {
     pianoRoll = undefined;
 
     /**
-     * @type {EventRouter | undefined}
+     * @type {AppEventRouter | undefined}
      */
     eventRouter = undefined;
 
@@ -60,9 +61,11 @@ export class App {
     
         this.playbackEngine = new PlaybackEngine(this.config);
         this.midiInput = new MidiInput(this.playbackEngine);
-        this.pianoRoll = new PianoRoll(this.canvasElement, this.playbackEngine, this.config);
-        this.eventRouter = new EventRouter();
+        this.eventRouter = new AppEventRouter();
         this.keyboardListener = new KeyboardListener(this.eventRouter);
+
+        const componentContext = new ComponentContext(this.config, this.playbackEngine, this.eventRouter);
+        this.pianoRoll = new PianoRoll(this.canvasElement, componentContext);
         
         playButton.onclick = () => this.playbackEngine.play();
         stopButton.onclick = () => this.playbackEngine.stop();

@@ -1,26 +1,20 @@
-import { PlaybackEngine } from "../audio/playback-engine.js"
-import { Component, Rectangle, Point } from "./component.js"
+import { Rectangle, Point } from "./component.js"
+import { ComponentContext } from "./component-context.js";
 import { TopLevelComponent } from "./top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";
 import { PianoComponent } from "./piano-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
-import { Config } from "../app/config.js";
 
 export class PianoRoll extends TopLevelComponent {
     /**
-     * @type {PlaybackEngine}
+     * @type {ComponentContext}
      */
-    playbackEngine;
-
+    context;
+    
     /**
      * @type {PianoRollView}
      */
     pianoRollView;
-
-    /**
-     * @type {Config}
-     */
-    config;
 
     /**
      * @type {PianoComponent}
@@ -37,18 +31,16 @@ export class PianoRoll extends TopLevelComponent {
     /**
      * 
      * @param {HTMLCanvasElement} canvasElement 
-     * @param {PlaybackEngine} playbackEngine 
-     * @param {Config} config 
+     * @param {ComponentContext} context 
      */
-    constructor(canvasElement, playbackEngine, config) {
+    constructor(canvasElement, context) {
         super(canvasElement);
-        this.playbackEngine = playbackEngine;
-        this.config = config;
+        this.context = context;
 
-        this.pianoRollView = new PianoRollView(playbackEngine, config);
+        this.pianoRollView = new PianoRollView(context);
         this.addChildComponent(this.pianoRollView);
 
-        this.pianoComponent = new PianoComponent(config);
+        this.pianoComponent = new PianoComponent(context);
         this.addChildComponent(this.pianoComponent);
 
         this.canvasResized();

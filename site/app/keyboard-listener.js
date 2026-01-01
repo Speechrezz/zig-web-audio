@@ -1,9 +1,9 @@
 import { AppCommand, AppEvent } from "./app-event.js";
-import { EventRouter } from "./event-router.js";
+import { AppEventRouter } from "./app-event-router.js";
 
 export class KeyboardListener {
     /**
-     * @type {EventRouter}
+     * @type {AppEventRouter}
      */
     eventRouter;
 
@@ -13,7 +13,7 @@ export class KeyboardListener {
     isMac;
 
     /**
-     * @param {EventRouter} eventRouter 
+     * @param {AppEventRouter} eventRouter 
      */
     constructor(eventRouter) {
         this.eventRouter = eventRouter;
@@ -32,8 +32,9 @@ export class KeyboardListener {
         const appCommand = this.keyboardEventToAppCommand(e);
         if (appCommand === null) return;
 
-        e.preventDefault();
-        this.eventRouter.handleEvent(new AppEvent(appCommand));
+        if (this.eventRouter.dispatchEvent(new AppEvent(appCommand))) {
+            e.preventDefault();
+        }
     }
 
     /**

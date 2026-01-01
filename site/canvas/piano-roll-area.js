@@ -1,8 +1,9 @@
-import { PlaybackEngine, Note } from "../audio/playback-engine.js"
+import { Note } from "../audio/playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
 import { NoteComponent } from "./note-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
-import { Config } from "../app/config.js";
+import { ComponentContext } from "./component-context.js";
+import { AppCommand, AppEvent } from "../app/app-event.js";
 
 const InteractionType = Object.freeze({
     none: 0, // NOT dragging
@@ -13,17 +14,12 @@ const InteractionType = Object.freeze({
 });
 
 export class PianoRollArea extends Component {
+    // ---General---
+    
     /**
-     * @type {PlaybackEngine}
+     * @type {ComponentContext}
      */
-    playbackEngine;
-
-
-
-    /**
-     * @type {Config}
-    */
-    config;
+    context;
 
     /**
     * @type {NoteComponent[]}
@@ -56,15 +52,15 @@ export class PianoRollArea extends Component {
     lastBeatLength = 1;
 
     /**
-     * @param {PlaybackEngine} playbackEngine 
-     * @param {Config} config 
+     * @param {ComponentContext} context 
      */
-    constructor(playbackEngine, config) {
+    constructor(context) {
         super();
-        this.playbackEngine = playbackEngine;
-        this.config = config;
+        this.context = context;
 
-        this.config.addZoomListener(() => this.zoomChanged());
+        this.context.eventRouter.addListener(this);
+
+        this.context.config.addZoomListener(() => this.zoomChanged());
         this.zoomChanged();
     }
 
@@ -72,17 +68,19 @@ export class PianoRollArea extends Component {
      * @param {CanvasRenderingContext2D} ctx 
      */
     draw(ctx) {
+        const config = this.context.config;
+
         // Lanes
-        for (let p = this.config.pitchMin; p <= this.config.pitchMax; p++) {
-            const y = (this.config.pitchMax - p) * this.config.noteHeight;
-            ctx.fillStyle = this.config.isBlackKey(p) ? "oklch(96.7% 0.003 264.542)" : "white";
-            ctx.fillRect(0, y, this.bounds.width, this.config.noteHeight);
+        for (let p = config.pitchMin; p <= config.pitchMax; p++) {
+            const y = (config.pitchMax - p) * config.noteHeight;
+            ctx.fillStyle = config.isBlackKey(p) ? "oklch(96.7% 0.003 264.542)" : "white";
+            ctx.fillRect(0, y, this.bounds.width, config.noteHeight);
         }
 
         // Grid
         ctx.lineWidth = 1;
         let gridIndex = 0;
-        for (let x = 0; x < this.bounds.width; x += this.config.beatWidth) {
+        for (let x = 0; x < this.bounds.width; x += config.beatWidth) {
             ctx.strokeStyle = gridIndex % 4 == 0 ? "oklch(70.7% 0.165 254.624)" : "oklch(88.2% 0.059 254.128)";
 
             ctx.beginPath();
@@ -103,9 +101,9 @@ export class PianoRollArea extends Component {
         }
 
         // Playhead
-        const playHead = this.playbackEngine.playHead;
+        const playHead = this.context.playbackEngine.playHead;
         if (playHead.isPlaying) {
-            const x = playHead.positionInBeats * this.config.beatWidth;
+            const x = playHead.positionInBeats * config.beatWidth;
             ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.5)";
             ctx.fillRect(x, 0, 8, this.bounds.height);
         }
@@ -191,6 +189,27 @@ export class PianoRollArea extends Component {
         this.updateMouseHighlightCursor(ev);
     }
 
+    /**
+     * Specify which events this listener can handle.
+     * @param {AppEvent} appEvent 
+     * @returns {number | null} Must return a `number` priority (higher = more priority) or `null` if can't handle. 
+     */
+    canHandleEvent(appEvent) {
+        if (appEvent.command === AppCommand.delete) {
+            return 100;
+        }
+
+        return null;
+    }
+
+    /**
+     * Handle the `AppEvent`.
+     * @param {AppEvent} appEvent 
+     */
+    handleEvent(appEvent) {
+        this.deleteSelection();
+    }
+
     interactionTypeToCursor(interactionType, isMouseDown = true) {
         switch (interactionType) {
             case InteractionType.none:
@@ -240,7 +259,7 @@ export class PianoRollArea extends Component {
      * @param {Note} note 
      */
     addNote(note) {
-        this.playbackEngine.getSelectedInstrument().notes.push(note);
+        this.context.playbackEngine.getSelectedInstrument().notes.push(note);
         const noteComponent = new NoteComponent(note, (c) => this.removeNote(c));
 
         this.noteComponents.push(noteComponent);
@@ -270,7 +289,7 @@ export class PianoRollArea extends Component {
         const noteComponentIndex = this.noteComponents.indexOf(noteComponent);
         this.noteComponents.splice(noteComponentIndex, 1);
 
-        const playbackEngineNotes = this.playbackEngine.getSelectedInstrument().notes;
+        const playbackEngineNotes = this.context.playbackEngine.getSelectedInstrument().notes;
         const engineNoteIndex = playbackEngineNotes.indexOf(noteComponent.note);
         playbackEngineNotes.splice(engineNoteIndex, 1);
 
@@ -295,7 +314,7 @@ export class PianoRollArea extends Component {
      * @param {Number} interactionType InteractionType
      */
     adjustNoteBegin(ev, noteComponent, interactionType) {
-        this.playbackEngine.sendPreviewMidiNote(noteComponent.note.noteNumber);
+        this.context.playbackEngine.sendPreviewMidiNote(noteComponent.note.noteNumber);
 
         if (!this.isNoteSelected(noteComponent)) {
             this.clearSelection();
@@ -358,7 +377,7 @@ export class PianoRollArea extends Component {
         const offsetY = ev.y - this.interactionAnchor.y;
 
         const offsetBeats = Math.round(this.xToBeat(offsetX));
-        const offsetPitch = Math.round(-offsetY / this.config.noteHeight);
+        const offsetPitch = Math.round(-offsetY / this.context.config.noteHeight);
 
         const oldNoteNumber = this.selectedNoteMain.note.noteNumber;
 
@@ -368,7 +387,7 @@ export class PianoRollArea extends Component {
         }
 
         if (this.selectedNoteMain.note.noteNumber !== oldNoteNumber) {
-            this.playbackEngine.sendPreviewMidiNote(this.selectedNoteMain.note.noteNumber);
+            this.context.playbackEngine.sendPreviewMidiNote(this.selectedNoteMain.note.noteNumber);
         }
     }
 
@@ -484,12 +503,17 @@ export class PianoRollArea extends Component {
     }
 
     clearSelection() {
-        if (this.selectedNoteMain !== null) {
-            this.selectedNoteMain.isSelected = false; // TODO: Remove this
-        }
-
         for (const selectedNote of this.selectedNotes) {
             selectedNote.isSelected = false;
+        }
+
+        this.selectedNoteMain = null;
+        this.selectedNotes.length = 0;
+    }
+
+    deleteSelection() {
+        for (const noteComponent of this.selectedNotes) {
+            this.removeNote(noteComponent);
         }
 
         this.selectedNoteMain = null;
@@ -515,20 +539,20 @@ export class PianoRollArea extends Component {
     }
 
     beatToX(beat) {
-        return beat * this.config.beatWidth;
+        return beat * this.context.config.beatWidth;
     }
 
     xToBeat(x) {
-        return x / this.config.beatWidth;
+        return x / this.context.config.beatWidth;
     }
 
     noteNumberToY(noteNumber) {
-        return this.bounds.height - (noteNumber - this.config.pitchMin + 1) * this.config.noteHeight;
+        return this.bounds.height - (noteNumber - this.context.config.pitchMin + 1) * this.context.config.noteHeight;
     }
 
     yToNoteNumber(y) {
         y = this.bounds.height - y;
-        return this.config.pitchMin + Math.floor(y / this.config.noteHeight);
+        return this.context.config.pitchMin + Math.floor(y / this.context.config.noteHeight);
     }
 
     /**
@@ -539,11 +563,11 @@ export class PianoRollArea extends Component {
         const x = this.beatToX(noteComponent.note.beatStart);
         const y = this.noteNumberToY(noteComponent.note.noteNumber);
 
-        noteComponent.setBounds(new Rectangle(x, y, this.config.beatWidth * noteComponent.note.beatLength, this.config.noteHeight));
+        noteComponent.setBounds(new Rectangle(x, y, this.context.config.beatWidth * noteComponent.note.beatLength, this.context.config.noteHeight));
     }
 
     indexOfNote(x, noteNumber) {
-        const notes = this.playbackEngine.getSelectedInstrument().notes;
+        const notes = this.context.playbackEngine.getSelectedInstrument().notes;
         for (let i = 0; i < notes.length; i++) {
             const note = notes[i];
             if (note.beatStart == x && note.noteNumber == noteNumber) {
@@ -555,7 +579,7 @@ export class PianoRollArea extends Component {
     }
 
     zoomChanged() {
-        this.setBounds(new Rectangle(0, 0, this.config.calculateWidth(), this.config.calculateHeight()));
+        this.setBounds(new Rectangle(0, 0, this.context.config.calculateWidth(), this.context.config.calculateHeight()));
 
         for (const note of this.noteComponents) {
             this.updateNoteBounds(this.selectedNoteMain);

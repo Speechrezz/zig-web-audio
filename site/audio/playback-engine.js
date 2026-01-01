@@ -307,7 +307,7 @@ export class PlaybackEngine {
      * @param {(PlayHead) => void} callback 
      */
     removeListener(callback) {
-        const index = this.playbackListeners.findIndex((c) => c === callback);
+        const index = this.playbackListeners.indexOf(callback);
         this.playbackListeners.splice(index, 1);
     }
 

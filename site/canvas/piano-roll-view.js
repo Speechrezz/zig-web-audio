@@ -1,35 +1,27 @@
-import { Component, Rectangle, Point } from "./component.js";
-import { PlaybackEngine } from "../audio/playback-engine.js"
+import { Component } from "./component.js";
 import { PianoRollArea } from "./piano-roll-area.js";
-import { Config } from "../app/config.js";
+import { ComponentContext } from "./component-context.js";
 
 export class PianoRollView extends Component{
     /**
-     * @type {PlaybackEngine}
+     * @type {ComponentContext}
      */
-    playbackEngine;
-
+    context;
+    
     /**
      * @type {PianoRollArea}
      */
     pianoRollArea;
 
     /**
-     * @type {Config}
+     * @param {ComponentContext} context 
      */
-    config;
-
-    /**
-     * @param {PlaybackEngine} playbackEngine 
-     * @param {Config} config 
-     */
-    constructor(playbackEngine, config) {
+    constructor(context) {
         super();
         
-        this.playbackEngine = playbackEngine;
-        this.config = config;
+        this.context = context;
 
-        this.pianoRollArea = new PianoRollArea(playbackEngine, config);
+        this.pianoRollArea = new PianoRollArea(context);
         this.addChildComponent(this.pianoRollArea);
     }
 }
