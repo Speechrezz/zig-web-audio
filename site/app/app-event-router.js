@@ -26,8 +26,6 @@ export class AppEventRouter {
      * @returns `true` if event was handled.
      */
     dispatchEvent(appEvent) {
-        console.log("dispatchEvent!", appEvent);
-        
         /** @type {AppEventListener | null} */
         let bestListener = null;
         /** @type {number | null} */

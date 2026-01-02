@@ -49,7 +49,9 @@ export class Note {
     }
 
     clone() {
-        return new Note(this.beatStart, this.beatLength, this.noteNumber, this.velocity, this.channel);
+        const newNote = new Note(this.beatStart, this.beatLength, this.noteNumber, 0, this.channel);
+        newNote.velocity = this.velocity;
+        return newNote;
     }
 
     getMidiVelocity() {

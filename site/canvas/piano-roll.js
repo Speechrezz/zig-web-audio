@@ -4,6 +4,7 @@ import { TopLevelComponent } from "./top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";
 import { PianoComponent } from "./piano-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
+import { AppCommand, AppEvent } from "../app/app-event.js";
 
 export class PianoRoll extends TopLevelComponent {
     /**
@@ -36,6 +37,8 @@ export class PianoRoll extends TopLevelComponent {
     constructor(canvasElement, context) {
         super(canvasElement);
         this.context = context;
+
+        this.context.eventRouter.addListener(this);
 
         this.pianoRollView = new PianoRollView(context);
         this.addChildComponent(this.pianoRollView);
@@ -124,6 +127,42 @@ export class PianoRoll extends TopLevelComponent {
         this.pianoRollView.pianoRollArea.translation.set(this.viewOffset);
         this.pianoComponent.translation.y = this.viewOffset.y;
         this.repaint();
+    }
+
+    /**
+     * Specify which events this listener can handle.
+     * @param {AppEvent} appEvent 
+     * @returns {number | null} Must return a `number` priority (higher = more priority) or `null` if can't handle. 
+     */
+    canHandleEvent(appEvent) {
+        switch (appEvent.command) {
+            case AppCommand.playPause:
+                return 0;
+        }
+
+        return null;
+    }
+
+    /**
+     * Handle the `AppEvent`.
+     * @param {AppEvent} appEvent 
+     */
+    handleEvent(appEvent) {
+        switch (appEvent.command) {
+            case AppCommand.playPause:
+                this.playPause();
+                break;
+        }
+    }
+
+    playPause() {
+        const playbackEngine = this.context.playbackEngine;
+        if (playbackEngine.playHead.isPlaying) {
+            playbackEngine.stop();
+        }
+        else {
+            playbackEngine.play();
+        }
     }
 }
 

@@ -195,8 +195,13 @@ export class PianoRollArea extends Component {
      * @returns {number | null} Must return a `number` priority (higher = more priority) or `null` if can't handle. 
      */
     canHandleEvent(appEvent) {
-        if (appEvent.command === AppCommand.delete) {
-            return 100;
+        switch (appEvent.command) {
+            case AppCommand.delete:
+            case AppCommand.copy:
+            case AppCommand.paste:
+            case AppCommand.cut:
+            case AppCommand.selectAll:
+                return 0;
         }
 
         return null;
@@ -207,7 +212,22 @@ export class PianoRollArea extends Component {
      * @param {AppEvent} appEvent 
      */
     handleEvent(appEvent) {
-        this.deleteSelection();
+        switch (appEvent.command) {
+            case AppCommand.delete:
+                this.deleteSelection();
+                break;
+            case AppCommand.copy:
+                this.copySelection();
+                break;
+            case AppCommand.paste:
+                this.pasteNotes();
+                break;
+            case AppCommand.cut:
+                break; // TODO
+            case AppCommand.selectAll:
+                this.selectAll();
+                break;
+        }
     }
 
     interactionTypeToCursor(interactionType, isMouseDown = true) {
@@ -260,7 +280,7 @@ export class PianoRollArea extends Component {
      */
     addNote(note) {
         this.context.playbackEngine.getSelectedInstrument().notes.push(note);
-        const noteComponent = new NoteComponent(note, (c) => this.removeNote(c));
+        const noteComponent = new NoteComponent(note);
 
         this.noteComponents.push(noteComponent);
         this.addChildComponent(noteComponent);
@@ -493,15 +513,31 @@ export class PianoRollArea extends Component {
 
         this.repaint();
     }
-
+    
     /**
      * @param {MouseEvent} ev 
      */
     selectionEnd(ev) {
-        this.selectionBounds = null;
-        this.repaint();
+       this.selectionBounds = null;
+       this.repaint();
     }
 
+    /**
+     * @param {NoteComponent} noteComponent 
+     */
+    addNoteToSelection(noteComponent) {
+        this.selectedNotes.push(noteComponent);
+        noteComponent.isSelected = true;
+    }
+
+    selectAll() {
+        this.clearSelection();
+        for (const noteComponent of this.noteComponents) {
+            this.addNoteToSelection(noteComponent);
+        }
+        this.repaint();
+    }
+    
     clearSelection() {
         for (const selectedNote of this.selectedNotes) {
             selectedNote.isSelected = false;
@@ -520,6 +556,36 @@ export class PianoRollArea extends Component {
         this.selectedNotes.length = 0;
     }
 
+    copySelection() {
+        if (this.selectedNotes.length === 0) return;
+
+        /** @type {Note[]} */
+        const notesToCopy = [];
+        for (const noteComponent of this.selectedNotes) {
+            notesToCopy.push(noteComponent.note.clone());
+        }
+
+        this.context.clipboardManager.setClipboard("notes", notesToCopy);
+    }
+
+    pasteNotes() {
+        if (this.context.clipboardManager.getType() !== "notes") return;
+
+        this.clearSelection();
+
+        /** @type {Note[]} */
+        const notesToPaste = this.context.clipboardManager.getClipboard();
+
+        for (const note of notesToPaste) {
+            const adjustedNote = note.clone();
+            adjustedNote.beatStart += 1;
+            const noteComponent = this.addNote(adjustedNote);
+            this.addNoteToSelection(noteComponent);
+        }
+
+        this.repaint();
+    }
+
     isNoteSelected(noteComponent) {
         return this.selectedNotes.indexOf(noteComponent) >= 0;
     }
@@ -529,7 +595,8 @@ export class PianoRollArea extends Component {
      * @param {Number} y relative to this component
      */
     findNoteAt(x, y) {
-        for (const noteComponent of this.noteComponents) {
+        for (let i = this.noteComponents.length - 1; i >= 0; i--) {
+            const noteComponent = this.noteComponents[i];
             if (noteComponent.bounds.contains(x, y)) {
                 return noteComponent;
             }

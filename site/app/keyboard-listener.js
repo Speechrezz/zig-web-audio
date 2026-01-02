@@ -57,6 +57,8 @@ export class KeyboardListener {
         const key = e.key.toLocaleLowerCase();
         if (this.isPrimaryModifierDown(e)) {
             switch (key) {
+                case 'a':
+                    return AppCommand.selectAll;
                 case 'z':
                     return AppCommand.undo;
                 case 'y':
@@ -65,6 +67,8 @@ export class KeyboardListener {
         }
         else {
             switch (key) {
+                case ' ': // space
+                    return AppCommand.playPause;
                 case 'delete':
                     return AppCommand.delete;
             }

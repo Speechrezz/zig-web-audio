@@ -6,6 +6,7 @@ import { PianoRoll } from "../canvas/piano-roll.js"
 import { KeyboardListener } from "./keyboard-listener.js"
 import { AppEventRouter } from "./app-event-router.js"
 import { ComponentContext } from "../canvas/component-context.js"
+import { ClipboardManager } from "./clipboard-manager.js"
 
 export class App {
     /**
@@ -27,6 +28,11 @@ export class App {
      * @type {AppEventRouter | undefined}
      */
     eventRouter = undefined;
+
+    /**
+     * @type {ClipboardManager | undefined}
+     */
+    clipboardManager = undefined;
 
     /**
      * @type {KeyboardListener | undefined}
@@ -62,9 +68,15 @@ export class App {
         this.playbackEngine = new PlaybackEngine(this.config);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.eventRouter = new AppEventRouter();
+        this.clipboardManager = new ClipboardManager();
         this.keyboardListener = new KeyboardListener(this.eventRouter);
 
-        const componentContext = new ComponentContext(this.config, this.playbackEngine, this.eventRouter);
+        const componentContext = new ComponentContext(
+            this.config, 
+            this.playbackEngine, 
+            this.eventRouter,
+            this.clipboardManager,
+        );
         this.pianoRoll = new PianoRoll(this.canvasElement, componentContext);
         
         playButton.onclick = () => this.playbackEngine.play();
