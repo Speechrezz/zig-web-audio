@@ -101,6 +101,7 @@ export class TopLevelComponent extends Component {
      */
     mouseDownInternal(ev) {
         ev.preventDefault();
+        this.canvas.focus();
         if (this.mouseAction !== MouseAction.none) return;
             
         this.canvas.setPointerCapture(ev.pointerId);
