@@ -376,8 +376,7 @@ export class Component {
         this.draw(ctx);
 
         // Draw children (also in this local space)
-        for (let i = this.childComponents.length - 1; i >=0; i--) {
-            const child = this.childComponents[i];
+        for (const child of this.childComponents) {
             if (child.visibleFlag) {
                 child.drawInternal(ctx);
             }
@@ -436,7 +435,8 @@ export class Component {
             return {component: this, x: x, y: y};
         }
         
-        for (const child of this.childComponents) {
+        for (let i = this.childComponents.length - 1; i >= 0; i--) {
+            const child = this.childComponents[i];
             const subChild = child.getMouseEventHandler(child.fromParentX(x), child.fromParentY(y), mouseAction);
             
             if (subChild !== null)
