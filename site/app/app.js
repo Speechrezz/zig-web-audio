@@ -7,43 +7,34 @@ import { KeyboardListener } from "./keyboard-listener.js"
 import { AppEventRouter } from "./app-event-router.js"
 import { ComponentContext } from "../canvas/component-context.js"
 import { ClipboardManager } from "./clipboard-manager.js"
+import { UndoManager } from "./undo-manager.js"
 
 export class App {
-    /**
-     * @type {PlaybackEngine | undefined}
-     */
+    /** @type {PlaybackEngine | undefined} */
     playbackEngine = undefined;
 
-    /**
-     * @type {MidiInput | undefined}
-     */
+    /** @type {MidiInput | undefined} */
     midiInput = undefined;
 
-    /**
-     * @type {PianoRoll | undefined}
-     */
+    /** @type {PianoRoll | undefined} */
     pianoRoll = undefined;
+    
+    /** @type {AppEventRouter} */
+    eventRouter = new AppEventRouter();
 
-    /**
-     * @type {AppEventRouter | undefined}
-     */
-    eventRouter = undefined;
+    /** @type {UndoManager | undefined} */
+    undoManager = undefined;
 
-    /**
-     * @type {ClipboardManager | undefined}
-     */
+    /** @type {ClipboardManager | undefined} */
     clipboardManager = undefined;
 
-    /**
-     * @type {KeyboardListener | undefined}
-     */
+    /** @type {KeyboardListener | undefined} */
     keyboardListener = undefined;
 
+    /** @type {Config} */
     config = new Config();
 
-    /**
-     * @type {HTMLCanvasElement}
-     */
+    /** @type {HTMLCanvasElement} */
     canvasElement;
 
     async initialize() {
@@ -67,16 +58,18 @@ export class App {
     
         this.playbackEngine = new PlaybackEngine(this.config);
         this.midiInput = new MidiInput(this.playbackEngine);
-        this.eventRouter = new AppEventRouter();
+        this.undoManager = new UndoManager(this.eventRouter);
         this.clipboardManager = new ClipboardManager();
         this.keyboardListener = new KeyboardListener(this.eventRouter);
 
         const componentContext = new ComponentContext(
             this.config, 
             this.playbackEngine, 
+            this.undoManager,
             this.eventRouter,
             this.clipboardManager,
         );
+
         this.pianoRoll = new PianoRoll(this.canvasElement, componentContext);
         
         playButton.onclick = () => this.playbackEngine.play();

@@ -4,41 +4,47 @@ import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, t
 
 export class Note {
     /**
+     * Unique note ID (used for undo management)
+     * @type {number}
+     */
+    id;
+    
+    /**
      * Position of the start of the note in beats 
-     * @type {Number}
+     * @type {number}
      */
     beatStart;
 
     /**
      * Length of the note in beats
-     * @type {Number}
+     * @type {number}
      */
     beatLength;
 
     /**
      * MIDI note number
-     * @type {Number}
+     * @type {number}
      */
     noteNumber;
 
     /**
      * Velocity (normalized 0..1)
-     * @type {Number}
+     * @type {number}
      */
     velocity;
 
     /**
      * MIDI channel
-     * @type {Number}
+     * @type {number}
      */
     channel;
 
     /**
-     * @param {Number} beatStart Position of note start in beats 
-     * @param {Number} beatLength Length of note in beats
-     * @param {Number} noteNumber MIDI note number
-     * @param {Number} velocity MIDI velocity 0..127
-     * @param {Number} channel MIDI channel
+     * @param {number} beatStart Position of note start in beats 
+     * @param {number} beatLength Length of note in beats
+     * @param {number} noteNumber MIDI note number
+     * @param {number} velocity MIDI velocity 0..127
+     * @param {number} channel MIDI channel
      */
     constructor(beatStart, beatLength, noteNumber, velocity = 100, channel = 0) {
         this.beatStart = beatStart;
@@ -51,6 +57,7 @@ export class Note {
     clone() {
         const newNote = new Note(this.beatStart, this.beatLength, this.noteNumber, 0, this.channel);
         newNote.velocity = this.velocity;
+        newNote.id = this.id;
         return newNote;
     }
 
@@ -113,6 +120,12 @@ export class Instrument {
     notes = [];
 
     /**
+     * Counts note IDs to ensure unique IDs
+     * @type {number}
+     */
+    noteIdCounter = 0;
+
+    /**
      * Currently playing notes
      * @type {NoteNumberAndChannel[]}
      */
@@ -127,7 +140,7 @@ export class Instrument {
     /**
      * 
      * @param {BigInt} id 
-     * @param {String} name 
+     * @param {string} name 
      */
     constructor(id, name) {
         this.id = id;
@@ -151,6 +164,11 @@ export class Instrument {
     isNotePlaying(noteNumber, channel) {
         const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
         return index >= 0;
+    }
+
+    getNextNoteId() {
+        this.noteIdCounter++;
+        return this.noteIdCounter - 1;
     }
 }
 
@@ -181,7 +199,7 @@ export class PlayHead {
 
     /**
      * 
-     * @param {Number} timePassedSec 
+     * @param {number} timePassedSec 
      * @returns 
      */
     getPositionInBeats(timePassedSec) {
@@ -191,7 +209,7 @@ export class PlayHead {
 
     /**
      * 
-     * @returns {Number} Time since audio context started in seconds
+     * @returns {number} Time since audio context started in seconds
      */
     getContextTimeSec() {
         return this.contextTimeStart + this.timePassedSec;
@@ -199,8 +217,8 @@ export class PlayHead {
 
     /**
      * 
-     * @param {Number} beats Number of beats
-     * @returns {Number} Time in seconds
+     * @param {number} beats Number of beats
+     * @returns {number} Time in seconds
      */
     beatsToSeconds(beats) {
         return beats * 60.0 / this.bpm;
@@ -208,8 +226,8 @@ export class PlayHead {
 
     /**
      * 
-     * @param {Number} seconds Time in seconds
-     * @returns {Number} Number of beats
+     * @param {number} seconds Time in seconds
+     * @returns {number} Number of beats
      */
     secondsToBeats(seconds) {
         return seconds * this.bpm / 60.0;
@@ -268,7 +286,7 @@ export class PlaybackEngine {
     /**
      * 
      * @param {BigInt} id 
-     * @param {String} name 
+     * @param {string} name 
      */
     addInstrument(id, name) {
         this.instruments.push(new Instrument(id, name));
@@ -321,7 +339,7 @@ export class PlaybackEngine {
 
     /**
      * 
-     * @param {Number} newBpm 
+     * @param {number} newBpm 
      */
     setTempo(newBpm) {
         if (!Number.isFinite(newBpm)) return;
@@ -412,8 +430,8 @@ export class PlaybackEngine {
 
     /**
      * @param {Instrument} instrument 
-     * @param {Number} beatStart 
-     * @param {Number} beatEnd 
+     * @param {number} beatStart 
+     * @param {number} beatEnd 
      * @returns {NoteEvent[]}
      */
     getNoteStartInInterval(instrument, beatStart, beatEnd) {
@@ -446,8 +464,8 @@ export class PlaybackEngine {
 
     /**
      * @param {Instrument} instrument 
-     * @param {Number} beatStart 
-     * @param {Number} beatEnd 
+     * @param {number} beatStart 
+     * @param {number} beatEnd 
      * @returns {NoteEvent[]}
      */
     getNoteStopInInterval(instrument, beatStart, beatEnd) {
@@ -487,7 +505,7 @@ export class PlaybackEngine {
 
     /**
      * @param {MidiEvent} midiEvent MIDI event
-     * @param {Number} timestampMs MIDI event timestamp
+     * @param {number} timestampMs MIDI event timestamp
      */
     sendMidiMessageFromDevice(midiEvent, timestampMs) {
         if (!isAudioContextRunning()) return;
@@ -511,7 +529,7 @@ export class PlaybackEngine {
 
     /**
      * Used to let user preview a note (i.e. when they are drawing a note in the piano roll).
-     * @param {Number} noteNumber MIDI note number
+     * @param {number} noteNumber MIDI note number
      */
     sendPreviewMidiNote(noteNumber) {
         if (!isAudioContextRunning() || this.playHead.isPlaying) return;

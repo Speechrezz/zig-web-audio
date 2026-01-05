@@ -4,6 +4,13 @@ import { NoteComponent } from "./note-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
 import { ComponentContext } from "./component-context.js";
 import { AppCommand, AppEvent } from "../app/app-event.js";
+import { AppTransaction } from "../app/undo-manager.js";
+
+const UNDO_ID = "piano-roll-area";
+const UndoTypes = Object.freeze({
+    addNote: "addNote",
+    removeNote: "removeNote",
+})
 
 const InteractionType = Object.freeze({
     none: 0, // NOT dragging
@@ -58,6 +65,7 @@ export class PianoRollArea extends Component {
         super();
         this.context = context;
 
+        this.context.undoManager.addListener(UNDO_ID, this);
         this.context.eventRouter.addListener(this);
 
         this.context.config.addZoomListener(() => this.zoomChanged());
@@ -230,6 +238,34 @@ export class PianoRollArea extends Component {
         }
     }
 
+    /**
+     * Override to handle undo events.
+     * @param {AppTransaction} transaction 
+     */
+    undo(transaction) {
+        console.log("[pianoroll] undo:", transaction);
+
+        switch (transaction.type) {
+            case UndoTypes.addNote: {
+                /** @type {Note} */
+                const note = transaction.diff;
+                const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
+                if (noteComponent !== undefined) {
+                    this.removeNote(noteComponent);   
+                }         
+                break;
+            }
+        }
+    }
+
+    /**
+     * Override to handle undo events.
+     * @param {AppTransaction} transaction 
+     */
+    redo(transaction) {
+        console.log("[pianoroll] redo:", transaction);
+    }
+
     interactionTypeToCursor(interactionType, isMouseDown = true) {
         switch (interactionType) {
             case InteractionType.none:
@@ -277,15 +313,24 @@ export class PianoRollArea extends Component {
 
     /**
      * @param {Note} note 
+     * @param {boolean} setId If `true`, this will assign the note object a new unique ID 
      */
-    addNote(note) {
-        this.context.playbackEngine.getSelectedInstrument().notes.push(note);
+    addNote(note, setId = true) {
+        const instrument = this.context.playbackEngine.getSelectedInstrument();
+
+        if (setId) {
+            note.id = instrument.getNextNoteId();
+        }
+
+        instrument.notes.push(note);
         const noteComponent = new NoteComponent(note);
 
         this.noteComponents.push(noteComponent);
         this.addChildComponent(noteComponent);
 
         this.updateNoteBounds(noteComponent);
+
+        this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoTypes.addNote, note.clone()));
 
         return noteComponent;
     }
