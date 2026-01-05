@@ -7,9 +7,9 @@ import { AppCommand, AppEvent } from "../app/app-event.js";
 import { AppTransaction } from "../app/undo-manager.js";
 
 const UNDO_ID = "piano-roll-area";
-const UndoTypes = Object.freeze({
-    addNote: "addNote",
-    removeNote: "removeNote",
+const UndoType = Object.freeze({
+    addNotes: "addNotes",
+    removeNotes: "removeNotes",
 })
 
 const InteractionType = Object.freeze({
@@ -160,8 +160,8 @@ export class PianoRollArea extends Component {
         else if (ev.mouseAction === MouseAction.remove) {
             document.documentElement.style.cursor = "not-allowed";
             this.clearSelection();
+            this.removeNoteAt(ev.x, ev.y, false);
             this.repaint();
-            this.removeNoteAt(ev.x, ev.y);
         }
         else if (ev.mouseAction === MouseAction.select) {
             this.selectionBegin(ev);
@@ -246,19 +246,24 @@ export class PianoRollArea extends Component {
         console.log("[pianoroll] undo:", transaction);
 
         switch (transaction.type) {
-            case UndoTypes.addNote: {
-                /** @type {Note} */
-                const note = transaction.diff;
-                const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
-                if (noteComponent !== undefined) {
-                    this.removeNote(noteComponent, false);   
-                }         
+            case UndoType.addNotes: {
+                /** @type {Note[]} */
+                const notes = transaction.diff;
+                for (const note of notes) {
+                    const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
+                    if (noteComponent !== undefined) {
+                        this.removeNote(noteComponent, false);   
+                    }
+                }
+                this.repaint();
                 break;
             }
-            case UndoTypes.removeNote: {
+            case UndoType.removeNotes: {
                 /** @type {Note} */
-                const note = transaction.diff;
-                this.addNote(note, false);
+                const notes = transaction.diff;
+                for (const note of notes) {
+                    this.addNote(note, false);
+                }
                 this.repaint();
                 break;
             }
@@ -273,20 +278,25 @@ export class PianoRollArea extends Component {
         console.log("[pianoroll] redo:", transaction);
 
         switch (transaction.type) {
-            case UndoTypes.addNote: {
+            case UndoType.addNotes: {
                 /** @type {Note} */
-                const note = transaction.diff;
-                this.addNote(note, false);
+                const notes = transaction.diff;
+                for (const note of notes) {
+                    this.addNote(note, false);
+                }
                 this.repaint();
                 break;
             }
-            case UndoTypes.removeNote: {
+            case UndoType.removeNotes: {
                 /** @type {Note} */
-                const note = transaction.diff;
-                const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
-                if (noteComponent !== undefined) {
-                    this.removeNote(noteComponent, false);   
-                }         
+                const notes = transaction.diff;
+                for (const note of notes) {
+                    const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
+                    if (noteComponent !== undefined) {
+                        this.removeNote(noteComponent, false);   
+                    }
+                }
+                this.repaint();
                 break;
             }
         }
@@ -357,7 +367,7 @@ export class PianoRollArea extends Component {
         this.updateNoteBounds(noteComponent);
 
         if (addToUndo) {
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoTypes.addNote, note.clone()));
+            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.addNotes, [note.clone()]));
         }
 
         return noteComponent;
@@ -390,20 +400,22 @@ export class PianoRollArea extends Component {
         this.removeChildComponent(noteComponent);
 
         if (addToUndo) {
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoTypes.removeNote, noteComponent.note.clone()));
+            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.removeNotes, [noteComponent.note.clone()]));
         }
-
-        this.repaint();
     }
 
     /**
      * @param {Number} x relative to this component
      * @param {Number} y relative to this component
+     * @param {boolean} repaintOnRemove If `true`, this will repaint when a note is removed.
      */
-    removeNoteAt(x, y) {
+    removeNoteAt(x, y, repaintOnRemove = true) {
         const noteComponent = this.findNoteAt(x, y);
         if (noteComponent !== null) {
             this.removeNote(noteComponent);
+            if (repaintOnRemove) {
+                this.repaint();
+            }
         }
     }
 
@@ -633,6 +645,8 @@ export class PianoRollArea extends Component {
 
         this.selectedNoteMain = null;
         this.selectedNotes.length = 0;
+
+        this.repaint();
     }
 
     copySelection() {
