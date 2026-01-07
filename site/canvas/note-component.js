@@ -46,4 +46,20 @@ export class NoteComponent extends Component{
         this.noteAnchor.beatLength = this.note.beatLength;
         this.noteAnchor.noteNumber = this.note.noteNumber;
     }
+
+    hasMoved() {
+        return this.noteAnchor.beatStart  !== this.note.beatStart
+            || this.noteAnchor.beatLength !== this.note.beatLength
+            || this.noteAnchor.noteNumber !== this.note.noteNumber;
+    }
+
+    getNoteDiff() {
+        const noteDiff = this.note.clone();
+
+        noteDiff.beatStart  -= this.noteAnchor.beatStart;
+        noteDiff.beatLength -= this.noteAnchor.beatLength;
+        noteDiff.noteNumber -= this.noteAnchor.noteNumber;
+
+        return noteDiff;
+    }
 }

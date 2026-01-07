@@ -11,8 +11,6 @@ const UndoType = Object.freeze({
     addNotes: "addNotes",
     removeNotes: "removeNotes",
     moveNote: "movesNote", 
-    adjustNoteStart: "adjustNoteStart", 
-    adjustNoteEnd: "adjustNoteEnd",
 })
 
 const InteractionType = Object.freeze({
@@ -280,7 +278,8 @@ export class PianoRollArea extends Component {
                     const noteComponent = this.noteComponents.find((v) => v.note.id === diffNote.id);
                     if (noteComponent === undefined) continue;
 
-                    noteComponent.note.beatStart -= diffNote.beatStart;
+                    noteComponent.note.beatStart  -= diffNote.beatStart;
+                    noteComponent.note.beatLength -= diffNote.beatLength;
                     noteComponent.note.noteNumber -= diffNote.noteNumber;
                     this.updateNoteBounds(noteComponent);
                 }
@@ -324,7 +323,8 @@ export class PianoRollArea extends Component {
                     const noteComponent = this.noteComponents.find((v) => v.note.id === diffNote.id);
                     if (noteComponent === undefined) continue;
 
-                    noteComponent.note.beatStart += diffNote.beatStart;
+                    noteComponent.note.beatStart  += diffNote.beatStart;
+                    noteComponent.note.beatLength += diffNote.beatLength;
                     noteComponent.note.noteNumber += diffNote.noteNumber;
                     this.updateNoteBounds(noteComponent);
                 }
@@ -499,7 +499,7 @@ export class PianoRollArea extends Component {
         
         switch (this.interactionType) {
             case InteractionType.newNote: {
-                const threshold = 4;
+                const threshold = 6;
                 const offsetX = ev.x - this.interactionAnchor.x;
 
                 // User has to move mouse `threshold` pixels before adjusting kicks-in
@@ -593,6 +593,17 @@ export class PianoRollArea extends Component {
      */
     adjustNoteEnd(ev) {
         if (this.interactionType === InteractionType.none) return;
+
+        if (this.selectedNoteMain.hasMoved()) {
+            /** @type {Note[]} */
+            const noteDiffs = [];
+            for (const noteComponent of this.selectedNotes) {
+                noteDiffs.push(noteComponent.getNoteDiff());        
+            }
+            console.log("noteDiffs:", noteDiffs);
+            
+            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.moveNote, noteDiffs));
+        }
 
         this.lastBeatLength = this.selectedNoteMain.note.beatLength;
         this.interactionType = InteractionType.none;
