@@ -10,6 +10,9 @@ const UNDO_ID = "piano-roll-area";
 const UndoType = Object.freeze({
     addNotes: "addNotes",
     removeNotes: "removeNotes",
+    moveNote: "movesNote", 
+    adjustNoteStart: "adjustNoteStart", 
+    adjustNoteEnd: "adjustNoteEnd",
 })
 
 const InteractionType = Object.freeze({
@@ -55,6 +58,12 @@ export class PianoRollArea extends Component {
      * @type {NoteComponent[]}
      */
     selectedNotes = [];
+
+    /**
+     * Keeps track of notes that are being removed as user removes them to form a single transaction
+     * @type {Note[]}
+     */
+    removedNotesBuffer = [];
 
     lastBeatLength = 1;
 
@@ -158,10 +167,7 @@ export class PianoRollArea extends Component {
             }
         }
         else if (ev.mouseAction === MouseAction.remove) {
-            document.documentElement.style.cursor = "not-allowed";
-            this.clearSelection();
-            this.removeNoteAt(ev.x, ev.y, false);
-            this.repaint();
+            this.removeNoteBegin(ev);
         }
         else if (ev.mouseAction === MouseAction.select) {
             this.selectionBegin(ev);
@@ -176,7 +182,7 @@ export class PianoRollArea extends Component {
             this.adjustNoteStep(ev);
         }
         else if (ev.mouseAction === MouseAction.remove) {
-            this.removeNoteAt(ev.x, ev.y);
+            this.removeNoteStep(ev);
         }
         else if (ev.mouseAction === MouseAction.select) {
             this.selectionUpdate(ev);
@@ -189,6 +195,9 @@ export class PianoRollArea extends Component {
     mouseUp(ev) {
         if (ev.mouseAction === MouseAction.draw) {
             this.adjustNoteEnd(ev);
+        }
+        else if (ev.mouseAction === MouseAction.remove) {
+            this.removeNoteEnd(ev);
         }
         else if (ev.mouseAction === MouseAction.select) {
             this.selectionEnd(ev);
@@ -252,18 +261,30 @@ export class PianoRollArea extends Component {
                 for (const note of notes) {
                     const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
                     if (noteComponent !== undefined) {
-                        this.removeNote(noteComponent, false);   
+                        this.removeNotes([noteComponent], false);   
                     }
                 }
                 this.repaint();
                 break;
             }
             case UndoType.removeNotes: {
-                /** @type {Note} */
-                const notes = transaction.diff;
-                for (const note of notes) {
-                    this.addNote(note, false);
+                const notes = cloneNotes(transaction.diff);
+                this.addNotes(notes, false);
+                this.repaint();
+                break;
+            }
+            case UndoType.moveNote: {
+                /** @type {Note[]} */
+                const diffNotes = transaction.diff;
+                for (const diffNote of diffNotes) {
+                    const noteComponent = this.noteComponents.find((v) => v.note.id === diffNote.id);
+                    if (noteComponent === undefined) continue;
+
+                    noteComponent.note.beatStart -= diffNote.beatStart;
+                    noteComponent.note.noteNumber -= diffNote.noteNumber;
+                    this.updateNoteBounds(noteComponent);
                 }
+
                 this.repaint();
                 break;
             }
@@ -279,11 +300,8 @@ export class PianoRollArea extends Component {
 
         switch (transaction.type) {
             case UndoType.addNotes: {
-                /** @type {Note} */
-                const notes = transaction.diff;
-                for (const note of notes) {
-                    this.addNote(note, false);
-                }
+                const notes = cloneNotes(transaction.diff);
+                this.addNotes(notes, false);
                 this.repaint();
                 break;
             }
@@ -293,9 +311,24 @@ export class PianoRollArea extends Component {
                 for (const note of notes) {
                     const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
                     if (noteComponent !== undefined) {
-                        this.removeNote(noteComponent, false);   
+                        this.removeNotes([noteComponent], false);   
                     }
                 }
+                this.repaint();
+                break;
+            }
+            case UndoType.moveNote: {
+                /** @type {Note[]} */
+                const diffNotes = transaction.diff;
+                for (const diffNote of diffNotes) {
+                    const noteComponent = this.noteComponents.find((v) => v.note.id === diffNote.id);
+                    if (noteComponent === undefined) continue;
+
+                    noteComponent.note.beatStart += diffNote.beatStart;
+                    noteComponent.note.noteNumber += diffNote.noteNumber;
+                    this.updateNoteBounds(noteComponent);
+                }
+
                 this.repaint();
                 break;
             }
@@ -348,81 +381,93 @@ export class PianoRollArea extends Component {
     }
 
     /**
-     * @param {Note} note 
+     * @param {Note[]} notes 
      * @param {boolean} addToUndo If `true`, this will assign the note object a new unique ID and notify the undo manager
      */
-    addNote(note, addToUndo = true) {
+    addNotes(notes, addToUndo = true) {
         const instrument = this.context.playbackEngine.getSelectedInstrument();
+        /** @type {NoteComponent[]} */
+        const noteComponents = [];
 
-        if (addToUndo) {
-            note.id = instrument.getNextNoteId();
+        for (const note of notes) {
+            if (addToUndo) {
+                note.id = instrument.getNextNoteId();
+            }
+
+            instrument.notes.push(note);
+            const noteComponent = new NoteComponent(note);
+
+            this.noteComponents.push(noteComponent);
+            this.addChildComponent(noteComponent);
+
+            this.updateNoteBounds(noteComponent);
+
+            noteComponents.push(noteComponent);
         }
 
-        instrument.notes.push(note);
-        const noteComponent = new NoteComponent(note);
-
-        this.noteComponents.push(noteComponent);
-        this.addChildComponent(noteComponent);
-
-        this.updateNoteBounds(noteComponent);
-
         if (addToUndo) {
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.addNotes, [note.clone()]));
+            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.addNotes, cloneNotes(notes)));
         }
 
-        return noteComponent;
+        return noteComponents;
     }
 
     /**
-     * @param {Number} x relative to this component
-     * @param {Number} y relative to this component
+     * @param {number} x relative to this component
+     * @param {number} y relative to this component
      */
     addNoteAt(x, y) {
         const beat = Math.floor(this.xToBeat(x));
         const noteNumber = this.yToNoteNumber(y);
 
         const note = new Note(beat, this.lastBeatLength, noteNumber);
-        return this.addNote(note);
+        return this.addNotes([note])[0];
     }
 
     /**
-     * @param {NoteComponent} noteComponent 
+     * @param {NoteComponent[]} noteComponents 
      * @param {boolean} addToUndo If `true`, this will notify the undo manager
      */
-    removeNote(noteComponent, addToUndo = true) {
-        const noteComponentIndex = this.noteComponents.indexOf(noteComponent);
-        this.noteComponents.splice(noteComponentIndex, 1);
+    removeNotes(noteComponents, addToUndo = true) {
+        for (const noteComponent of noteComponents) {
+            const noteComponentIndex = this.noteComponents.indexOf(noteComponent);
+            this.noteComponents.splice(noteComponentIndex, 1);
 
-        const playbackEngineNotes = this.context.playbackEngine.getSelectedInstrument().notes;
-        const engineNoteIndex = playbackEngineNotes.indexOf(noteComponent.note);
-        playbackEngineNotes.splice(engineNoteIndex, 1);
+            const playbackEngineNotes = this.context.playbackEngine.getSelectedInstrument().notes;
+            const engineNoteIndex = playbackEngineNotes.indexOf(noteComponent.note);
+            playbackEngineNotes.splice(engineNoteIndex, 1);
 
-        this.removeChildComponent(noteComponent);
+            this.removeChildComponent(noteComponent);
+        }
 
         if (addToUndo) {
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.removeNotes, [noteComponent.note.clone()]));
+            /** @type {Note[]} */
+            const notes = [];
+            for (const noteComponent of noteComponents) {
+                notes.push(noteComponent.note.clone());
+            }
+            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.removeNotes, notes));
         }
     }
 
     /**
-     * @param {Number} x relative to this component
-     * @param {Number} y relative to this component
-     * @param {boolean} repaintOnRemove If `true`, this will repaint when a note is removed.
+     * @param {number} x relative to this component
+     * @param {number} y relative to this component
      */
-    removeNoteAt(x, y, repaintOnRemove = true) {
+    removeNoteAt(x, y) {
         const noteComponent = this.findNoteAt(x, y);
         if (noteComponent !== null) {
-            this.removeNote(noteComponent);
-            if (repaintOnRemove) {
-                this.repaint();
-            }
+            this.removeNotes([noteComponent], false);
+            return noteComponent.note;
         }
+
+        return null;
     }
 
     /**
      * @param {MouseEvent} ev 
      * @param {NoteComponent} noteComponent 
-     * @param {Number} interactionType InteractionType
+     * @param {number} interactionType InteractionType
      */
     adjustNoteBegin(ev, noteComponent, interactionType) {
         this.context.playbackEngine.sendPreviewMidiNote(noteComponent.note.noteNumber);
@@ -550,10 +595,45 @@ export class PianoRollArea extends Component {
         if (this.interactionType === InteractionType.none) return;
 
         this.lastBeatLength = this.selectedNoteMain.note.beatLength;
-        document.documentElement.style.cursor = "auto";
         this.interactionType = InteractionType.none;
     }
 
+    /**
+     * @param {MouseEvent} ev 
+     */
+    removeNoteBegin(ev) {
+        document.documentElement.style.cursor = "not-allowed";
+        this.clearSelection();
+        this.removedNotesBuffer.length = 0;
+
+        const removedNote = this.removeNoteAt(ev.x, ev.y);
+        if (removedNote !== null) {
+            this.removedNotesBuffer.push(removedNote);
+        }
+
+        this.repaint();
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    removeNoteStep(ev) {
+        const removedNote = this.removeNoteAt(ev.x, ev.y);
+        if (removedNote !== null) {
+            this.removedNotesBuffer.push(removedNote);
+            this.repaint();
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    removeNoteEnd(ev) {
+        if (this.removedNotesBuffer.length > 0) {
+            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.removeNotes, cloneNotes(this.removedNotesBuffer)));
+        }
+    }
+    
     /**
      * @param {MouseEvent} ev 
      */
@@ -621,11 +701,18 @@ export class PianoRollArea extends Component {
         noteComponent.isSelected = true;
     }
 
-    selectAll() {
-        this.clearSelection();
-        for (const noteComponent of this.noteComponents) {
+    /**
+     * @param {NoteComponent[]} noteComponents 
+     */
+    addNotesToSelection(noteComponents) {
+        for (const noteComponent of noteComponents) {
             this.addNoteToSelection(noteComponent);
         }
+    }
+
+    selectAll() {
+        this.clearSelection();
+        this.addNotesToSelection(this.noteComponents);
         this.repaint();
     }
     
@@ -639,10 +726,8 @@ export class PianoRollArea extends Component {
     }
 
     deleteSelection() {
-        for (const noteComponent of this.selectedNotes) {
-            this.removeNote(noteComponent);
-        }
-
+        this.removeNotes(this.selectedNotes);
+        
         this.selectedNoteMain = null;
         this.selectedNotes.length = 0;
 
@@ -666,15 +751,14 @@ export class PianoRollArea extends Component {
 
         this.clearSelection();
 
-        /** @type {Note[]} */
-        const notesToPaste = this.context.clipboardManager.getClipboard();
+        const notesToPaste = cloneNotes(this.context.clipboardManager.getClipboard());
 
         for (const note of notesToPaste) {
-            const adjustedNote = note.clone();
-            adjustedNote.beatStart += 1;
-            const noteComponent = this.addNote(adjustedNote);
-            this.addNoteToSelection(noteComponent);
+            note.beatStart += 1;
         }
+
+        const noteComponents = this.addNotes(notesToPaste);
+        this.addNotesToSelection(noteComponents);
 
         this.repaint();
     }
@@ -684,8 +768,8 @@ export class PianoRollArea extends Component {
     }
 
     /**
-     * @param {Number} x relative to this component
-     * @param {Number} y relative to this component
+     * @param {number} x relative to this component
+     * @param {number} y relative to this component
      */
     findNoteAt(x, y) {
         for (let i = this.noteComponents.length - 1; i >= 0; i--) {
@@ -747,4 +831,15 @@ export class PianoRollArea extends Component {
 
         this.repaint();
     }
+}
+
+function cloneNotes(notes) {
+    /** @type {Note[]} */
+    const cloned = [];
+
+    for (const note of notes) {
+        cloned.push(note.clone());
+    }
+
+    return cloned;
 }
