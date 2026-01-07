@@ -505,17 +505,23 @@ export class PlaybackEngine {
 
     /**
      * @param {MidiEvent} midiEvent MIDI event
-     * @param {number} timestampMs MIDI event timestamp
+     * @param {number | undefined} timestampMs MIDI event timestamp
      */
-    sendMidiMessageFromDevice(midiEvent, timestampMs) {
+    sendMidiMessageFromDevice(midiEvent, timestampMs = undefined) {
         if (!isAudioContextRunning()) return;
 
-        const sampleRate = getAudioContext().sampleRate;
-        const audibleTimeSec = toAudibleTime(timestampMs);
-        const blockSize = getBlockSize();
-        const adjustedTimestamp = Math.max(0, blockSize + Math.floor(audibleTimeSec * sampleRate));
+        if (timestampMs !== undefined) {
+            const sampleRate = getAudioContext().sampleRate;
+            const audibleTimeSec = toAudibleTime(timestampMs);
+            const blockSize = getBlockSize();
+            const adjustedTimestamp = Math.max(0, blockSize + Math.floor(audibleTimeSec * sampleRate));
+            sendMidiMessageSamples(midiEvent, adjustedTimestamp);
+        }
+        else {
+            const adjustedTimestamp = getContextTime() + this.lookAheadSec;
+            sendMidiMessageSeconds(midiEvent, adjustedTimestamp);
+        }
 
-        sendMidiMessageSamples(midiEvent, adjustedTimestamp);
 
         if (midiEvent.isNoteOn()) {
             const selectedInstrument = this.getSelectedInstrument();

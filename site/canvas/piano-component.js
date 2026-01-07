@@ -1,12 +1,19 @@
 import { Component, Rectangle, Point } from "./component.js";
 import { Config } from "../app/config.js";
 import { ComponentContext } from "./component-context.js";
+import { MouseEvent } from "./mouse-event.js";
+import { MidiEvent, MidiEventType } from "../audio/midi.js";
 
 export class PianoComponent extends Component {
     /**
      * @type {ComponentContext}
      */
     context;
+
+    /**
+     * @type {{noteNumber: number, velocity: number} | null}
+     */
+    playingNote = null;
 
     /**
      * 
@@ -62,10 +69,70 @@ export class PianoComponent extends Component {
                 ctx.fillText(`C${(p / 12) - 1}`, this.bounds.width - 30, y);
             }
         }
+
+        const instrument = this.context.playbackEngine.getSelectedInstrument();
+
+        ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.3)";
+        for (const activeNote of instrument.activeNotes) {
+            const y = (config.pitchMax - activeNote.noteNumber) * config.noteHeight;
+            ctx.fillRect(0, y, this.bounds.width, config.noteHeight);
+        }
     }
 
     zoomChanged() {
         this.setBounds(new Rectangle(0, 0, this.bounds.width, this.context.config.calculateHeight()));
         console.log("piano bounds:", this.bounds);
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    mouseDown(ev) {
+        const noteNumber = this.yToNoteNumber(ev.y);
+        const velocity = this.xToNoteVelocity(ev.x);
+        this.playingNote = { noteNumber, velocity };
+
+        const midiEvent = MidiEvent.newNote(MidiEventType.NoteOn, this.playingNote.noteNumber, this.playingNote.velocity, 0);
+        this.context.playbackEngine.sendMidiMessageFromDevice(midiEvent);
+
+        this.repaint();
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    mouseDrag(ev) {
+        const noteNumber = this.yToNoteNumber(ev.y);
+        if (noteNumber !== this.playingNote.noteNumber) {
+            const midiOff = MidiEvent.newNote(MidiEventType.NoteOff, this.playingNote.noteNumber, 100, 0);
+            this.context.playbackEngine.sendMidiMessageFromDevice(midiOff);
+            
+            this.playingNote.noteNumber = noteNumber;
+
+            const midiOn = MidiEvent.newNote(MidiEventType.NoteOn, this.playingNote.noteNumber, this.playingNote.velocity, 0);
+            this.context.playbackEngine.sendMidiMessageFromDevice(midiOn);
+
+            this.repaint();
+        }
+    }
+
+    /**
+     * @param {MouseEvent} ev 
+     */
+    mouseUp(ev) {
+        const midiEvent = MidiEvent.newNote(MidiEventType.NoteOff, this.playingNote.noteNumber, 100, 0);
+        this.context.playbackEngine.sendMidiMessageFromDevice(midiEvent);
+
+        this.playingNoteNumber = null;
+
+        this.repaint();
+    }
+
+    yToNoteNumber(y) {
+        return this.context.config.pitchMax - Math.floor(y / this.context.config.noteHeight);
+    }
+
+    xToNoteVelocity(x) {
+        return 127 * x / this.bounds.width;
     }
 }
