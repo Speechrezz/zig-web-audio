@@ -250,8 +250,6 @@ export class PianoRollArea extends Component {
      * @param {AppTransaction} transaction 
      */
     undo(transaction) {
-        console.log("[pianoroll] undo:", transaction);
-
         switch (transaction.type) {
             case UndoType.addNotes: {
                 /** @type {Note[]} */
@@ -295,8 +293,6 @@ export class PianoRollArea extends Component {
      * @param {AppTransaction} transaction 
      */
     redo(transaction) {
-        console.log("[pianoroll] redo:", transaction);
-
         switch (transaction.type) {
             case UndoType.addNotes: {
                 const notes = cloneNotes(transaction.diff);
@@ -600,7 +596,6 @@ export class PianoRollArea extends Component {
             for (const noteComponent of this.selectedNotes) {
                 noteDiffs.push(noteComponent.getNoteDiff());        
             }
-            console.log("noteDiffs:", noteDiffs);
             
             this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.moveNote, noteDiffs));
         }
