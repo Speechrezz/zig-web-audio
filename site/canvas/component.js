@@ -190,12 +190,6 @@ export class Component {
     mouseOverFlag = false;
     mouseDraggingFlag = false;
 
-    /**
-     * Top level component MUST implement this.
-     * @type {(() => CanvasRenderingContext2D) | null}
-     */
-    getGraphicsContext = null;
-
 
     // ---Virtual methods---
 
@@ -327,9 +321,11 @@ export class Component {
      */
     repaint() {
         const topLevelComponent = this.getTopLevelComponent();
-        if (topLevelComponent.getGraphicsContext) {
-            const ctx = topLevelComponent.getGraphicsContext();
-            topLevelComponent.drawInternal(ctx);
+        if (typeof topLevelComponent.topLevelRepaint === 'function') {
+            topLevelComponent.topLevelRepaint();
+        }
+        else {
+            console.error("[Component] Top level component is missing the 'topLevelRepaint()' method!");
         }
     }
 

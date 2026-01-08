@@ -7,6 +7,7 @@ export class TopLevelComponent extends Component {
      */
     canvas;
 
+    /** @type {MouseAction} */
     mouseAction = MouseAction.none;
     mouseDownButton = 0;
 
@@ -15,6 +16,8 @@ export class TopLevelComponent extends Component {
      */
     selectedComponent = null;
 
+    isRepaintPending = false;
+
     /**
      * 
      * @param {HTMLCanvasElement} canvasElement 
@@ -22,7 +25,6 @@ export class TopLevelComponent extends Component {
     constructor(canvasElement) {
         super();
         this.canvas = canvasElement;
-        this.getGraphicsContext = () => this.canvas.getContext("2d");
 
         this.canvas.onpointerdown = (ev) => this.mouseDownInternal(ev);
         this.canvas.onpointerup   = (ev) => this.mouseUpInternal(ev);
@@ -158,6 +160,18 @@ export class TopLevelComponent extends Component {
                 this.selectedComponent.mouseOverFlag = this.selectedComponent === componentUnderCursor;
                 this.selectedComponent.mouseDrag(mouseEvent);
             }
+        }
+    }
+
+    topLevelRepaint() {
+        if (this.isRepaintPending === false) {
+            this.isRepaintPending = true;
+
+            requestAnimationFrame((timestamp) => {
+                const ctx = this.canvas.getContext("2d");
+                this.drawInternal(ctx);
+                this.isRepaintPending = false;
+            });
         }
     }
 }
