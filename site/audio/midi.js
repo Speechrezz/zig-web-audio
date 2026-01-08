@@ -29,7 +29,11 @@ export function sendStopAllNotes(allowTailOff = true) {
     });
 }
 
-// MIDI Channel Voice event type nibbles
+/**
+ * MIDI Channel Voice event type nibbles
+ * @readonly
+ * @enum {number}
+ */
 export const MidiEventType = Object.freeze({
     NoteOff: 0x8, // 0x8n
     NoteOn: 0x9, // 0x9n
@@ -41,17 +45,17 @@ export const MidiEventType = Object.freeze({
 });
 
 export class MidiEvent {
-    /** @type {Number} */
+    /** @type {number} */
     status;
-    /** @type {Number} */
+    /** @type {number} */
     d1;
-    /** @type {Number} */
+    /** @type {number} */
     d2;
 
     /**
-     * @param {Number} status 
-     * @param {Number} d1 
-     * @param {Number} d2 
+     * @param {number} status 
+     * @param {number} d1 
+     * @param {number} d2 
      */
     constructor(status, d1, d2) {
         this.status = status & 0xFF;
@@ -66,10 +70,10 @@ export class MidiEvent {
      *   bits 16..23: data2
      *   bits 24..31: 0
      *
-     * @param {Number} eventTypeNibble - 0x8..0xE (e.g. MidiEventType.NoteOn)
-     * @param {Number} noteNumberOrData1 - for note events: note number (0..127); otherwise data1
-     * @param {Number} velocityOrData2 - for note events: velocity (0..127); otherwise data2 (or ignored for 1-data-byte types)
-     * @param {Number} channel - 0..15 (MIDI channels 1..16 correspond to 0..15)
+     * @param {MidiEventType} eventTypeNibble - 0x8..0xE (e.g. MidiEventType.NoteOn)
+     * @param {number} noteNumberOrData1 - for note events: note number (0..127); otherwise data1
+     * @param {number} velocityOrData2 - for note events: velocity (0..127); otherwise data2 (or ignored for 1-data-byte types)
+     * @param {number} channel - 0..15 (MIDI channels 1..16 correspond to 0..15)
      * @returns packed 32-bit unsigned int
      */
     static newNote(eventTypeNibble, noteNumberOrData1, velocityOrData2, channel) {

@@ -1,3 +1,7 @@
+/**
+ * @readonly
+ * @enum {string}
+ */
 export const AppCommand = Object.freeze({
     none: "none",
     copy: "copy",
@@ -13,7 +17,7 @@ export const AppCommand = Object.freeze({
 export class AppEvent {
     /**
      * AppCommand 
-     * @type {String}
+     * @type {AppCommand}
      */
     command;
 
