@@ -3,7 +3,7 @@ const audio = @import("framework").audio;
 const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
 const Instrument = @import("instrument/Instrument.zig");
-const SineSynthInstrument = @import("instrument/SineSynthInstrument.zig");
+const SineSynthInstrument = @import("instrument/SineSynth/SineSynthInstrument.zig");
 
 instruments: std.ArrayList(Instrument) = .empty,
 

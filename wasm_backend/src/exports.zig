@@ -8,6 +8,8 @@ const wasm_allocator = @import("framework").wasm_allcator;
 
 var audio_processor_web: AudioProcessorWeb(AudioProcessor) = undefined;
 
+// Audio processing
+
 export fn initAudio() void {
     audio_processor_web.init();
 }
@@ -32,6 +34,8 @@ export fn getOutputChannel(channel_index: usize) [*]f32 {
     return audio_processor_web.audio_buffer.getChannel(channel_index).ptr;
 }
 
+// MIDI
+
 export fn sendMidiEvent(instrument_index: usize, packed_event: u32, sample_position: i64) void {
     _ = instrument_index; // TODO
     return audio_processor_web.midi_buffer.appendPacked(packed_event, sample_position);
@@ -39,4 +43,21 @@ export fn sendMidiEvent(instrument_index: usize, packed_event: u32, sample_posit
 
 export fn stopAllNotes(allow_tail_off: bool) void {
     audio_processor_web.onStopAllNotesMessage(allow_tail_off);
+}
+
+// Instrument
+
+export fn addInstrument(instrument_type: usize) void {
+    logging.logDebug("Adding instrument {}...", .{instrument_type});
+    // TODO
+}
+
+export fn removeInstrument(instrument_index: usize) void {
+    logging.logDebug("Removing instrument {}...", .{instrument_index});
+    // TODO
+}
+
+export fn clearInstruments() void {
+    logging.logDebug("Clearing instruments...", .{});
+    // TODO
 }

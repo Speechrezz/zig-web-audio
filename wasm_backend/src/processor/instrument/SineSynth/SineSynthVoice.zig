@@ -10,7 +10,9 @@ frequency: f32 = 0.0,
 velocity: f32 = 1.0,
 is_note_on: bool = false,
 
-pub const init: @This() = .{};
+pub fn init(self: *@This()) void {
+    self.* = .{};
+}
 
 pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
     self.buffer.deinit(allocator);
@@ -36,9 +38,7 @@ pub fn renderNextBlock(self: *@This(), output_view: audio.AudioView) void {
     output_view.addFrom(voice_view);
 }
 
-pub fn startNote(self: *@This(), note_frequency: f32, velocity: f32, pitch_wheel_pos: i32) void {
-    _ = pitch_wheel_pos;
-
+pub fn startNote(self: *@This(), note_frequency: f32, velocity: f32, _: i32) void {
     self.frequency = note_frequency;
     self.velocity = velocity;
 
@@ -48,9 +48,7 @@ pub fn startNote(self: *@This(), note_frequency: f32, velocity: f32, pitch_wheel
     self.is_note_on = true;
 }
 
-pub fn stopNote(self: *@This(), velocity: f32, allow_tail_off: bool) void {
-    _ = velocity;
-
+pub fn stopNote(self: *@This(), _: f32, allow_tail_off: bool) void {
     if (allow_tail_off) {
         self.adsr.noteOff();
     } else {

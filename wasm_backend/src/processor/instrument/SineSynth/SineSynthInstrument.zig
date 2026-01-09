@@ -2,12 +2,13 @@ const std = @import("std");
 const audio = @import("framework").audio;
 const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
-const Instrument = @import("Instrument.zig");
-const SynthProcessor = @import("../synth/SynthProcessor.zig");
+const Instrument = @import("../Instrument.zig");
+const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
+const SynthVoice = @import("SineSynthVoice.zig");
 
 pub const name = "Sine Synth";
 
-synth_processor: SynthProcessor = undefined,
+synth_processor: SynthProcessor(SynthVoice) = undefined,
 
 pub fn init(self: *@This()) void {
     self.synth_processor.init();
