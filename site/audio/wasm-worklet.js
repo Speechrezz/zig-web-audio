@@ -21,7 +21,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
             const msg = event.data;
 
             if (msg.type === WorkletMessageType.midi) {
-                this.instance.exports.appendMidiEvent(msg.data, BigInt(msg.time));
+                this.instance.exports.sendMidiEvent(msg.instrumentIndex, msg.data, BigInt(msg.time));
             } 
             else if (msg.type === WorkletMessageType.stopAllNotes) {
                 this.instance.exports.stopAllNotes(msg.allowTailOff);

@@ -324,9 +324,6 @@ export class Component {
         if (typeof topLevelComponent.topLevelRepaint === 'function') {
             topLevelComponent.topLevelRepaint();
         }
-        else {
-            console.error("[Component] Top level component is missing the 'topLevelRepaint()' method!");
-        }
     }
 
     /**

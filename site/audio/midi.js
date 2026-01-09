@@ -2,21 +2,24 @@ import { WorkletMessageType } from "./worklet-message.js";
 import { getAudioContext, getAudioWorkletNode } from "./audio.js";
 
 /**
+ * @param {number} instrumentIndex 
  * @param {MidiEvent} midiEvent 
  * @param {BigInt} timeStampSeconds Time since start of the audio context (in seconds)
  */
-export function sendMidiMessageSeconds(midiEvent, timeStampSeconds) {
+export function sendMidiMessageSeconds(instrumentIndex, midiEvent, timeStampSeconds) {
     const sampleRate = getAudioContext().sampleRate;
-    sendMidiMessageSamples(midiEvent, Math.floor(sampleRate * timeStampSeconds))
+    sendMidiMessageSamples(instrumentIndex, midiEvent, Math.floor(sampleRate * timeStampSeconds))
 }
 
 /**
+ * @param {number} instrumentIndex 
  * @param {MidiEvent} midiEvent 
  * @param {BigInt} timeStampSamples Time since start of the audio context (in samples)
  */
-export function sendMidiMessageSamples(midiEvent, timeStampSamples) {
+export function sendMidiMessageSamples(instrumentIndex, midiEvent, timeStampSamples) {
     getAudioWorkletNode().port.postMessage({
         type: WorkletMessageType.midi,
+        instrumentIndex: instrumentIndex,
         data: midiEvent.toPacked(),
         time: timeStampSamples,
     });
