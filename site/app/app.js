@@ -42,6 +42,7 @@ export class App {
         const playButton = document.getElementById("play-button");
         const stopButton = document.getElementById("stop-button");
         const bpmInput = document.getElementById("bpm-input");
+        const addInstrumentButton = document.getElementById("add-instrument-button");
         this.canvasElement = document.getElementById("pianoroll");
     
         const audioContextStateChanged = (isRunning) => {
@@ -84,6 +85,8 @@ export class App {
     
         this.resizeCanvas();
         window.addEventListener("resize", () => this.resizeCanvas());
+
+        addInstrumentButton.onclick = () => this.addInstrument();
     }
 
     resizeCanvas() {
@@ -97,5 +100,9 @@ export class App {
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         this.pianoRoll.canvasResized();
+    }
+
+    addInstrument() {
+        console.log("Add instrument");
     }
 }
