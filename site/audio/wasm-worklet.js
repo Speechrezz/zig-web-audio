@@ -20,14 +20,19 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
         this.port.onmessage = (event) => {
             const msg = event.data;
 
-            if (msg.type === WorkletMessageType.midi) {
-                this.instance.exports.sendMidiEvent(msg.instrumentIndex, msg.data, BigInt(msg.time));
-            } 
-            else if (msg.type === WorkletMessageType.stopAllNotes) {
-                this.instance.exports.stopAllNotes(msg.allowTailOff);
-            }
-            else {
-                console.log("[WasmProcessor] onmessage:", msg); // TODO
+            switch (msg.type) {
+                default:
+                    console.log("[WasmProcessor] onmessage:", msg); // TODO
+                    break;
+                case WorkletMessageType.midi:
+                    this.instance.exports.sendMidiEvent(msg.instrumentIndex, msg.data, BigInt(msg.time));
+                    break;
+                case WorkletMessageType.stopAllNotes:
+                    this.instance.exports.stopAllNotes(msg.allowTailOff);
+                    break;
+                case WorkletMessageType.addInstrument:
+                    this.instance.exports.addInstrument(msg.instrumentId);
+                    break;
             }
         };
 
