@@ -1,6 +1,8 @@
 import { Config } from "../app/config.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
-import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
+import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime, getAudioWorkletNode } from "./audio.js"
+import { WorkletMessageType } from "./worklet-message.js";
+import { InstrumentTypes } from "./audio-constants.js";
 
 export class Note {
     /**
@@ -293,19 +295,25 @@ export class PlaybackEngine {
         this.playHead = new PlayHead(config);
 
         // TEMP:
-        this.addInstrument(0, "temp");
+        this.addInstrument(InstrumentTypes.SineSynth);
 
         // TODO
     }
 
     /**
      * 
-     * @param {BigInt} id 
-     * @param {string} name 
+     * @param {string} instrumentKey 
      */
-    addInstrument(id, name) {
-        this.instruments.push(new Instrument(id, name));
+    addInstrument(instrumentKey) {
+        const instrumentType = InstrumentTypes[instrumentKey];
+        console.log("Instrument types:", InstrumentTypes, ", key:", instrumentKey, ", instrumentType:", instrumentType);
+        this.instruments.push(new Instrument(instrumentType.id, instrumentType.name));
         this.updateInstrumentIndices();
+
+        getAudioWorkletNode().port.postMessage({
+            type: WorkletMessageType.addInstrument,
+            instrumentId: instrumentType.id,
+        });
     }
 
     /**

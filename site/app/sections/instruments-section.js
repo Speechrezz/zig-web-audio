@@ -1,13 +1,10 @@
-import { getAudioWorkletNode } from "../../audio/audio.js";
-import { WorkletMessageType } from "../../audio/worklet-message.js";
-
-export const InstrumentType = Object.freeze({
-    SineSynth: {id: 1, name: "Sine Synth"},
-    SawSynth: {id: 2, name: "Saw Synth"},
-    DrumPad: {id: 3, name: "Drum Pad"},
-});
+import { InstrumentTypes } from "../../audio/audio-constants.js";
+import { PlaybackEngine } from "../../audio/playback-engine.js";
 
 export class InstrumentsSection {
+    /** @type {PlaybackEngine} */
+    playbackEngine;
+    
     /** @type {HTMLButtonElement} */
     addInstrumentButton;
 
@@ -21,7 +18,10 @@ export class InstrumentsSection {
 
         window.addEventListener("pointerdown", (e) => this.windowClicked(e));
 
-        for (const instrumentType of Object.values(InstrumentType)) {
+        for (const key in InstrumentTypes) {
+            /** @type {InstrumentType} */
+            const instrumentType = InstrumentTypes[key];
+
             const button = document.createElement('button');
             button.classList.add("dropdown-item");
             button.innerHTML = instrumentType.name;
@@ -50,20 +50,10 @@ export class InstrumentsSection {
 
     /**
      * @param {PointerEvent} e 
-     * @param {number} instrumentId
+     * @param {string} instrumentKey
      */
-    instrumentDropdownItemClicked(e, instrumentId) {
-        sendAddInstrument(instrumentId);
+    instrumentDropdownItemClicked(e, instrumentKey) {
+        this.playbackEngine.addInstrument(instrumentKey);
         this.addInstrumentContents.classList.remove("flex");
     }
-}
-
-/**
- * @param {number} instrumentId 
- */
-export function sendAddInstrument(instrumentId) {
-    getAudioWorkletNode().port.postMessage({
-        type: WorkletMessageType.addInstrument,
-        instrumentId: instrumentId,
-    });
 }
