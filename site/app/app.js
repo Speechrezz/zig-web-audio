@@ -85,8 +85,6 @@ export class App {
         })
         this.playbackEngine.setTempo(Number(bpmInput.value));
     
-        this.playbackEngine.addListener(() => this.pianoRoll.repaint());
-    
         this.resizeCanvas();
         window.addEventListener("resize", () => this.resizeCanvas());
     }

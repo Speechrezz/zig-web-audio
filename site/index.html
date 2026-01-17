@@ -29,6 +29,11 @@
     <div id="editor-container">
       <div id="instruments-container">
         <h2>Instruments</h2>
+        <div id="instrument-list">
+          <div class="instrument-section">
+            Instrument!
+          </div>
+        </div>
         <div class="dropdown">
           <div style="width: 100%; display: flex; flex-direction: column;">
             <button class="dropdown-button" id="add-instrument-button">+</button>
@@ -61,8 +66,6 @@
     position: relative;
     display: inline-block;
     margin: 0.5rem;
-    /* display: flex;
-    flex-direction: column; */
   }
 
   .dropdown-button {
@@ -132,8 +135,26 @@
     border: 1px solid oklch(70.7% 0.022 261.325);
   }
 
+  #instrument-list {
+    margin: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .instrument-section {
+    width: 100%;
+    border: 1px solid oklch(70.7% 0.022 261.325);
+    padding: 0.5rem;
+    box-sizing: border-box;
+  }
+
+  .instrument-selected {
+    border: 1px solid oklch(80.9% 0.105 251.813);
+  }
+
   #add-instrument-button {
-    margin: 2rem 0;
+    margin: 1rem 0;
     margin-bottom: 0;
     padding: 0.5rem 0;
     width: auto;

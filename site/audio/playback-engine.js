@@ -2,7 +2,7 @@ import { Config } from "../app/config.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime, getAudioWorkletNode } from "./audio.js"
 import { WorkletMessageType } from "./worklet-message.js";
-import { InstrumentDetailsList, InstrumentType } from "./audio-constants.js";
+import { AudioEvent, InstrumentDetailsList, InstrumentType } from "./audio-constants.js";
 
 export class Note {
     /**
@@ -264,9 +264,9 @@ export class PlaybackEngine {
     instruments = [];
 
     /**
-     * @type {((PlayHead) => void)[]}
+     * @type {(() => void)[][]}
      */
-    playbackListeners = [];
+    audioEventListeners = [];
 
     /**
      * Helps mitigate jitter
@@ -286,6 +286,11 @@ export class PlaybackEngine {
         this.config = config;
         this.playHead = new PlayHead(config);
 
+        // Initialize listeners list
+        for (const key of Object.keys(AudioEvent)) {
+            this.audioEventListeners.push([]);
+        }
+
         // TEMP:
         this.addInstrument(InstrumentType.SineSynth);
 
@@ -299,22 +304,28 @@ export class PlaybackEngine {
         const instrumentDetails = InstrumentDetailsList[instrumentType];
         this.instruments.push(new Instrument(instrumentDetails.name));
         this.updateInstrumentIndices();
-        console.log("instruments:", this.instruments);
 
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.addInstrument,
             instrumentType: instrumentType,
         });
+
+        this.notifyListeners(AudioEvent.InstrumentsChanged);
     }
 
     /**
-     * 
-     * @param {BigInt} id 
+     * @param {number} instrumentIndex
      */
-    removeInstrument(id) {
-        const index = this.instruments.findIndex((instrument) => instrument.id == id);
-        this.instruments.splice(index, 1);
+    removeInstrument(instrumentIndex) {
+        this.instruments.splice(instrumentIndex, 1);
         this.updateInstrumentIndices();
+
+        getAudioWorkletNode().port.postMessage({
+            type: WorkletMessageType.removeInstrument,
+            instrumentIndex: instrumentIndex,
+        });
+
+        this.notifyListeners(AudioEvent.InstrumentsChanged);
     }
 
     updateInstrumentIndices() {
@@ -324,12 +335,21 @@ export class PlaybackEngine {
     }
 
     /**
-     * 
-     * @param {BigInt} id 
+     * @param {number} index 
      * @return {Instrument} instrument
      */
-    getInstrument(id) {
-        return this.instruments.find((instrument) => instrument.id == id);
+    getInstrument(index) {
+        return this.instruments[index];
+    }
+
+    /**
+     * @param {number} index 
+     */
+    selectInstrument(index) {
+        if (this.selectedInstrumentIndex === index) return;
+
+        this.selectedInstrumentIndex = index;
+        this.notifyListeners(AudioEvent.InstrumentSelected);
     }
 
     getSelectedInstrument() {
@@ -337,25 +357,30 @@ export class PlaybackEngine {
     }
 
     /**
-     * 
-     * @param {(PlayHead) => void} callback 
+     * @param {AudioEvent} eventType 
+     * @param {() => void} callback 
      */
-    addListener(callback) {
-        this.playbackListeners.push(callback);
+    addListener(eventType, callback) {
+        this.audioEventListeners[eventType].push(callback);
     }
 
     /**
-     * 
-     * @param {(PlayHead) => void} callback 
+     * @param {AudioEvent} eventType 
+     * @param {() => void} callback 
      */
-    removeListener(callback) {
-        const index = this.playbackListeners.indexOf(callback);
-        this.playbackListeners.splice(index, 1);
+    removeListener(eventType, callback) {
+        const listeners = this.audioEventListeners[eventType];
+        const index = listeners.indexOf(callback);
+        listeners.splice(index, 1);
     }
 
-    notifyListeners() {
-        for (const callback of this.playbackListeners) {
-            callback(this.playHead);
+    /**
+     * @param {AudioEvent} eventType 
+     */
+    notifyListeners(eventType) {
+        const listeners = this.audioEventListeners[eventType];
+        for (const callback of listeners) {
+            callback();
         }
     }
 
@@ -402,7 +427,7 @@ export class PlaybackEngine {
 
         playHead.isPlaying = false;
         clearInterval(this.timer);
-        this.notifyListeners();
+        this.notifyListeners(AudioEvent.PlayHead);
     }
 
     step() {
@@ -422,7 +447,7 @@ export class PlaybackEngine {
             }
         }
 
-        this.notifyListeners();
+        this.notifyListeners(AudioEvent.PlayHead);
         
         playHead.positionInBeats = nextPositionInBeats;
         playHead.timePassedSec = nextTimePassedSec;

@@ -5,6 +5,7 @@ import { PianoRollView } from "./piano-roll-view.js";
 import { PianoComponent } from "./piano-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
 import { AppCommand, AppEvent } from "../app/app-event.js";
+import { AudioEvent } from "../audio/audio-constants.js";
 
 export class PianoRoll extends TopLevelComponent {
     /**
@@ -39,6 +40,7 @@ export class PianoRoll extends TopLevelComponent {
         this.context = context;
 
         this.context.eventRouter.addListener(this);
+        this.context.playbackEngine.addListener(AudioEvent.PlayHead, () => this.repaint());
 
         this.pianoRollView = new PianoRollView(context);
         this.addChildComponent(this.pianoRollView);
