@@ -20,8 +20,8 @@ export class App {
     /** @type {PianoRoll | undefined} */
     pianoRoll = undefined;
 
-    /** @type {InstrumentsSection} */
-    instrumentsSection = new InstrumentsSection();
+    /** @type {InstrumentsSection | undefined} */
+    instrumentsSection = undefined;
     
     /** @type {AppEventRouter} */
     eventRouter = new AppEventRouter();
@@ -63,6 +63,7 @@ export class App {
         this.playbackEngine = new PlaybackEngine(this.config);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.undoManager = new UndoManager(this.eventRouter);
+        this.instrumentsSection = new InstrumentsSection(this.playbackEngine);
         this.clipboardManager = new ClipboardManager();
         this.keyboardListener = new KeyboardListener(this.eventRouter);
 

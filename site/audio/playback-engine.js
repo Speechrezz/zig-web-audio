@@ -2,7 +2,7 @@ import { Config } from "../app/config.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime, getAudioWorkletNode } from "./audio.js"
 import { WorkletMessageType } from "./worklet-message.js";
-import { InstrumentTypes } from "./audio-constants.js";
+import { InstrumentDetailsList, InstrumentType } from "./audio-constants.js";
 
 export class Note {
     /**
@@ -121,11 +121,6 @@ export class Instrument {
     index;
 
     /**
-     * @type {number}
-     */
-    id;
-
-    /**
      * @type {string}
      */
     name;
@@ -155,12 +150,9 @@ export class Instrument {
     queuedNoteEvents = [];
 
     /**
-     * 
-     * @param {number} id 
      * @param {string} name 
      */
-    constructor(id, name) {
-        this.id = id;
+    constructor(name) {
         this.name = name;
     }
 
@@ -295,24 +287,23 @@ export class PlaybackEngine {
         this.playHead = new PlayHead(config);
 
         // TEMP:
-        this.addInstrument(InstrumentTypes.SineSynth);
+        this.addInstrument(InstrumentType.SineSynth);
 
         // TODO
     }
 
     /**
-     * 
-     * @param {string} instrumentKey 
+     * @param {number} instrumentType
      */
-    addInstrument(instrumentKey) {
-        const instrumentType = InstrumentTypes[instrumentKey];
-        console.log("Instrument types:", InstrumentTypes, ", key:", instrumentKey, ", instrumentType:", instrumentType);
-        this.instruments.push(new Instrument(instrumentType.id, instrumentType.name));
+    addInstrument(instrumentType) {
+        const instrumentDetails = InstrumentDetailsList[instrumentType];
+        this.instruments.push(new Instrument(instrumentDetails.name));
         this.updateInstrumentIndices();
+        console.log("instruments:", this.instruments);
 
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.addInstrument,
-            instrumentId: instrumentType.id,
+            instrumentType: instrumentType,
         });
     }
 

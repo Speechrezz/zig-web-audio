@@ -31,7 +31,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     this.instance.exports.stopAllNotes(msg.allowTailOff);
                     break;
                 case WorkletMessageType.addInstrument:
-                    this.instance.exports.addInstrument(msg.instrumentId);
+                    this.instance.exports.addInstrument(msg.instrumentType);
                     break;
             }
         };

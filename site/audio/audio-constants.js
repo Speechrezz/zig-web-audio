@@ -1,9 +1,16 @@
 /**
- * @typedef {{id: number, name: string}} InstrumentType
+ * @readonly
+ * @enum
  */
-
-export const InstrumentTypes = Object.freeze({
-    SineSynth: {id: 1, name: "Sine Synth"},
-    SawSynth: {id: 2, name: "Saw Synth"},
-    // DrumPad: {id: 3, name: "Drum Pad"},
+export const InstrumentType = Object.freeze({
+    SineSynth: 0,
+    SawSynth: 1,
 });
+
+/**
+ * @readonly
+ */
+export const InstrumentDetailsList = Object.freeze([
+    { name: "Sine Synth" },
+    { name: "Saw Synth" },
+])

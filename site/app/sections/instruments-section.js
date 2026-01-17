@@ -1,4 +1,4 @@
-import { InstrumentTypes } from "../../audio/audio-constants.js";
+import { InstrumentDetailsList } from "../../audio/audio-constants.js";
 import { PlaybackEngine } from "../../audio/playback-engine.js";
 
 export class InstrumentsSection {
@@ -11,23 +11,31 @@ export class InstrumentsSection {
     /** @type {HTMLDivElement} */
     addInstrumentContents;
 
-    constructor() {
+    /**
+     * @param {PlaybackEngine} playbackEngine 
+     */
+    constructor(playbackEngine) {
+        this.playbackEngine = playbackEngine;
         this.addInstrumentButton = document.getElementById("add-instrument-button");
         this.addInstrumentContents = document.getElementById("add-instrument-contents");
         this.addInstrumentButton.onclick = () => this.addInstrumentClicked();
 
         window.addEventListener("pointerdown", (e) => this.windowClicked(e));
 
-        for (const key in InstrumentTypes) {
-            /** @type {InstrumentType} */
-            const instrumentType = InstrumentTypes[key];
+        this.initializeDropdown();
+    }
 
-            const button = document.createElement('button');
-            button.classList.add("dropdown-item");
-            button.innerHTML = instrumentType.name;
-            button.onclick = (e) => this.instrumentDropdownItemClicked(e, instrumentType.id);
+    initializeDropdown() {
+        for (let i = 0; i < InstrumentDetailsList.length; i++)
+        {
+            const instrumentDetails = InstrumentDetailsList[i];
             
-            const div = document.createElement('div');
+            const button = document.createElement("button");
+            button.classList.add("dropdown-item");
+            button.innerHTML = instrumentDetails.name;
+            button.onclick = (e) => this.instrumentDropdownItemClicked(e, i);
+            
+            const div = document.createElement("div");
             div.appendChild(button);
 
             this.addInstrumentContents.appendChild(div);
@@ -50,10 +58,10 @@ export class InstrumentsSection {
 
     /**
      * @param {PointerEvent} e 
-     * @param {string} instrumentKey
+     * @param {number} instrumentType
      */
-    instrumentDropdownItemClicked(e, instrumentKey) {
-        this.playbackEngine.addInstrument(instrumentKey);
+    instrumentDropdownItemClicked(e, instrumentType) {
+        this.playbackEngine.addInstrument(instrumentType);
         this.addInstrumentContents.classList.remove("flex");
     }
 }
