@@ -5,6 +5,7 @@ import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
 import { ComponentContext } from "./component-context.js";
 import { AppCommand, AppEvent } from "../app/app-event.js";
 import { AppTransaction } from "../app/undo-manager.js";
+import { AudioEvent } from "../audio/audio-constants.js";
 
 const UNDO_ID = "piano-roll-area";
 const UndoType = Object.freeze({
@@ -71,6 +72,8 @@ export class PianoRollArea extends Component {
     constructor(context) {
         super();
         this.context = context;
+
+        this.context.playbackEngine.addListener(AudioEvent.InstrumentSelected, () => this.instrumentSelected());
 
         this.context.undoManager.addListener(UNDO_ID, this);
         this.context.eventRouter.addListener(this);
@@ -835,6 +838,27 @@ export class PianoRollArea extends Component {
             this.updateNoteBounds(this.selectedNoteMain);
         }
 
+        this.repaint();
+    }
+
+    resetNotes() {
+        for (const noteComponent of this.noteComponents) {
+            this.removeChildComponent(noteComponent);
+        }
+        this.noteComponents.length = 0;
+
+        const instrument = this.context.playbackEngine.getSelectedInstrument();
+        for (const note of instrument.notes) {
+            const noteComponent = new NoteComponent(note);
+            this.updateNoteBounds(noteComponent);
+            this.addChildComponent(noteComponent);
+            this.noteComponents.push(noteComponent);
+        }
+    }
+
+    instrumentSelected() {
+        this.clearSelection();
+        this.resetNotes();
         this.repaint();
     }
 }

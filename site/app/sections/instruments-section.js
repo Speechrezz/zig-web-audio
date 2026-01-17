@@ -49,8 +49,6 @@ export class InstrumentsSection {
     }
 
     instrumentsChanged() {
-        console.log("instrumentChanged!", this.playbackEngine.instruments);
-
         this.instrumentList.replaceChildren();
 
         for (let i = 0; i < this.playbackEngine.instruments.length; i++) {
