@@ -6,6 +6,7 @@ import { ComponentContext } from "./component-context.js";
 import { AppCommand, AppEvent } from "../app/app-event.js";
 import { AppTransaction } from "../app/undo-manager.js";
 import { AudioEvent } from "../audio/audio-constants.js";
+import { NotesManager, cloneNotes } from "../audio/notes-manager.js";
 
 const UNDO_ID = "piano-roll-area";
 const UndoType = Object.freeze({
@@ -25,14 +26,13 @@ const InteractionType = Object.freeze({
 export class PianoRollArea extends Component {
     // ---General---
     
-    /**
-     * @type {ComponentContext}
-     */
+    /** @type {ComponentContext} */
     context;
 
-    /**
-    * @type {NoteComponent[]}
-    */
+    /** @type {NotesManager} */
+    notesManager;
+
+    /** @type {NoteComponent[]} */
     noteComponents = [];
 
   
@@ -58,12 +58,6 @@ export class PianoRollArea extends Component {
      */
     selectedNotes = [];
 
-    /**
-     * Keeps track of notes that are being removed as user removes them to form a single transaction
-     * @type {Note[]}
-     */
-    removedNotesBuffer = [];
-
     lastBeatLength = 1;
 
     /**
@@ -72,10 +66,10 @@ export class PianoRollArea extends Component {
     constructor(context) {
         super();
         this.context = context;
+        this.notesManager = new NotesManager(this.context.playbackEngine, this.context.undoManager);
+        this.notesManager.listenerList.push(() => { this.resetNotes(); this.repaint(); });
 
         this.context.playbackEngine.addListener(AudioEvent.InstrumentSelected, () => this.instrumentSelected());
-
-        this.context.undoManager.addListener(UNDO_ID, this);
         this.context.eventRouter.addListener(this);
 
         this.context.config.addZoomListener(() => this.zoomChanged());
@@ -248,92 +242,6 @@ export class PianoRollArea extends Component {
         }
     }
 
-    /**
-     * Override to handle undo events.
-     * @param {AppTransaction} transaction 
-     */
-    undo(transaction) {
-        switch (transaction.type) {
-            case UndoType.addNotes: {
-                /** @type {Note[]} */
-                const notes = transaction.diff;
-                for (const note of notes) {
-                    const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
-                    if (noteComponent !== undefined) {
-                        this.removeNotes([noteComponent], false);   
-                    }
-                }
-                this.repaint();
-                break;
-            }
-            case UndoType.removeNotes: {
-                const notes = cloneNotes(transaction.diff);
-                this.addNotes(notes, false);
-                this.repaint();
-                break;
-            }
-            case UndoType.moveNote: {
-                /** @type {Note[]} */
-                const diffNotes = transaction.diff;
-                for (const diffNote of diffNotes) {
-                    const noteComponent = this.noteComponents.find((v) => v.note.id === diffNote.id);
-                    if (noteComponent === undefined) continue;
-
-                    noteComponent.note.beatStart  -= diffNote.beatStart;
-                    noteComponent.note.beatLength -= diffNote.beatLength;
-                    noteComponent.note.noteNumber -= diffNote.noteNumber;
-                    this.updateNoteBounds(noteComponent);
-                }
-
-                this.repaint();
-                break;
-            }
-        }
-    }
-
-    /**
-     * Override to handle undo events.
-     * @param {AppTransaction} transaction 
-     */
-    redo(transaction) {
-        switch (transaction.type) {
-            case UndoType.addNotes: {
-                const notes = cloneNotes(transaction.diff);
-                this.addNotes(notes, false);
-                this.repaint();
-                break;
-            }
-            case UndoType.removeNotes: {
-                /** @type {Note} */
-                const notes = transaction.diff;
-                for (const note of notes) {
-                    const noteComponent = this.noteComponents.find((v) => v.note.id === note.id);
-                    if (noteComponent !== undefined) {
-                        this.removeNotes([noteComponent], false);   
-                    }
-                }
-                this.repaint();
-                break;
-            }
-            case UndoType.moveNote: {
-                /** @type {Note[]} */
-                const diffNotes = transaction.diff;
-                for (const diffNote of diffNotes) {
-                    const noteComponent = this.noteComponents.find((v) => v.note.id === diffNote.id);
-                    if (noteComponent === undefined) continue;
-
-                    noteComponent.note.beatStart  += diffNote.beatStart;
-                    noteComponent.note.beatLength += diffNote.beatLength;
-                    noteComponent.note.noteNumber += diffNote.noteNumber;
-                    this.updateNoteBounds(noteComponent);
-                }
-
-                this.repaint();
-                break;
-            }
-        }
-    }
-
     interactionTypeToCursor(interactionType, isMouseDown = true) {
         switch (interactionType) {
             case InteractionType.none:
@@ -381,19 +289,14 @@ export class PianoRollArea extends Component {
 
     /**
      * @param {Note[]} notes 
-     * @param {boolean} addToUndo If `true`, this will assign the note object a new unique ID and notify the undo manager
      */
-    addNotes(notes, addToUndo = true) {
-        const instrument = this.context.playbackEngine.getSelectedInstrument();
+    addNotes(notes) {
+        this.notesManager.addNotes(this.context.playbackEngine.selectedInstrumentIndex, notes);
+
         /** @type {NoteComponent[]} */
         const noteComponents = [];
 
         for (const note of notes) {
-            if (addToUndo) {
-                note.id = instrument.getNextNoteId();
-            }
-
-            instrument.notes.push(note);
             const noteComponent = new NoteComponent(note);
 
             this.noteComponents.push(noteComponent);
@@ -402,10 +305,6 @@ export class PianoRollArea extends Component {
             this.updateNoteBounds(noteComponent);
 
             noteComponents.push(noteComponent);
-        }
-
-        if (addToUndo) {
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.addNotes, cloneNotes(notes)));
         }
 
         return noteComponents;
@@ -425,28 +324,26 @@ export class PianoRollArea extends Component {
 
     /**
      * @param {NoteComponent[]} noteComponents 
-     * @param {boolean} addToUndo If `true`, this will notify the undo manager
      */
-    removeNotes(noteComponents, addToUndo = true) {
+    removeNotes(noteComponents) {
+        /** @type {Note[]} */
+        const notes = [];
+
         for (const noteComponent of noteComponents) {
-            const noteComponentIndex = this.noteComponents.indexOf(noteComponent);
-            this.noteComponents.splice(noteComponentIndex, 1);
-
-            const playbackEngineNotes = this.context.playbackEngine.getSelectedInstrument().notes;
-            const engineNoteIndex = playbackEngineNotes.indexOf(noteComponent.note);
-            playbackEngineNotes.splice(engineNoteIndex, 1);
-
-            this.removeChildComponent(noteComponent);
+            this.deleteNoteComponent(noteComponent);
+            notes.push(noteComponent.note);
         }
 
-        if (addToUndo) {
-            /** @type {Note[]} */
-            const notes = [];
-            for (const noteComponent of noteComponents) {
-                notes.push(noteComponent.note.clone());
-            }
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.removeNotes, notes));
-        }
+        this.notesManager.removeNotes(this.context.playbackEngine.selectedInstrumentIndex, notes);
+    }
+
+    /**
+     * @param {NoteComponent} noteComponent 
+     */
+    deleteNoteComponent(noteComponent) {
+        const noteComponentIndex = this.noteComponents.indexOf(noteComponent);
+        this.noteComponents.splice(noteComponentIndex, 1);
+        this.removeChildComponent(noteComponent);
     }
 
     /**
@@ -600,7 +497,7 @@ export class PianoRollArea extends Component {
                 noteDiffs.push(noteComponent.getNoteDiff());        
             }
             
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.moveNote, noteDiffs));
+            this.notesManager.moveNotesGestureEnd(this.context.playbackEngine.selectedInstrumentIndex, noteDiffs);
         }
 
         this.lastBeatLength = this.selectedNoteMain.note.beatLength;
@@ -613,11 +510,13 @@ export class PianoRollArea extends Component {
     removeNoteBegin(ev) {
         document.documentElement.style.cursor = "not-allowed";
         this.clearSelection();
-        this.removedNotesBuffer.length = 0;
 
-        const removedNote = this.removeNoteAt(ev.x, ev.y);
-        if (removedNote !== null) {
-            this.removedNotesBuffer.push(removedNote);
+        this.notesManager.removeNotesGestureBegin(this.context.playbackEngine.selectedInstrumentIndex);
+
+        const noteToRemove = this.findNoteAt(ev.x, ev.y);
+        if (noteToRemove !== null) {
+            this.notesManager.removeNotesGestureStep(noteToRemove.note);
+            this.deleteNoteComponent(noteToRemove);
         }
 
         this.repaint();
@@ -627,9 +526,10 @@ export class PianoRollArea extends Component {
      * @param {MouseEvent} ev 
      */
     removeNoteStep(ev) {
-        const removedNote = this.removeNoteAt(ev.x, ev.y);
-        if (removedNote !== null) {
-            this.removedNotesBuffer.push(removedNote);
+        const noteToRemove = this.findNoteAt(ev.x, ev.y);
+        if (noteToRemove !== null) {
+            this.notesManager.removeNotesGestureStep(noteToRemove.note);
+            this.deleteNoteComponent(noteToRemove);
             this.repaint();
         }
     }
@@ -638,9 +538,7 @@ export class PianoRollArea extends Component {
      * @param {MouseEvent} ev 
      */
     removeNoteEnd(ev) {
-        if (this.removedNotesBuffer.length > 0) {
-            this.context.undoManager.push(new AppTransaction(UNDO_ID, UndoType.removeNotes, cloneNotes(this.removedNotesBuffer)));
-        }
+        this.notesManager.removeNotesGestureEnd();
     }
     
     /**
@@ -861,15 +759,4 @@ export class PianoRollArea extends Component {
         this.resetNotes();
         this.repaint();
     }
-}
-
-function cloneNotes(notes) {
-    /** @type {Note[]} */
-    const cloned = [];
-
-    for (const note of notes) {
-        cloned.push(note.clone());
-    }
-
-    return cloned;
 }

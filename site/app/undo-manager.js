@@ -79,7 +79,6 @@ export class UndoManager {
     }
 
     undo() {
-        console.log("undo...");
         const index = this.writeIndex - 1;
         if (index < 0) return;
 
@@ -91,7 +90,6 @@ export class UndoManager {
     }
 
     redo() {
-        console.log("redo...");
         if (this.writeIndex === this.transactions.length) return;
 
         const transaction = this.transactions[this.writeIndex];
