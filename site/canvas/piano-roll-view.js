@@ -1,10 +1,10 @@
 import { Component } from "./component.js";
 import { PianoRollArea } from "./piano-roll-area.js";
-import { ComponentContext } from "./component-context.js";
+import { AppContext } from "../app/app-context.js"
 
 export class PianoRollView extends Component{
     /**
-     * @type {ComponentContext}
+     * @type {AppContext}
      */
     context;
     
@@ -14,7 +14,7 @@ export class PianoRollView extends Component{
     pianoRollArea;
 
     /**
-     * @param {ComponentContext} context 
+     * @param {AppContext} context 
      */
     constructor(context) {
         super();

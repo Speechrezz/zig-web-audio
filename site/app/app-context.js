@@ -1,10 +1,10 @@
-import { Config } from "../app/config.js";
+import { Config } from "./config.js";
 import { PlaybackEngine } from "../audio/playback-engine.js";
-import { AppEventRouter } from "../app/app-event-router.js";
-import { ClipboardManager } from "../app/clipboard-manager.js";
-import { UndoManager } from "../app/undo-manager.js";
+import { AppEventRouter } from "./app-event-router.js";
+import { ClipboardManager } from "./clipboard-manager.js";
+import { UndoManager } from "./undo-manager.js";
 
-export class ComponentContext {
+export class AppContext {
     /** @type {Config} */
     config;
 

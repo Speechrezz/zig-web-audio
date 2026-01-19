@@ -1,5 +1,5 @@
 import { Rectangle, Point } from "./component.js"
-import { ComponentContext } from "./component-context.js";
+import { AppContext } from "../app/app-context.js"
 import { TopLevelComponent } from "./top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";
 import { PianoComponent } from "./piano-component.js";
@@ -9,7 +9,7 @@ import { AudioEvent } from "../audio/audio-constants.js";
 
 export class PianoRoll extends TopLevelComponent {
     /**
-     * @type {ComponentContext}
+     * @type {AppContext}
      */
     context;
     
@@ -33,7 +33,7 @@ export class PianoRoll extends TopLevelComponent {
     /**
      * 
      * @param {HTMLCanvasElement} canvasElement 
-     * @param {ComponentContext} context 
+     * @param {AppContext} context 
      */
     constructor(canvasElement, context) {
         super(canvasElement);

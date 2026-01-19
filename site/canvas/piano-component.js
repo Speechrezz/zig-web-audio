@@ -1,12 +1,11 @@
 import { Component, Rectangle, Point } from "./component.js";
-import { Config } from "../app/config.js";
-import { ComponentContext } from "./component-context.js";
+import { AppContext } from "../app/app-context.js"
 import { MouseEvent } from "./mouse-event.js";
 import { MidiEvent, MidiEventType } from "../audio/midi.js";
 
 export class PianoComponent extends Component {
     /**
-     * @type {ComponentContext}
+     * @type {AppContext}
      */
     context;
 
@@ -17,7 +16,7 @@ export class PianoComponent extends Component {
 
     /**
      * 
-     * @param {ComponentContext} context 
+     * @param {AppContext} context 
      */
     constructor(context) {
         super();

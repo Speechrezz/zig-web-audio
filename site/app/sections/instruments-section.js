@@ -1,9 +1,9 @@
 import { AudioEvent, InstrumentDetailsList } from "../../audio/audio-constants.js";
-import { PlaybackEngine } from "../../audio/playback-engine.js";
+import { AppContext } from "../app-context.js";
 
 export class InstrumentsSection {
-    /** @type {PlaybackEngine} */
-    playbackEngine;
+    /** @type {AppContext} */
+    context;    
     
     /** @type {HTMLButtonElement} */
     addInstrumentButton;
@@ -15,17 +15,17 @@ export class InstrumentsSection {
     instrumentList;
 
     /**
-     * @param {PlaybackEngine} playbackEngine 
+     * @param {AppContext} context 
      */
-    constructor(playbackEngine) {
-        this.playbackEngine = playbackEngine;
+    constructor(context) {
+        this.context = context;
         this.addInstrumentButton = document.getElementById("add-instrument-button");
         this.addInstrumentContents = document.getElementById("add-instrument-contents");
         this.instrumentList = document.getElementById("instrument-list");
         this.addInstrumentButton.onclick = () => this.addInstrumentClicked();
 
-        this.playbackEngine.addListener(AudioEvent.InstrumentsChanged, () => this.instrumentsChanged());
-        this.playbackEngine.addListener(AudioEvent.InstrumentSelected, () => this.updateSelectedInstrument());
+        this.context.playbackEngine.addListener(AudioEvent.InstrumentsChanged, () => this.instrumentsChanged());
+        this.context.playbackEngine.addListener(AudioEvent.InstrumentSelected, () => this.updateSelectedInstrument());
         window.addEventListener("pointerdown", (e) => this.windowClicked(e));
 
         this.initializeDropdown();
@@ -52,8 +52,8 @@ export class InstrumentsSection {
     instrumentsChanged() {
         this.instrumentList.replaceChildren();
 
-        for (let i = 0; i < this.playbackEngine.instruments.length; i++) {
-            const instrument = this.playbackEngine.instruments[i];
+        for (let i = 0; i < this.context.playbackEngine.instruments.length; i++) {
+            const instrument = this.context.playbackEngine.instruments[i];
 
             const div = document.createElement("div");
             div.classList.add("instrument-section");
@@ -93,7 +93,7 @@ export class InstrumentsSection {
      * @param {number} instrumentType
      */
     instrumentDropdownItemClicked(e, instrumentType) {
-        this.playbackEngine.addInstrument(instrumentType);
+        this.context.playbackEngine.addInstrument(instrumentType);
         this.addInstrumentContents.classList.remove("flex");
     }
 
@@ -104,7 +104,7 @@ export class InstrumentsSection {
     instrumentClicked(e, index) {
         if (e.target.tagName === "BUTTON") return;
 
-        this.playbackEngine.selectInstrument(index);
+        this.context.playbackEngine.selectInstrument(index);
     }
 
     /**
@@ -112,14 +112,14 @@ export class InstrumentsSection {
      * @param {number} index Instrument index
      */
     deleteInstrumentClicked(e, index) {
-        this.playbackEngine.removeInstrument(index);
+        this.context.playbackEngine.removeInstrument(index);
     }
 
     updateSelectedInstrument() {
         const childNodes = this.instrumentList.childNodes;
         for (let i = 0; i < childNodes.length; i++) {
             const node = childNodes[i];
-            if (i === this.playbackEngine.selectedInstrumentIndex) {
+            if (i === this.context.playbackEngine.selectedInstrumentIndex) {
                 node.classList.add("instrument-selected");
             }
             else {

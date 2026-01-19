@@ -5,7 +5,7 @@ import { PlaybackEngine } from "../audio/playback-engine.js"
 import { PianoRoll } from "../canvas/piano-roll.js"
 import { KeyboardListener } from "./keyboard-listener.js"
 import { AppEventRouter } from "./app-event-router.js"
-import { ComponentContext } from "../canvas/component-context.js"
+import { AppContext } from "./app-context.js"
 import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { InstrumentsSection } from "./sections/instruments-section.js"
@@ -63,11 +63,10 @@ export class App {
         this.playbackEngine = new PlaybackEngine(this.config);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.undoManager = new UndoManager(this.eventRouter);
-        this.instrumentsSection = new InstrumentsSection(this.playbackEngine);
         this.clipboardManager = new ClipboardManager();
         this.keyboardListener = new KeyboardListener(this.eventRouter);
 
-        const componentContext = new ComponentContext(
+        const appContext = new AppContext(
             this.config, 
             this.playbackEngine, 
             this.undoManager,
@@ -75,7 +74,8 @@ export class App {
             this.clipboardManager,
         );
 
-        this.pianoRoll = new PianoRoll(this.canvasElement, componentContext);
+        this.instrumentsSection = new InstrumentsSection(appContext);
+        this.pianoRoll = new PianoRoll(this.canvasElement, appContext);
         
         playButton.onclick = () => this.playbackEngine.play();
         stopButton.onclick = () => this.playbackEngine.stop();

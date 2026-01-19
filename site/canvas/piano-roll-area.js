@@ -2,9 +2,8 @@ import { Note } from "../audio/playback-engine.js"
 import { Component, Rectangle, Point } from "./component.js"
 import { NoteComponent } from "./note-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
-import { ComponentContext } from "./component-context.js";
+import { AppContext } from "../app/app-context.js"
 import { AppCommand, AppEvent } from "../app/app-event.js";
-import { AppTransaction } from "../app/undo-manager.js";
 import { AudioEvent } from "../audio/audio-constants.js";
 import { NotesManager, cloneNotes } from "../audio/notes-manager.js";
 
@@ -26,7 +25,7 @@ const InteractionType = Object.freeze({
 export class PianoRollArea extends Component {
     // ---General---
     
-    /** @type {ComponentContext} */
+    /** @type {AppContext} */
     context;
 
     /** @type {NotesManager} */
@@ -61,7 +60,7 @@ export class PianoRollArea extends Component {
     lastBeatLength = 1;
 
     /**
-     * @param {ComponentContext} context 
+     * @param {AppContext} context 
      */
     constructor(context) {
         super();

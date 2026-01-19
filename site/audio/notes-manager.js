@@ -6,7 +6,7 @@ const UndoType = Object.freeze({
     addNotes: "addNotes",
     removeNotes: "removeNotes",
     moveNotes: "movesNotes", 
-})
+});
 
 export class NotesManager {
     /** @type {PlaybackEngine} */

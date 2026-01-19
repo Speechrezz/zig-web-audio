@@ -174,13 +174,15 @@ export class TopLevelComponent extends Component {
         const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.scroll)
         if (componentWithCoords === null) return;
 
+        const deltaScale = 0.75;
+
         const mouseScrollEvent = new MouseScrollEvent(
             componentWithCoords.x, 
             componentWithCoords.y, 
             ev.offsetX, 
             ev.offsetY,
-            ev.deltaX,
-            ev.deltaY,
+            ev.deltaX * deltaScale,
+            ev.deltaY * deltaScale,
         );
 
         componentWithCoords.component.mouseScroll(mouseScrollEvent);
