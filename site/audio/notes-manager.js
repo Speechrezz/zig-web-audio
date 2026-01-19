@@ -21,8 +21,8 @@ export class NotesManager {
     /** @type {number} */
     gestureInstrumentIndex = 0;
 
-    /** @type {(() => void)[]} */
-    listenerList = [];
+    /** @type {undefined | (() => void)} */
+    pianoRollCallback = undefined;
 
     /**
      * @param {PlaybackEngine} playbackEngine 
@@ -171,9 +171,7 @@ export class NotesManager {
             }
         }
 
-        for (const listener of this.listenerList) {
-            listener();
-        }
+        this.pianoRollCallback();
     }
 
     /**
@@ -218,9 +216,7 @@ export class NotesManager {
             }
         }
 
-        for (const listener of this.listenerList) {
-            listener();
-        }
+        this.pianoRollCallback();
     }
 }
 

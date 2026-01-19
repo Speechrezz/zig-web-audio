@@ -67,7 +67,7 @@ export class PianoRollArea extends Component {
         super();
         this.context = context;
         this.notesManager = new NotesManager(this.context.playbackEngine, this.context.undoManager);
-        this.notesManager.listenerList.push(() => { this.resetNotes(); this.repaint(); });
+        this.notesManager.pianoRollCallback = () => { this.resetNotes(); this.repaint(); };
 
         this.context.playbackEngine.addListener(AudioEvent.InstrumentSelected, () => this.instrumentSelected());
         this.context.eventRouter.addListener(this);
