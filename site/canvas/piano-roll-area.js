@@ -135,7 +135,7 @@ export class PianoRollArea extends Component {
                 return MouseActionPolicy.acceptBlock;
 
             default:
-                return MouseActionPolicy.ignorePropogate;
+                return MouseActionPolicy.ignorePropagate;
         }
     }
 

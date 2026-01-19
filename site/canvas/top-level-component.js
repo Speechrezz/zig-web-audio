@@ -1,5 +1,5 @@
 import { Component, Rectangle } from "./component.js"
-import { MouseAction, MouseEvent } from "./mouse-event.js";
+import { MouseAction, MouseEvent, MouseScrollEvent } from "./mouse-event.js";
 
 export class TopLevelComponent extends Component {
     /**
@@ -31,6 +31,8 @@ export class TopLevelComponent extends Component {
         this.canvas.onpointermove = (ev) => this.mouseMoveInternal(ev);
 
         this.canvas.oncontextmenu = (ev) => ev.preventDefault();
+
+        this.canvas.onwheel = (ev) => this.mouseWheelInternal(ev);
     }
 
     canvasResized() {
@@ -161,6 +163,27 @@ export class TopLevelComponent extends Component {
                 this.selectedComponent.mouseDrag(mouseEvent);
             }
         }
+    }
+
+    /**
+     * @param {WheelEvent} ev 
+     */
+    mouseWheelInternal(ev) {
+        ev.preventDefault();
+
+        const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.scroll)
+        if (componentWithCoords === null) return;
+
+        const mouseScrollEvent = new MouseScrollEvent(
+            componentWithCoords.x, 
+            componentWithCoords.y, 
+            ev.offsetX, 
+            ev.offsetY,
+            ev.deltaX,
+            ev.deltaY,
+        )
+
+        componentWithCoords.component.mouseScroll(mouseScrollEvent);
     }
 
     topLevelRepaint() {

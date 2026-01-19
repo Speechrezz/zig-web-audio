@@ -3,7 +3,7 @@ import { ComponentContext } from "./component-context.js";
 import { TopLevelComponent } from "./top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";
 import { PianoComponent } from "./piano-component.js";
-import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
+import { MouseAction, MouseEvent, MouseActionPolicy, MouseScrollEvent } from "./mouse-event.js";
 import { AppCommand, AppEvent } from "../app/app-event.js";
 import { AudioEvent } from "../audio/audio-constants.js";
 
@@ -80,10 +80,11 @@ export class PianoRoll extends TopLevelComponent {
                 return MouseActionPolicy.acceptPropagate;
 
             case MouseAction.move:
+            case MouseAction.scroll:
                 return MouseActionPolicy.acceptBlock;
                 
             default:
-                return MouseActionPolicy.ignorePropogate;
+                return MouseActionPolicy.ignorePropagate;
         }
     }
 
@@ -117,6 +118,13 @@ export class PianoRoll extends TopLevelComponent {
 
             this.updateViewOffset(this.viewOffsetAnchor.x + offsetX, this.viewOffsetAnchor.y + offsetY);
         }
+    }
+
+    /**
+     * @param {MouseScrollEvent} ev 
+     */
+    mouseScroll(ev) {
+        this.updateViewOffset(this.viewOffset.x - ev.deltaX, this.viewOffset.y - ev.deltaY);
     }
 
     updateViewOffset(x, y) {

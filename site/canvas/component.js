@@ -1,4 +1,4 @@
-import { MouseEvent, MouseAction, MouseActionPolicy } from "./mouse-event.js"
+import { MouseEvent, MouseAction, MouseActionPolicy, MouseScrollEvent } from "./mouse-event.js"
 
 export class Point {
     x = 0;
@@ -236,7 +236,7 @@ export class Component {
             case MouseAction.draw:
                 return MouseActionPolicy.acceptPropagate;
             default:
-                return MouseActionPolicy.ignorePropogate;
+                return MouseActionPolicy.ignorePropagate;
         }
     }
 
@@ -254,6 +254,8 @@ export class Component {
     mouseMove(ev) {}
     /** @param {MouseEvent} ev */
     mouseClick(ev) {}
+    /** @param {MouseScrollEvent} ev */
+    mouseScroll(ev) {}
 
     // ---Component methods---
 
@@ -439,7 +441,7 @@ export class Component {
         if (policy === MouseActionPolicy.acceptPropagate) {
             return {component: this, x: x, y: y};
         }
-        if (policy === MouseActionPolicy.ignorePropogate) {
+        if (policy === MouseActionPolicy.ignorePropagate) {
             return null;
         }
 

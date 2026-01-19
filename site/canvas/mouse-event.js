@@ -8,6 +8,7 @@ export const MouseAction = Object.freeze({
     move: 2,
     remove: 3,
     select: 4,
+    scroll: 5,
 });
 
 /**
@@ -15,7 +16,7 @@ export const MouseAction = Object.freeze({
  * @enum {number}
  */
 export const MouseActionPolicy = Object.freeze({
-    ignorePropogate: 0,  // Can NOT handle; keep searching children
+    ignorePropagate: 0,  // Can NOT handle; keep searching children
     acceptPropagate: 1,  // CAN handle, but children get priority if they can
     acceptBlock: 2,      // CAN handle and prevents searching children
 });
@@ -42,5 +43,33 @@ export class MouseEvent {
         this.globalX = globalX;
         this.globalY = globalY;
         this.mouseAction = mouseAction;
+    }
+}
+
+export class MouseScrollEvent {
+    x = 0;
+    y = 0;
+    globalX = 0;
+    globalY = 0;
+
+    deltaX = 0;
+    deltaY = 0;
+
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} globalX 
+     * @param {number} globalY 
+     * @param {number} deltaX 
+     * @param {number} deltaY 
+     */
+    constructor(x, y, globalX, globalY, deltaX, deltaY) {
+        this.x = x;
+        this.y = y;
+        this.globalX = globalX;
+        this.globalY = globalY;
+        this.deltaX = deltaX;
+        this.deltaY = deltaY;
     }
 }
