@@ -47,17 +47,17 @@ export fn stopAllNotes(allow_tail_off: bool) void {
 
 // Instrument
 
-export fn addInstrument(instrument_type: usize) void {
-    logging.logDebug("[WASM] Adding instrument {}...", .{instrument_type});
+export fn addInstrument(instrument_index: usize, instrument_type: usize) void {
+    logging.logDebug("[WASM] Adding instrument {} at index {}...", .{ instrument_type, instrument_index });
     // TODO
 }
 
 export fn removeInstrument(instrument_index: usize) void {
-    logging.logDebug("[WASM] Removing instrument {}...", .{instrument_index});
+    logging.logDebug("[WASM] Removing instrument at index {}...", .{instrument_index});
     // TODO
 }
 
 export fn clearInstruments() void {
-    logging.logDebug("[WASM] Clearing instruments...", .{});
+    logging.logDebug("[WASM] Clearing all instruments...", .{});
     // TODO
 }

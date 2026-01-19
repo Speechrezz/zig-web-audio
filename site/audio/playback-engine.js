@@ -302,11 +302,13 @@ export class PlaybackEngine {
      */
     addInstrument(instrumentType) {
         const instrumentDetails = InstrumentDetailsList[instrumentType];
-        this.instruments.push(new Instrument(instrumentDetails.name));
+        const newInstrument = new Instrument(instrumentDetails.name);
+        this.instruments.push(newInstrument);
         this.updateInstrumentIndices();
 
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.addInstrument,
+            instrumentIndex: newInstrument.index,
             instrumentType: instrumentType,
         });
 
