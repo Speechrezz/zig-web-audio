@@ -181,7 +181,7 @@ export class TopLevelComponent extends Component {
             ev.offsetY,
             ev.deltaX,
             ev.deltaY,
-        )
+        );
 
         componentWithCoords.component.mouseScroll(mouseScrollEvent);
     }

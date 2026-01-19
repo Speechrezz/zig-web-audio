@@ -29,6 +29,7 @@ export class InstrumentsSection {
         window.addEventListener("pointerdown", (e) => this.windowClicked(e));
 
         this.initializeDropdown();
+        this.instrumentsChanged();
     }
 
     initializeDropdown() {
@@ -56,8 +57,16 @@ export class InstrumentsSection {
 
             const div = document.createElement("div");
             div.classList.add("instrument-section");
-            div.innerHTML = instrument.name;
             div.onclick = (e) => this.instrumentClicked(e, i);
+
+            const span = document.createElement("span");
+            span.innerHTML = instrument.name;
+            div.appendChild(span);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.innerHTML = "x";
+            deleteButton.onclick = (e) => this.deleteInstrumentClicked(e, i);
+            div.appendChild(deleteButton);
 
             this.instrumentList.appendChild(div);
         }
@@ -93,7 +102,17 @@ export class InstrumentsSection {
      * @param {number} index Instrument index
      */
     instrumentClicked(e, index) {
+        if (e.target.tagName === "BUTTON") return;
+
         this.playbackEngine.selectInstrument(index);
+    }
+
+    /**
+     * @param {PointerEvent} e 
+     * @param {number} index Instrument index
+     */
+    deleteInstrumentClicked(e, index) {
+        this.playbackEngine.removeInstrument(index);
     }
 
     updateSelectedInstrument() {
