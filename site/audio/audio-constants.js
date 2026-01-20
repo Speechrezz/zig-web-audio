@@ -21,6 +21,13 @@ export const InstrumentDetailsList = Object.freeze([
  */
 export const AudioEvent = Object.freeze({
     PlayHead: 0,
-    InstrumentsChanged: 1,
-    InstrumentSelected: 2,
+});
+
+/**
+ * @readonly
+ * @enum
+ */
+export const InstrumentEvent = Object.freeze({
+    InstrumentsChanged: 0,
+    InstrumentSelected: 1,
 });

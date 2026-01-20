@@ -1,8 +1,8 @@
 import { Config } from "../app/config.js";
+import { Instrument, InstrumentsContainer } from "./instrument.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
-import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime, getAudioWorkletNode } from "./audio.js"
-import { WorkletMessageType } from "./worklet-message.js";
-import { AudioEvent, InstrumentDetailsList, InstrumentType } from "./audio-constants.js";
+import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
+import { AudioEvent } from "./audio-constants.js";
 
 export class Note {
     /**
@@ -72,24 +72,6 @@ export class Note {
     }
 }
 
-export class NoteNumberAndChannel {
-    noteNumber = 0;
-    channel = 0;
-
-    constructor(noteNumber, channel = 0) {
-        this.noteNumber = noteNumber;
-        this.channel = channel;
-    }
-
-    /**
-     * @param {NoteNumberAndChannel} other 
-     */
-    eql(noteNumber, channel = 0) {
-        return this.noteNumber === noteNumber
-            && this.channel === channel;
-    }
-}
-
 class NoteEvent {
     noteNumber = 0;
     velocity = 0;
@@ -111,73 +93,6 @@ class NoteEvent {
 
     clone() {
         return {...this};
-    }
-}
-
-export class Instrument {
-    /**
-     * @type {number}
-     */
-    index;
-
-    /**
-     * @type {string}
-     */
-    name;
-
-    /**
-     * All the drawn/saved notes
-     * @type {Note[]}
-     */
-    notes = [];
-
-    /**
-     * Counts note IDs to ensure unique IDs
-     * @type {number}
-     */
-    noteIdCounter = 0;
-
-    /**
-     * Currently playing notes
-     * @type {NoteNumberAndChannel[]}
-     */
-    activeNotes = [];
-
-    /**
-     * Note stop events that need to be processed
-     * @type {NoteEvent[]}
-     */
-    queuedNoteEvents = [];
-
-    /**
-     * @param {string} name 
-     */
-    constructor(name) {
-        this.name = name;
-    }
-
-    noteStart(noteNumber, channel) {
-        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
-        if (index === -1) {
-            this.activeNotes.push(new NoteNumberAndChannel(noteNumber, channel));
-        }
-    }
-
-    noteStop(noteNumber, channel) {
-        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
-        if (index >= 0) {
-            this.activeNotes.splice(index, 1);
-        }
-    }
-
-    isNotePlaying(noteNumber, channel) {
-        const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
-        return index >= 0;
-    }
-
-    getNextNoteId() {
-        this.noteIdCounter++;
-        return this.noteIdCounter - 1;
     }
 }
 
@@ -207,7 +122,6 @@ export class PlayHead {
     }
 
     /**
-     * 
      * @param {number} timePassedSec 
      * @returns 
      */
@@ -217,7 +131,6 @@ export class PlayHead {
     }
 
     /**
-     * 
      * @returns {number} Time since audio context started in seconds
      */
     getContextTimeSec() {
@@ -225,7 +138,6 @@ export class PlayHead {
     }
 
     /**
-     * 
      * @param {number} beats Number of beats
      * @returns {number} Time in seconds
      */
@@ -234,7 +146,6 @@ export class PlayHead {
     }
 
     /**
-     * 
      * @param {number} seconds Time in seconds
      * @returns {number} Number of beats
      */
@@ -258,10 +169,7 @@ export class PlaybackEngine {
      */
     playHead;
 
-    /**
-     * @type {Instrument[]}
-     */
-    instruments = [];
+    instruments = new InstrumentsContainer();
 
     /**
      * @type {(() => void)[][]}
@@ -272,11 +180,6 @@ export class PlaybackEngine {
      * Helps mitigate jitter
      */
     lookAheadSec = 0.1;
-
-    /**
-     * Currently selected instrument index, used for 
-     */
-    selectedInstrumentIndex = 0;
 
 
     /**
@@ -290,72 +193,6 @@ export class PlaybackEngine {
         for (const key of Object.keys(AudioEvent)) {
             this.audioEventListeners.push([]);
         }
-
-        // TEMP:
-        this.addInstrument(InstrumentType.SineSynth);
-
-        // TODO
-    }
-
-    /**
-     * @param {number} instrumentType
-     */
-    addInstrument(instrumentType) {
-        const instrumentDetails = InstrumentDetailsList[instrumentType];
-        const newInstrument = new Instrument(instrumentDetails.name);
-        this.instruments.push(newInstrument);
-        this.updateInstrumentIndices();
-
-        getAudioWorkletNode().port.postMessage({
-            type: WorkletMessageType.addInstrument,
-            instrumentIndex: newInstrument.index,
-            instrumentType: instrumentType,
-        });
-
-        this.notifyListeners(AudioEvent.InstrumentsChanged);
-    }
-
-    /**
-     * @param {number} instrumentIndex
-     */
-    removeInstrument(instrumentIndex) {
-        this.instruments.splice(instrumentIndex, 1);
-        this.updateInstrumentIndices();
-
-        getAudioWorkletNode().port.postMessage({
-            type: WorkletMessageType.removeInstrument,
-            instrumentIndex: instrumentIndex,
-        });
-
-        this.notifyListeners(AudioEvent.InstrumentsChanged);
-    }
-
-    updateInstrumentIndices() {
-        for (let i = 0; i < this.instruments.length; i++) {
-            this.instruments[i].index = i;
-        }
-    }
-
-    /**
-     * @param {number} index 
-     * @return {Instrument} instrument
-     */
-    getInstrument(index) {
-        return this.instruments[index];
-    }
-
-    /**
-     * @param {number} index 
-     */
-    selectInstrument(index) {
-        if (this.selectedInstrumentIndex === index) return;
-
-        this.selectedInstrumentIndex = index;
-        this.notifyListeners(AudioEvent.InstrumentSelected);
-    }
-
-    getSelectedInstrument() {
-        return this.instruments[this.selectedInstrumentIndex];
     }
 
     /**
@@ -387,7 +224,6 @@ export class PlaybackEngine {
     }
 
     /**
-     * 
      * @param {number} newBpm 
      */
     setTempo(newBpm) {
@@ -420,7 +256,7 @@ export class PlaybackEngine {
     stop() {
         const playHead = this.playHead;
 
-        for (const instrument of this.instruments) {
+        for (const instrument of this.instruments.getList()) {
             instrument.activeNotes.length = 0;
             instrument.queuedNoteEvents.length = 0;
         }
@@ -438,7 +274,7 @@ export class PlaybackEngine {
         const nextTimePassedSec = getContextTime() - playHead.contextTimeStart
         const nextPositionInBeats = playHead.getPositionInBeats(nextTimePassedSec);
         
-        for (const instrument of this.instruments) {
+        for (const instrument of this.instruments.getList()) {
             const noteStartEvents = this.getNoteStartInInterval(instrument, playHead.positionInBeats, nextPositionInBeats);
             const noteEvents = this.getNoteStopInInterval(instrument, playHead.positionInBeats, nextPositionInBeats);
             noteEvents.push(...noteStartEvents);
@@ -560,7 +396,7 @@ export class PlaybackEngine {
     sendMidiMessageFromDevice(midiEvent, timestampMs = undefined) {
         if (!isAudioContextRunning()) return;
 
-        const instrument = this.getSelectedInstrument();
+        const instrument = this.instruments.getSelected();
 
         if (timestampMs !== undefined) {
             const sampleRate = getAudioContext().sampleRate;
@@ -589,7 +425,7 @@ export class PlaybackEngine {
     sendPreviewMidiNote(noteNumber) {
         if (!isAudioContextRunning() || this.playHead.isPlaying) return;
 
-        const instrument = this.getSelectedInstrument();
+        const instrument = this.instruments.getSelected();
 
         const noteOnEvent  = MidiEvent.newNote(MidiEventType.NoteOn,  noteNumber, 60, 0);
         const noteOffEvent = MidiEvent.newNote(MidiEventType.NoteOff, noteNumber, 60, 0);

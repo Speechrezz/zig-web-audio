@@ -1,4 +1,4 @@
-import { AudioEvent, InstrumentDetailsList } from "../../audio/audio-constants.js";
+import { AudioEvent, InstrumentDetailsList, InstrumentEvent } from "../../audio/audio-constants.js";
 import { AppContext } from "../app-context.js";
 
 export class InstrumentsSection {
@@ -24,8 +24,8 @@ export class InstrumentsSection {
         this.instrumentList = document.getElementById("instrument-list");
         this.addInstrumentButton.onclick = () => this.addInstrumentClicked();
 
-        this.context.playbackEngine.addListener(AudioEvent.InstrumentsChanged, () => this.instrumentsChanged());
-        this.context.playbackEngine.addListener(AudioEvent.InstrumentSelected, () => this.updateSelectedInstrument());
+        this.context.instruments.addListener(InstrumentEvent.InstrumentsChanged, () => this.instrumentsChanged());
+        this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.updateSelectedInstrument());
         window.addEventListener("pointerdown", (e) => this.windowClicked(e));
 
         this.initializeDropdown();
@@ -51,9 +51,10 @@ export class InstrumentsSection {
 
     instrumentsChanged() {
         this.instrumentList.replaceChildren();
+        const instruments = this.context.instruments.getList();
 
-        for (let i = 0; i < this.context.playbackEngine.instruments.length; i++) {
-            const instrument = this.context.playbackEngine.instruments[i];
+        for (let i = 0; i < instruments.length; i++) {
+            const instrument = instruments[i];
 
             const div = document.createElement("div");
             div.classList.add("instrument-section");
@@ -93,7 +94,7 @@ export class InstrumentsSection {
      * @param {number} instrumentType
      */
     instrumentDropdownItemClicked(e, instrumentType) {
-        this.context.playbackEngine.addInstrument(instrumentType);
+        this.context.instruments.addInstrument(instrumentType);
         this.addInstrumentContents.classList.remove("flex");
     }
 
@@ -104,7 +105,7 @@ export class InstrumentsSection {
     instrumentClicked(e, index) {
         if (e.target.tagName === "BUTTON") return;
 
-        this.context.playbackEngine.selectInstrument(index);
+        this.context.instruments.selectInstrument(index);
     }
 
     /**
@@ -112,14 +113,14 @@ export class InstrumentsSection {
      * @param {number} index Instrument index
      */
     deleteInstrumentClicked(e, index) {
-        this.context.playbackEngine.removeInstrument(index);
+        this.context.instruments.removeInstrument(index);
     }
 
     updateSelectedInstrument() {
         const childNodes = this.instrumentList.childNodes;
         for (let i = 0; i < childNodes.length; i++) {
             const node = childNodes[i];
-            if (i === this.context.playbackEngine.selectedInstrumentIndex) {
+            if (i === this.context.instruments.selectedIndex) {
                 node.classList.add("instrument-selected");
             }
             else {

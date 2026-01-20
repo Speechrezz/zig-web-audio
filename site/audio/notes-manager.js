@@ -1,5 +1,6 @@
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
-import { Note, PlaybackEngine } from "./playback-engine.js";
+import { InstrumentsContainer } from "./instrument.js";
+import { Note } from "./playback-engine.js";
 
 const UNDO_ID = "notes-manager";
 const UndoType = Object.freeze({
@@ -9,8 +10,8 @@ const UndoType = Object.freeze({
 });
 
 export class NotesManager {
-    /** @type {PlaybackEngine} */
-    playbackEngine;
+    /** @type {InstrumentsContainer} */
+    instruments;
 
     /** @type {UndoManager} */
     undoManager;
@@ -25,11 +26,11 @@ export class NotesManager {
     pianoRollCallback = undefined;
 
     /**
-     * @param {PlaybackEngine} playbackEngine 
+     * @param {InstrumentsContainer} instruments 
      * @param {UndoManager} undoManager 
      */
-    constructor(playbackEngine, undoManager) {
-        this.playbackEngine = playbackEngine;
+    constructor(instruments, undoManager) {
+        this.instruments = instruments;
         this.undoManager = undoManager;
 
         this.undoManager.addListener(UNDO_ID, this);
@@ -41,7 +42,7 @@ export class NotesManager {
      * @param {boolean} newNotes `true` if the notes being added are brand-new.
      */
     addNotes(instrumentIndex, notes, newNotes = true) {
-        const instrument = this.playbackEngine.instruments[instrumentIndex];
+        const instrument = this.instruments.get(instrumentIndex);
 
         for (const note of notes) {
             if (newNotes) {
@@ -69,7 +70,7 @@ export class NotesManager {
      * @param {boolean} addToUndo `true` if this remove event should be communicated to the undo manager.
      */
     removeNotes(instrumentIndex, notes, addToUndo = true) {
-        const instrument = this.playbackEngine.instruments[instrumentIndex];
+        const instrument = this.instruments.get(instrumentIndex);
 
         for (const note of notes) {
             const instrumentNoteIndex = instrument.notes.indexOf(note);
@@ -136,7 +137,7 @@ export class NotesManager {
     undo(transaction) {
         /** @type {number} */
         const instrumentIndex = transaction.diff.instrumentIndex;
-        const instrument = this.playbackEngine.instruments[instrumentIndex];
+        const instrument = this.instruments.get(instrumentIndex);
         /** @type {Note[]} */
         const notesDiff = transaction.diff.notes;
         
@@ -181,7 +182,7 @@ export class NotesManager {
     redo(transaction) {
         /** @type {number} */
         const instrumentIndex = transaction.diff.instrumentIndex;
-        const instrument = this.playbackEngine.instruments[instrumentIndex];
+        const instrument = this.instruments.get(instrumentIndex);
         /** @type {Note[]} */
         const notesDiff = transaction.diff.notes;
 

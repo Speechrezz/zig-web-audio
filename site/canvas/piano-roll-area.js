@@ -4,7 +4,7 @@ import { NoteComponent } from "./note-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy } from "./mouse-event.js";
 import { AppContext } from "../app/app-context.js"
 import { AppCommand, AppEvent } from "../app/app-event.js";
-import { AudioEvent } from "../audio/audio-constants.js";
+import { InstrumentEvent } from "../audio/audio-constants.js";
 import { NotesManager, cloneNotes } from "../audio/notes-manager.js";
 
 const UNDO_ID = "piano-roll-area";
@@ -65,10 +65,10 @@ export class PianoRollArea extends Component {
     constructor(context) {
         super();
         this.context = context;
-        this.notesManager = new NotesManager(this.context.playbackEngine, this.context.undoManager);
+        this.notesManager = new NotesManager(this.context.instruments, this.context.undoManager);
         this.notesManager.pianoRollCallback = () => { this.resetNotes(); this.repaint(); };
 
-        this.context.playbackEngine.addListener(AudioEvent.InstrumentSelected, () => this.instrumentSelected());
+        this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
         this.context.eventRouter.addListener(this);
 
         this.context.config.addZoomListener(() => this.zoomChanged());
@@ -290,7 +290,7 @@ export class PianoRollArea extends Component {
      * @param {Note[]} notes 
      */
     addNotes(notes) {
-        this.notesManager.addNotes(this.context.playbackEngine.selectedInstrumentIndex, notes);
+        this.notesManager.addNotes(this.context.instruments.selectedIndex, notes);
 
         /** @type {NoteComponent[]} */
         const noteComponents = [];
@@ -333,7 +333,7 @@ export class PianoRollArea extends Component {
             notes.push(noteComponent.note);
         }
 
-        this.notesManager.removeNotes(this.context.playbackEngine.selectedInstrumentIndex, notes);
+        this.notesManager.removeNotes(this.context.instruments.selectedIndex, notes);
     }
 
     /**
@@ -496,7 +496,7 @@ export class PianoRollArea extends Component {
                 noteDiffs.push(noteComponent.getNoteDiff());        
             }
             
-            this.notesManager.moveNotesGestureEnd(this.context.playbackEngine.selectedInstrumentIndex, noteDiffs);
+            this.notesManager.moveNotesGestureEnd(this.context.instruments.selectedIndex, noteDiffs);
         }
 
         this.lastBeatLength = this.selectedNoteMain.note.beatLength;
@@ -510,7 +510,7 @@ export class PianoRollArea extends Component {
         document.documentElement.style.cursor = "not-allowed";
         this.clearSelection();
 
-        this.notesManager.removeNotesGestureBegin(this.context.playbackEngine.selectedInstrumentIndex);
+        this.notesManager.removeNotesGestureBegin(this.context.instruments.selectedIndex);
 
         const noteToRemove = this.findNoteAt(ev.x, ev.y);
         if (noteToRemove !== null) {
@@ -717,7 +717,7 @@ export class PianoRollArea extends Component {
     }
 
     indexOfNote(x, noteNumber) {
-        const notes = this.context.playbackEngine.getSelectedInstrument().notes;
+        const notes = this.context.instruments.getSelected().notes;
         for (let i = 0; i < notes.length; i++) {
             const note = notes[i];
             if (note.beatStart == x && note.noteNumber == noteNumber) {
@@ -744,7 +744,7 @@ export class PianoRollArea extends Component {
         }
         this.noteComponents.length = 0;
 
-        const instrument = this.context.playbackEngine.getSelectedInstrument();
+        const instrument = this.context.instruments.getSelected();
         for (const note of instrument.notes) {
             const noteComponent = new NoteComponent(note);
             this.updateNoteBounds(noteComponent);
