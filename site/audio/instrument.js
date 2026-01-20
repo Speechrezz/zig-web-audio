@@ -142,7 +142,7 @@ export class InstrumentsContainer {
         }
 
         // TEMP:
-        this.addInstrument(-1, InstrumentType.SineSynth);
+        this.addInstrument(-1, InstrumentType.SineSynth, false);
     }
 
     /**
