@@ -38,7 +38,7 @@ pub fn appendPacked(self: *@This(), packed_event: u32, sample_position: i64) voi
     self.events.appendAssumeCapacity(midi_event);
 }
 
-pub fn getCurrentBlockEvents(self: *@This(), block_size: u32) []MidiEvent {
+pub fn getCurrentBlockEvents(self: *@This(), block_size: usize) []MidiEvent {
     return self.getCurrentBlockEventsImpl(
         @intCast(block_size),
         externs.getCurrentFrame(),

@@ -9,6 +9,7 @@ pub const StopAllFlag = enum { none, stopWithTail, stopImmediately };
 
 processor_list: std.ArrayList(AudioProcessorWrapper) = .empty,
 audio_buffer: audio.AudioBuffer = undefined,
+process_spec: ?audio.ProcessSpec = null,
 stop_all_notes_flag: StopAllFlag = .none,
 
 pub fn init(self: *@This()) void {
@@ -27,6 +28,8 @@ pub fn deinit(self: *@This()) void {
 
 pub fn prepare(self: *@This(), spec: audio.ProcessSpec) bool {
     logging.logDebug("[ProcessorContainerWeb.prepare()] spec: {}", .{spec});
+
+    self.process_spec = spec;
 
     self.audio_buffer.resize(
         wasm_allocator,
@@ -50,13 +53,14 @@ pub fn prepare(self: *@This(), spec: audio.ProcessSpec) bool {
     return true;
 }
 
-pub fn process(self: *@This(), block_size: u32) bool {
+pub fn process(self: *@This(), block_size: usize) bool {
     if (self.stop_all_notes_flag != .none) {
         self.stop(self.stop_all_notes_flag == .stopWithTail);
         self.stop_all_notes_flag = .none;
     }
 
     self.audio_buffer.clear();
+    var output_view = self.audio_buffer.createViewWithLength(block_size);
 
     for (self.processor_list.items) |*processor| {
         processor.process(
@@ -69,6 +73,8 @@ pub fn process(self: *@This(), block_size: u32) bool {
             );
             return false;
         };
+
+        output_view.addFrom(processor.audio_buffer.createViewWithLength(block_size));
     }
 
     return true;
@@ -90,11 +96,17 @@ pub fn onStopMessage(self: *@This(), allow_tail_off: bool) void {
 }
 
 pub fn addProcessor(self: *@This(), index: usize, audio_processor: AudioProcessor) void {
-    self.processor_list.insert(
-        wasm_allocator,
-        index,
-        AudioProcessorWrapper.init(audio_processor),
-    ) catch |err| {
+    var wrapper = AudioProcessorWrapper.init(audio_processor);
+    if (self.process_spec) |spec| {
+        wrapper.prepare(wasm_allocator, spec) catch |err| {
+            logging.logDebug(
+                "[ProcessorContainerWeb.addProcessor()] ERROR preparing AudioProcessor '{s}': {}",
+                .{ audio_processor.name, err },
+            );
+        };
+    }
+
+    self.processor_list.insert(wasm_allocator, index, wrapper) catch |err| {
         logging.logDebug(
             "[ProcessorContainerWeb.addProcessor()] ERROR processing AudioProcessor '{s}': {}",
             .{ audio_processor.name, err },

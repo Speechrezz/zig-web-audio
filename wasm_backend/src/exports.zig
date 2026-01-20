@@ -27,7 +27,7 @@ export fn prepareAudio(sample_rate: f64, num_channels: usize, block_size: usize)
     });
 }
 
-export fn processAudio(block_size: u32) bool {
+export fn processAudio(block_size: usize) bool {
     return processor_container_web.process(block_size);
 }
 
