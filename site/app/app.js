@@ -9,6 +9,7 @@ import { AppContext } from "./app-context.js"
 import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { InstrumentsSection } from "./sections/instruments-section.js"
+import { InstrumentsContainer } from "../audio/instrument.js"
 
 export class App {
     /** @type {PlaybackEngine | undefined} */
@@ -60,9 +61,10 @@ export class App {
             audioContextStateChanged(toggleAudioContext());
         }
     
-        this.playbackEngine = new PlaybackEngine(this.config);
-        this.midiInput = new MidiInput(this.playbackEngine);
         this.undoManager = new UndoManager(this.eventRouter);
+        const instruments = new InstrumentsContainer(this.undoManager);
+        this.playbackEngine = new PlaybackEngine(this.config, instruments);
+        this.midiInput = new MidiInput(this.playbackEngine);
         this.clipboardManager = new ClipboardManager();
         this.keyboardListener = new KeyboardListener(this.eventRouter);
 

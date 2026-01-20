@@ -1,6 +1,13 @@
 import { getAudioWorkletNode } from "./audio.js";
 import { InstrumentDetailsList, InstrumentType, InstrumentEvent } from "./audio-constants.js";
 import { WorkletMessageType } from "./worklet-message.js";
+import { AppTransaction, UndoManager } from "../app/undo-manager.js";
+
+const UNDO_ID = "instrument";
+const UndoType = Object.freeze({
+    addInstrument: "add", 
+    removeInstrument: "remove", 
+});
 
 class NoteNumberAndChannel {
     noteNumber = 0;
@@ -21,14 +28,13 @@ class NoteNumberAndChannel {
 }
 
 export class Instrument {
-    /**
-     * @type {number}
-     */
+    /** @type {number} */
     index;
 
-    /**
-     * @type {string}
-     */
+    /** @type {InstrumentType} */
+    type;
+
+    /** @type {string} */
     name;
 
     /**
@@ -58,7 +64,8 @@ export class Instrument {
     /**
      * @param {string} name 
      */
-    constructor(name) {
+    constructor(type, name) {
+        this.type = type;
         this.name = name;
     }
 
@@ -85,9 +92,32 @@ export class Instrument {
         this.noteIdCounter++;
         return this.noteIdCounter - 1;
     }
+
+    serialize() {
+        return {
+            index: this.index,
+            type: this.type,
+            name: this.name,
+            notes: this.notes,
+            noteIdCounter: this.noteIdCounter,
+        };
+    }
+
+    static deserialize(json) {
+        const newInstrument = new Instrument(json.type, json.name);
+
+        newInstrument.index = json.index;
+        newInstrument.notes = json.notes;
+        newInstrument.noteIdCounter = json.noteIdCounter;
+
+        return newInstrument;
+    }
 }
 
 export class InstrumentsContainer {
+    /** @type {UndoManager} */
+    undoManager;    
+
     /** @type {Instrument[]} */
     instruments = [];
 
@@ -99,22 +129,44 @@ export class InstrumentsContainer {
      */
     instrumentEventListeners = [];
 
-    constructor() {
+    /**
+     * @param {UndoManager} undoManager 
+     */
+    constructor(undoManager) {
+        this.undoManager = undoManager;
+        this.undoManager.addListener(UNDO_ID, this);
+
         // Initialize listeners list
         for (const key of Object.keys(InstrumentEvent)) {
             this.instrumentEventListeners.push([]);
         }
 
         // TEMP:
-        this.addInstrument(InstrumentType.SineSynth);
+        this.addInstrument(-1, InstrumentType.SineSynth);
     }
 
     /**
+     * @param {number} instrumentIndex 
      * @param {InstrumentType} instrumentType
+     * @param {boolean} addToUndo
      */
-    addInstrument(instrumentType) {
+    addInstrument(instrumentIndex, instrumentType, addToUndo = true) {
+        if (instrumentIndex < 0) {
+            instrumentIndex = this.instruments.length;
+        }
+
         const instrumentDetails = InstrumentDetailsList[instrumentType];
-        const newInstrument = new Instrument(instrumentDetails.name);
+        const newInstrument = new Instrument(instrumentType, instrumentDetails.name);
+
+        return this.addInstrumentInternal(newInstrument, newInstrument, addToUndo);
+    }
+
+    /**
+     * @param {number} instrumentIndex 
+     * @param {Instrument} newInstrument 
+     * @param {boolean} addToUndo 
+     */
+    addInstrumentInternal(instrumentIndex, newInstrument, addToUndo = true) {
         this.instruments.push(newInstrument);
         this.updateInstrumentIndices();
         this.selectedIndex = newInstrument.index;
@@ -122,18 +174,29 @@ export class InstrumentsContainer {
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.addInstrument,
             instrumentIndex: newInstrument.index,
-            instrumentType: instrumentType,
+            instrumentType: newInstrument.type,
         });
+
+        if (addToUndo) {
+            this.undoManager.push(new AppTransaction(
+                UNDO_ID,
+                UndoType.addInstrument,
+                newInstrument.serialize(),
+            ));
+        }
 
         this.notifyListeners(InstrumentEvent.InstrumentsChanged);
         this.notifyListeners(InstrumentEvent.InstrumentSelected);
+
+        return newInstrument;
     }
 
     /**
      * @param {number} instrumentIndex
+     * @param {boolean} addToUndo
      */
-    removeInstrument(instrumentIndex) {
-        this.instruments.splice(instrumentIndex, 1);
+    removeInstrument(instrumentIndex, addToUndo = true) {
+        const removedInstrument = this.instruments.splice(instrumentIndex, 1)[0];
         this.updateInstrumentIndices();
 
         getAudioWorkletNode().port.postMessage({
@@ -143,6 +206,14 @@ export class InstrumentsContainer {
 
         if (this.selectedIndex >= instrumentIndex) {
             this.selectedIndex = Math.max(0, this.selectedIndex - 1);
+        }
+
+        if (addToUndo) {
+            this.undoManager.push(new AppTransaction(
+                UNDO_ID,
+                UndoType.removeInstrument,
+                removedInstrument.serialize(),
+            ));
         }
 
         this.notifyListeners(InstrumentEvent.InstrumentSelected);
@@ -207,5 +278,39 @@ export class InstrumentsContainer {
         for (const callback of listeners) {
             callback();
         }
+    }
+
+    /**
+     * Override to handle undo events.
+     * @param {AppTransaction} transaction 
+     */
+    undo(transaction) {
+        switch (transaction.type) {
+            case UndoType.addInstrument:
+                this.removeInstrument(transaction.diff.index, false);
+                break;
+            case UndoType.removeInstrument: {
+                const newInstrument = Instrument.deserialize(transaction.diff);
+                this.addInstrumentInternal(newInstrument.index, newInstrument, false);
+                break;
+            }
+        }        
+    }
+
+    /**
+     * Override to handle redo events.
+     * @param {AppTransaction} transaction 
+     */
+    redo(transaction) {
+        switch (transaction.type) {
+            case UndoType.addInstrument: {
+                const newInstrument = Instrument.deserialize(transaction.diff);
+                this.addInstrumentInternal(newInstrument.index, newInstrument, false);
+                break;
+            }
+            case UndoType.removeInstrument:
+                this.removeInstrument(transaction.diff.index, false);
+                break;
+        }        
     }
 }

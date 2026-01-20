@@ -94,7 +94,7 @@ export class InstrumentsSection {
      * @param {number} instrumentType
      */
     instrumentDropdownItemClicked(e, instrumentType) {
-        this.context.instruments.addInstrument(instrumentType);
+        this.context.instruments.addInstrument(-1, instrumentType);
         this.addInstrumentContents.classList.remove("flex");
     }
 

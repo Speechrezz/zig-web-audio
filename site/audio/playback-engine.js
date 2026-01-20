@@ -159,21 +159,16 @@ export class PlayHead {
 }
 
 export class PlaybackEngine {
-    /**
-     * @type {Config}
-     */
+    /** @type {Config} */
     config;
 
-    /**
-     * @type {PlayHead}
-     */
+    /** @type {PlayHead} */
     playHead;
 
-    instruments = new InstrumentsContainer();
+    /** @type {InstrumentsContainer} */
+    instruments;
 
-    /**
-     * @type {(() => void)[][]}
-     */
+    /** @type {(() => void)[][]} */
     audioEventListeners = [];
 
     /**
@@ -184,10 +179,12 @@ export class PlaybackEngine {
 
     /**
      * @param {Config} config 
+     * @param {InstrumentsContainer} instruments 
      */
-    constructor(config) {
+    constructor(config, instruments) {
         this.config = config;
         this.playHead = new PlayHead(config);
+        this.instruments = instruments;
 
         // Initialize listeners list
         for (const key of Object.keys(AudioEvent)) {
