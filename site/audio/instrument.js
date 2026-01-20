@@ -158,7 +158,7 @@ export class InstrumentsContainer {
         const instrumentDetails = InstrumentDetailsList[instrumentType];
         const newInstrument = new Instrument(instrumentType, instrumentDetails.name);
 
-        return this.addInstrumentInternal(newInstrument, newInstrument, addToUndo);
+        return this.addInstrumentInternal(instrumentIndex, newInstrument, addToUndo);
     }
 
     /**
@@ -167,7 +167,7 @@ export class InstrumentsContainer {
      * @param {boolean} addToUndo 
      */
     addInstrumentInternal(instrumentIndex, newInstrument, addToUndo = true) {
-        this.instruments.push(newInstrument);
+        this.instruments.splice(instrumentIndex, 0, newInstrument);
         this.updateInstrumentIndices();
         this.selectedIndex = newInstrument.index;
 
