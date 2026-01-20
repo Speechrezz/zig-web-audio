@@ -1,0 +1,19 @@
+const std = @import("std");
+const audio = @import("framework").audio;
+const SineSynthInstrument = @import("instruments/SineSynth/SineSynthInstrument.zig");
+
+pub fn instrumentTypeToProcessor(allocator: std.mem.Allocator, instrument_type: usize) !audio.AudioProcessor {
+    _ = instrument_type;
+    return try SineSynthInstrument.create(allocator);
+}
+
+test "Registering instrument test" {
+    const allocator = std.testing.allocator;
+
+    var processor_list: std.ArrayList(audio.AudioProcessorWrapper) = .empty;
+    const instrument1 = audio.AudioProcessorWrapper.init(
+        try SineSynthInstrument.create(allocator),
+    );
+
+    processor_list.append(allocator, instrument1);
+}

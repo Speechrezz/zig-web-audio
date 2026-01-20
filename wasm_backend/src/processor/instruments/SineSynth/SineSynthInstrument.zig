@@ -2,7 +2,6 @@ const std = @import("std");
 const audio = @import("framework").audio;
 const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
-const Instrument = @import("../Instrument.zig");
 const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
 const SynthVoice = @import("SineSynthVoice.zig");
 
@@ -14,13 +13,13 @@ pub fn init(self: *@This()) void {
     self.synth_processor.init();
 }
 
-pub fn create(allocator: std.mem.Allocator) !Instrument {
+pub fn create(allocator: std.mem.Allocator) !audio.AudioProcessor {
     const self = try allocator.create(@This());
     self.init();
-    return self.instrument();
+    return self.processor();
 }
 
-pub fn instrument(self: *@This()) Instrument {
+pub fn processor(self: *@This()) audio.AudioProcessor {
     return .{
         .name = name,
         .ptr = self,

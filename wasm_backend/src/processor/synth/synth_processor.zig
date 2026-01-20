@@ -148,7 +148,7 @@ pub fn SynthProcessor(comptime SynthVoice: type) type {
 }
 
 test "SynthProcessor tests" {
-    const SynthVoice = @import("../instrument/SineSynth/SineSynthVoice.zig");
+    const SynthVoice = @import("../instruments/SineSynth/SineSynthVoice.zig");
     const dsp = @import("framework").dsp;
     const allocator = std.testing.allocator;
 

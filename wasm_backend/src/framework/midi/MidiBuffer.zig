@@ -1,11 +1,9 @@
 const std = @import("std");
-const MidiEvent = @import("../midi/MidiEvent.zig");
-const logging = @import("logging.zig");
-const externs = @import("externs.zig");
+const MidiEvent = @import("MidiEvent.zig");
+const logging = @import("../web/logging.zig");
+const externs = @import("../web/externs.zig");
 
 const Self = @This();
-
-pub const StopAllNotesFlag = enum { none, stopWithTail, stopImmediately };
 
 events: std.ArrayList(MidiEvent) = .empty,
 read_index: usize = 0,
@@ -75,34 +73,34 @@ test "Add and read current block midi events" {
     const allocator = std.testing.allocator;
     const block_size = 128;
 
-    var web_midi: Self = undefined;
-    web_midi.init();
-    defer web_midi.deinit(allocator);
-    try web_midi.resize(allocator, block_size * 4);
+    var midi_buffer: Self = undefined;
+    midi_buffer.init();
+    defer midi_buffer.deinit(allocator);
+    try midi_buffer.resize(allocator, block_size * 4);
 
     const packed_event = 6043280;
 
-    web_midi.appendPacked(packed_event, 50);
-    web_midi.appendPacked(packed_event, 0);
-    web_midi.appendPacked(packed_event, 100);
-    web_midi.appendPacked(packed_event, 150);
-    web_midi.appendPacked(packed_event, 200);
-    web_midi.appendPacked(packed_event, 50);
+    midi_buffer.appendPacked(packed_event, 50);
+    midi_buffer.appendPacked(packed_event, 0);
+    midi_buffer.appendPacked(packed_event, 100);
+    midi_buffer.appendPacked(packed_event, 150);
+    midi_buffer.appendPacked(packed_event, 200);
+    midi_buffer.appendPacked(packed_event, 50);
 
-    const events_block1 = web_midi.getCurrentBlockEventsImpl(block_size, 0);
+    const events_block1 = midi_buffer.getCurrentBlockEventsImpl(block_size, 0);
     try std.testing.expect(events_block1.len == 4);
     try std.testing.expect(events_block1[0].sample_position == 0);
-    try std.testing.expect(web_midi.read_index == 4);
-    try std.testing.expect(web_midi.events.items.len == 6);
+    try std.testing.expect(midi_buffer.read_index == 4);
+    try std.testing.expect(midi_buffer.events.items.len == 6);
 
-    const events_block2 = web_midi.getCurrentBlockEventsImpl(block_size, block_size);
+    const events_block2 = midi_buffer.getCurrentBlockEventsImpl(block_size, block_size);
     try std.testing.expect(events_block2.len == 2);
     try std.testing.expect(events_block2[0].sample_position == 22);
-    try std.testing.expect(web_midi.read_index == 2);
-    try std.testing.expect(web_midi.events.items.len == 2);
+    try std.testing.expect(midi_buffer.read_index == 2);
+    try std.testing.expect(midi_buffer.events.items.len == 2);
 
-    const events_block3 = web_midi.getCurrentBlockEventsImpl(block_size, block_size * 2);
+    const events_block3 = midi_buffer.getCurrentBlockEventsImpl(block_size, block_size * 2);
     try std.testing.expect(events_block3.len == 0);
-    try std.testing.expect(web_midi.read_index == 0);
-    try std.testing.expect(web_midi.events.items.len == 0);
+    try std.testing.expect(midi_buffer.read_index == 0);
+    try std.testing.expect(midi_buffer.events.items.len == 0);
 }
