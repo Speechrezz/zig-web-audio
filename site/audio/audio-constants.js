@@ -4,7 +4,7 @@
  */
 export const InstrumentType = Object.freeze({
     SineSynth: 0,
-    SawSynth: 1,
+    TriangleSynth: 1,
 });
 
 /**
@@ -12,7 +12,7 @@ export const InstrumentType = Object.freeze({
  */
 export const InstrumentDetailsList = Object.freeze([
     { name: "Sine Synth" },
-    { name: "Saw Synth" },
+    { name: "Triangle Synth" },
 ]);
 
 /**

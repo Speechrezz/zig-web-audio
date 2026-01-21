@@ -34,6 +34,8 @@ pub fn process(self: *@This(), audio_view: audio.AudioView, frequency: f32, gain
             }
         }
     }
+
+    self.phase = current_phase;
 }
 
 fn phaseToSample(phase: f32, gain: f32) f32 {

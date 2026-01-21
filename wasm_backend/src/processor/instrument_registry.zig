@@ -1,9 +1,16 @@
 const std = @import("std");
 const audio = @import("framework").audio;
 const SineSynthInstrument = @import("instruments/SineSynth/SineSynthInstrument.zig");
+const TriangleSynthInstrument = @import("instruments/TriangleSynth/TriangleSynthInstrument.zig");
 
 pub fn instrumentTypeToProcessor(allocator: std.mem.Allocator, instrument_type: usize) !audio.AudioProcessor {
-    _ = instrument_type;
+    switch (instrument_type) {
+        0 => return try SineSynthInstrument.create(allocator),
+        1 => return try TriangleSynthInstrument.create(allocator),
+
+        else => {},
+    }
+
     return try SineSynthInstrument.create(allocator);
 }
 
