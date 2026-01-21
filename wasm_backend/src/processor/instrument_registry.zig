@@ -1,17 +1,31 @@
 const std = @import("std");
 const audio = @import("framework").audio;
+const logging = @import("framework").logging;
 const SineSynthInstrument = @import("instruments/SineSynth/SineSynthInstrument.zig");
 const TriangleSynthInstrument = @import("instruments/TriangleSynth/TriangleSynthInstrument.zig");
+
+const Error = std.mem.Allocator.Error || error{InstrumentTypeDoesNotExist};
 
 pub fn instrumentTypeToProcessor(allocator: std.mem.Allocator, instrument_type: usize) !audio.AudioProcessor {
     switch (instrument_type) {
         0 => return try SineSynthInstrument.create(allocator),
         1 => return try TriangleSynthInstrument.create(allocator),
 
-        else => {},
+        else => return Error.InstrumentTypeDoesNotExist,
     }
+}
 
-    return try SineSynthInstrument.create(allocator);
+pub fn instrumentTypeToProcessorWeb(allocator: std.mem.Allocator, instrument_type: usize) ?audio.AudioProcessor {
+    return instrumentTypeToProcessor(
+        allocator,
+        instrument_type,
+    ) catch |err| {
+        logging.logDebug(
+            "[WASM.addInstrument()] Failed to create instrument '{}': {}",
+            .{ instrument_type, err },
+        );
+        return null;
+    };
 }
 
 test "Registering instrument test" {

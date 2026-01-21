@@ -95,7 +95,7 @@ pub fn onStopMessage(self: *@This(), allow_tail_off: bool) void {
     self.stop_all_notes_flag = if (allow_tail_off) .stopWithTail else .stopImmediately;
 }
 
-pub fn addProcessor(self: *@This(), index: usize, audio_processor: AudioProcessor) void {
+pub fn addProcessor(self: *@This(), index: usize, audio_processor: AudioProcessor) bool {
     var wrapper = AudioProcessorWrapper.init(audio_processor);
     if (self.process_spec) |spec| {
         wrapper.prepare(wasm_allocator, spec) catch |err| {
@@ -103,6 +103,7 @@ pub fn addProcessor(self: *@This(), index: usize, audio_processor: AudioProcesso
                 "[ProcessorContainerWeb.addProcessor()] ERROR preparing AudioProcessor '{s}': {}",
                 .{ audio_processor.name, err },
             );
+            return false;
         };
     }
 
@@ -111,8 +112,10 @@ pub fn addProcessor(self: *@This(), index: usize, audio_processor: AudioProcesso
             "[ProcessorContainerWeb.addProcessor()] ERROR processing AudioProcessor '{s}': {}",
             .{ audio_processor.name, err },
         );
-        return;
+        return false;
     };
+
+    return true;
 }
 
 pub fn removeProcessor(self: *@This(), index: usize) void {
