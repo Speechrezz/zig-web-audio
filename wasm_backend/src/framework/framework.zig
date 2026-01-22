@@ -8,6 +8,7 @@ pub const MidiEvent = @import("midi/MidiEvent.zig");
 pub const ProcessorContainerWeb = @import("web/ProcessorContainerWeb.zig");
 
 test {
-    _ = @import("midi/midi.zig");
     _ = @import("audio/audio.zig");
+    _ = @import("dsp/dsp.zig");
+    _ = @import("midi/midi.zig");
 }
