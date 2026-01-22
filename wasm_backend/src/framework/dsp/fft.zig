@@ -18,23 +18,17 @@ pub fn fftInplace(comptime FloatType: type, array: []std.math.Complex(FloatType)
     std.debug.assert(std.math.isPowerOfTwo(N));
 
     // 1. Bit-reversal
-    var num_bits: usize = 0;
-    var temp = N;
-    while (temp > 1) {
-        temp >>= 1;
-        num_bits += 1;
-    }
-
+    const num_bits = std.math.log2_int(usize, N);
     for (0..N) |i| {
         const j = reverseBits(i, num_bits);
         if (j > i) {
-            std.mem.swap(Complex, &array[i], &array[2]);
+            std.mem.swap(Complex, &array[i], &array[j]);
         }
     }
 
     // 2. Iterative butterfly
     var m: usize = 2;
-    const sign: FloatType = if (inverse) -1.0 else 1.0;
+    const sign: FloatType = if (inverse) 1.0 else -1.0;
     while (m <= N) : (m *= 2) {
         const half = m / 2;
         const theta = sign * 2.0 * std.math.pi / @as(FloatType, @floatFromInt(m));
@@ -55,10 +49,11 @@ pub fn fftInplace(comptime FloatType: type, array: []std.math.Complex(FloatType)
 
     // 3. Normalize if inverse
     if (inverse) {
+        const invN = 1.0 / @as(FloatType, @floatFromInt(N));
         for (0..N) |i| {
             const v = &array[i];
-            v.re /= @floatFromInt(N);
-            v.im /= @floatFromInt(N);
+            v.re *= invN;
+            v.im *= invN;
         }
     }
 }
@@ -68,12 +63,11 @@ test "FFT test" {
 
     // FFT of an impulse
 
-    var values1 = [_]Complex{
-        .{ .re = 1.0, .im = 0.0 },
-        .{ .re = 0.0, .im = 0.0 },
-        .{ .re = 0.0, .im = 0.0 },
-        .{ .re = 0.0, .im = 0.0 },
-    };
+    var values1: [32]Complex = undefined;
+    values1[0] = .{ .re = 1.0, .im = 0.0 };
+    for (values1[1..]) |*v| {
+        v.* = .{ .re = 0.0, .im = 0.0 };
+    }
 
     fftInplace(f32, &values1, false);
 
@@ -105,7 +99,7 @@ test "FFT test" {
 
     // FFT and inverse FFT
 
-    var values3: [4]Complex = undefined;
+    var values3: [32]Complex = undefined;
     var i: f32 = 1.0;
     for (&values3) |*v| {
         v.re = i;
