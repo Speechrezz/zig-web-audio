@@ -11,7 +11,7 @@ fn reverseBits(x_in: anytype, num_bits: usize) @TypeOf(x_in) {
 }
 
 // Uses the Radix-2 Cooley-Tukey algorithm. Not the fastest implementation.
-fn fftInplace(comptime FloatType: type, array: []std.math.Complex(FloatType), inverse: bool) void {
+pub fn fftInplace(comptime FloatType: type, array: []std.math.Complex(FloatType), inverse: bool) void {
     const Complex = std.math.Complex(FloatType);
 
     const N = array.len;
