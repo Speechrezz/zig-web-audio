@@ -1,6 +1,7 @@
 pub const AdsrProcessor = @import("AdsrProcessor.zig");
-pub const fft = @import("fft.zig");
+pub const WavetableOsc = @import("WavetableOsc.zig");
 
 test {
-    _ = @import("fft.zig");
+    _ = AdsrProcessor;
+    _ = WavetableOsc;
 }
