@@ -3,13 +3,15 @@ const audio = @import("framework").audio;
 const logging = @import("framework").logging;
 const SineSynthInstrument = @import("instruments/SineSynth/SineSynthInstrument.zig");
 const TriangleSynthInstrument = @import("instruments/TriangleSynth/TriangleSynthInstrument.zig");
+const WavetableSynthInstrument = @import("instruments/WavetableSynth/WavetableSynthInstrument.zig");
 
-const Error = std.mem.Allocator.Error || error{InstrumentTypeDoesNotExist};
+pub const Error = std.mem.Allocator.Error || error{InstrumentTypeDoesNotExist};
 
 pub fn instrumentTypeToProcessor(allocator: std.mem.Allocator, instrument_type: usize) !audio.AudioProcessor {
     switch (instrument_type) {
         0 => return try SineSynthInstrument.create(allocator),
         1 => return try TriangleSynthInstrument.create(allocator),
+        2 => return try WavetableSynthInstrument.create(allocator),
 
         else => return Error.InstrumentTypeDoesNotExist,
     }

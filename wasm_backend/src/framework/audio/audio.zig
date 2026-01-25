@@ -10,5 +10,5 @@ pub const AudioProcessorWrapper = @import("AudioProcessorWrapper.zig");
 pub const AudioView = @import("AudioView.zig");
 
 test {
-    _ = @import("AudioView.zig");
+    _ = AudioView;
 }
