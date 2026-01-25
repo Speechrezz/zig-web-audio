@@ -90,7 +90,7 @@ test "Wavetable Oscillator" {
     // This should not do any band-limiting
     osc.bandLimitAtFrequency(0.1);
     for (saw_wave, table) |v1, v2| {
-        try std.testing.expectApproxEqRel(v1 + 2.0, v2 + 2.0, 1e-4);
+        try std.testing.expectApproxEqRel(v1 + 2.0, v2 + 2.0, 1e-5);
     }
 
     // This should do FULL band-limiting (AKA all frequencies are 0)
