@@ -26,6 +26,24 @@ pub fn init(
     self.value_normalized = self.convertToNormalized(value_default);
 }
 
+pub fn create(
+    id: []const u8,
+    name: []const u8,
+    value_min: f32,
+    value_max: f32,
+    value_default: f32,
+) @This() {
+    var container: @This() = undefined;
+    container.init(
+        id,
+        name,
+        value_min,
+        value_max,
+        value_default,
+    );
+    return container;
+}
+
 pub fn getValue(self: *const @This()) f32 {
     return self.convertFromNormalized(self.value_normalized);
 }
