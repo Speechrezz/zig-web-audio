@@ -10,24 +10,25 @@ pub const name = "Sine Synth";
 processor: audio.AudioProcessor,
 synth_processor: SynthProcessor(SynthVoice),
 
-pub fn init(self: *@This()) void {
-    self.processor = .{
-        .name = name,
-        .ptr = self,
-        .vtable = &.{
+pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
+    try self.processor.init(
+        allocator,
+        name,
+        self,
+        &.{
             .destroy = destroy,
             .prepare = prepare,
             .process = process,
             .stop = stop,
         },
-    };
+    );
 
     self.synth_processor.init();
 }
 
 pub fn create(allocator: std.mem.Allocator) !*audio.AudioProcessor {
     const self = try allocator.create(@This());
-    self.init();
+    try self.init(allocator);
     return &self.processor;
 }
 
@@ -48,7 +49,7 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     _ = allocator;
 
     self.synth_processor.process(audio_view, midi_events);
-    audio_view.multiplyBy(0.15); // Reduce volume
+    audio_view.multiplyBy(self.processor.gain_param.getValue());
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {

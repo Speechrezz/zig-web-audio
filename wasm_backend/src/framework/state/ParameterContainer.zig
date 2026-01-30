@@ -4,18 +4,18 @@ const AudioParameter = @import("AudioParameter.zig");
 list: std.ArrayList(AudioParameter) = .empty,
 map: std.StringHashMapUnmanaged(usize) = .empty,
 
-pub fn init(self: *@This()) void {
-    self.* = .{};
-}
+pub const empty: @This() = .{};
 
 pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
     self.list.deinit(allocator);
     self.map.deinit(allocator);
 }
 
-pub fn add(self: *@This(), allocator: std.mem.Allocator, parameter: AudioParameter) !void {
+pub fn add(self: *@This(), allocator: std.mem.Allocator, parameter: AudioParameter) !*AudioParameter {
     try self.list.append(allocator, parameter);
-    try self.map.put(allocator, parameter.id, self.list.items.len - 1);
+    const index = self.list.items.len - 1;
+    try self.map.put(allocator, parameter.id, index);
+    return &self.list.items[index];
 }
 
 pub fn getWithId(self: *const @This(), parameter_id: []const u8) ?*AudioParameter {
@@ -43,11 +43,10 @@ pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify) !void {
 test "ParameterContainer" {
     const allocator = std.testing.allocator;
 
-    var container: @This() = undefined;
-    container.init();
+    var container: @This() = .empty;
     defer container.deinit(allocator);
 
-    try container.add(allocator, AudioParameter.create(
+    _ = try container.add(allocator, AudioParameter.create(
         "test1",
         "Test 1",
         0.0,
@@ -55,7 +54,7 @@ test "ParameterContainer" {
         1.0,
     ));
 
-    try container.add(allocator, AudioParameter.create(
+    _ = try container.add(allocator, AudioParameter.create(
         "test2",
         "Test 2",
         10.0,

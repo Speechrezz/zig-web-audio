@@ -51,11 +51,10 @@ test "returnJsonString" {
 
     const allocator = std.testing.allocator;
 
-    var container: ParameterContainer = undefined;
-    container.init();
+    var container: ParameterContainer = .empty;
     defer container.deinit(allocator);
 
-    try container.add(allocator, AudioParameter.create(
+    _ = try container.add(allocator, AudioParameter.create(
         "test1",
         "Test 1",
         0.0,
@@ -63,7 +62,7 @@ test "returnJsonString" {
         1.0,
     ));
 
-    try container.add(allocator, AudioParameter.create(
+    _ = try container.add(allocator, AudioParameter.create(
         "test2",
         "Test 2",
         10.0,
