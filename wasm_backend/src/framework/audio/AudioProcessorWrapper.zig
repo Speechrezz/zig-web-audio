@@ -5,9 +5,9 @@ const AudioProcessor = @import("AudioProcessor.zig");
 
 audio_buffer: audio.AudioBuffer = undefined,
 midi_buffer: midi.MidiBuffer = undefined,
-audio_processor: AudioProcessor = undefined,
+audio_processor: *AudioProcessor = undefined,
 
-pub fn init(audio_processor: AudioProcessor) @This() {
+pub fn init(audio_processor: *AudioProcessor) @This() {
     var new_wrapper: @This() = .{};
 
     new_wrapper.audio_buffer.init();

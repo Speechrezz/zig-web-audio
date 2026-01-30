@@ -95,7 +95,7 @@ pub fn onStopMessage(self: *@This(), allow_tail_off: bool) void {
     self.stop_all_notes_flag = if (allow_tail_off) .stopWithTail else .stopImmediately;
 }
 
-pub fn addProcessor(self: *@This(), index: usize, audio_processor: AudioProcessor) bool {
+pub fn addProcessor(self: *@This(), index: usize, audio_processor: *AudioProcessor) bool {
     var wrapper = AudioProcessorWrapper.init(audio_processor);
     if (self.process_spec) |spec| {
         wrapper.prepare(wasm_allocator, spec) catch |err| {

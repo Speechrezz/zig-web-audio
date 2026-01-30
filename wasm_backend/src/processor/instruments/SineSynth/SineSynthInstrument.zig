@@ -7,20 +7,11 @@ const SynthVoice = @import("SineSynthVoice.zig");
 
 pub const name = "Sine Synth";
 
-synth_processor: SynthProcessor(SynthVoice) = undefined,
+processor: audio.AudioProcessor,
+synth_processor: SynthProcessor(SynthVoice),
 
 pub fn init(self: *@This()) void {
-    self.synth_processor.init();
-}
-
-pub fn create(allocator: std.mem.Allocator) !audio.AudioProcessor {
-    const self = try allocator.create(@This());
-    self.init();
-    return self.processor();
-}
-
-pub fn processor(self: *@This()) audio.AudioProcessor {
-    return .{
+    self.processor = .{
         .name = name,
         .ptr = self,
         .vtable = &.{
@@ -30,6 +21,14 @@ pub fn processor(self: *@This()) audio.AudioProcessor {
             .stop = stop,
         },
     };
+
+    self.synth_processor.init();
+}
+
+pub fn create(allocator: std.mem.Allocator) !*audio.AudioProcessor {
+    const self = try allocator.create(@This());
+    self.init();
+    return &self.processor;
 }
 
 fn destroy(ctx: *anyopaque, allocator: std.mem.Allocator) void {
