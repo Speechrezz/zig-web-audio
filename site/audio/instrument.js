@@ -143,9 +143,6 @@ export class InstrumentsContainer {
 
         // Listen to audio worklet
         getAudioWorkletNode().port.addEventListener("message", (ev) => this.addInstrumentCallback(ev));
-
-        // TEMP:
-        this.addInstrument(-1, InstrumentType.SineSynth, false);
     }
 
     /**
