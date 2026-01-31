@@ -74,6 +74,33 @@ pub fn convertFromNormalized(self: *const @This(), normalized: f32) f32 {
     return std.math.clamp(value, self.value_min, self.value_max);
 }
 
+pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify, index: usize) !void {
+    try write_stream.beginObject();
+
+    try write_stream.objectField("index");
+    try write_stream.write(index);
+
+    try write_stream.objectField("id");
+    try write_stream.write(self.id);
+
+    try write_stream.objectField("name");
+    try write_stream.write(self.name);
+
+    try write_stream.objectField("value_min");
+    try write_stream.write(self.value_min);
+
+    try write_stream.objectField("value_max");
+    try write_stream.write(self.value_max);
+
+    try write_stream.objectField("value_default");
+    try write_stream.write(self.value_default);
+
+    try write_stream.objectField("value_normalized");
+    try write_stream.write(self.value_normalized);
+
+    try write_stream.endObject();
+}
+
 test "AudioParameter" {
     var param: @This() = undefined;
     param.init("test", "Test", 10.0, 20.0, 12.0);

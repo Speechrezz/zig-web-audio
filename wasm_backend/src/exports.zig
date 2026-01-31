@@ -1,6 +1,6 @@
-const std = @import("std");
-const logging = @import("framework").logging;
 const audio = @import("framework").audio;
+const logging = @import("framework").logging;
+const std = @import("std");
 const state = @import("framework").state;
 const web = @import("framework").web;
 const ProcessorContainerWeb = @import("framework").ProcessorContainerWeb;
@@ -78,13 +78,12 @@ export fn clearInstruments() void {
     // TODO
 }
 
-export fn getInstrumentParameters(instrument_index: usize) u64 {
+export fn getInstrumentState(instrument_index: usize) u64 {
     const instrument = processor_container_web.getProcessor(instrument_index);
-    const parameters = &instrument.audio_processor.parameters;
-    const web_string = web.string.returnJsonString(
+    const web_string = web.string.toJsonString(
         wasm_allocator,
-        parameters,
-        state.ParameterContainer.toJson,
+        instrument,
+        audio.AudioProcessorWrapper.toJson,
     );
     return @bitCast(web_string);
 }

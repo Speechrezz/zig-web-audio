@@ -121,8 +121,8 @@ export class InstrumentsContainer {
     /** @type {Instrument[]} */
     instruments = [];
 
-    /** @type {number} */
-    selectedIndex = 0;
+    /** @type {null | number} */
+    selectedIndex = null;
 
     /**
      * @type {(() => void)[][]}
@@ -141,6 +141,9 @@ export class InstrumentsContainer {
             this.instrumentEventListeners.push([]);
         }
 
+        // Listen to audio worklet
+        getAudioWorkletNode().port.addEventListener("message", (ev) => this.addInstrumentCallback(ev));
+
         // TEMP:
         this.addInstrument(-1, InstrumentType.SineSynth, false);
     }
@@ -155,27 +158,37 @@ export class InstrumentsContainer {
             instrumentIndex = this.instruments.length;
         }
 
-        const instrumentDetails = InstrumentDetailsList[instrumentType];
-        const newInstrument = new Instrument(instrumentType, instrumentDetails.name);
-
-        return this.addInstrumentInternal(instrumentIndex, newInstrument, addToUndo);
+        getAudioWorkletNode().port.postMessage({
+            type: WorkletMessageType.addInstrument,
+            instrumentIndex,
+            instrumentType,
+            addToUndo,
+        });
     }
 
     /**
-     * @param {number} instrumentIndex 
-     * @param {Instrument} newInstrument 
-     * @param {boolean} addToUndo 
+     * @param {MessageEvent} ev 
      */
-    addInstrumentInternal(instrumentIndex, newInstrument, addToUndo = true) {
+    addInstrumentCallback(ev) {
+        if (ev.data.type !== WorkletMessageType.addInstrument) return;
+
+        if (ev.data.success !== true) {
+            console.error("Failed to add instrument.", ev);
+            return;
+        }
+
+        const instrumentState = ev.data.state;
+        const instrumentType = instrumentState.instrumentType;
+        const instrumentIndex = instrumentState.instrumentIndex;
+        const addToUndo = instrumentState.addToUndo;
+        console.log("instrumentState:", instrumentState);
+
+        const instrumentDetails = InstrumentDetailsList[instrumentType];
+        const newInstrument = new Instrument(instrumentType, instrumentDetails.name);
+
         this.instruments.splice(instrumentIndex, 0, newInstrument);
         this.updateInstrumentIndices();
         this.selectedIndex = newInstrument.index;
-
-        getAudioWorkletNode().port.postMessage({
-            type: WorkletMessageType.addInstrument,
-            instrumentIndex: newInstrument.index,
-            instrumentType: newInstrument.type,
-        });
 
         if (addToUndo) {
             this.undoManager.push(new AppTransaction(
@@ -187,8 +200,6 @@ export class InstrumentsContainer {
 
         this.notifyListeners(InstrumentEvent.InstrumentsChanged);
         this.notifyListeners(InstrumentEvent.InstrumentSelected);
-
-        return newInstrument;
     }
 
     /**
@@ -205,7 +216,10 @@ export class InstrumentsContainer {
         });
 
         if (this.selectedIndex >= instrumentIndex) {
-            this.selectedIndex = Math.max(0, this.selectedIndex - 1);
+            if (this.instruments.length === 0)
+                this.selectedIndex = null;
+            else
+                this.selectedIndex = Math.max(0, this.selectedIndex - 1);
         }
 
         if (addToUndo) {
@@ -245,6 +259,8 @@ export class InstrumentsContainer {
     }
 
     getSelected() {
+        if (this.selectedIndex === null)
+            return null;
         return this.instruments[this.selectedIndex];
     }
 

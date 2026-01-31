@@ -33,9 +33,9 @@ pub fn idToIndex(self: *const @This(), parameter_id: []const u8) ?usize {
 
 pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
-    for (self.list.items) |param| {
+    for (self.list.items, 0..) |param, i| {
         try write_stream.objectField(param.id);
-        try write_stream.write(param);
+        try param.toJson(write_stream, i);
     }
     try write_stream.endObject();
 }

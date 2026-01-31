@@ -290,6 +290,8 @@ export class PianoRollArea extends Component {
      * @param {Note[]} notes 
      */
     addNotes(notes) {
+        if (this.context.instruments.getSelected() === null) return [];
+
         this.notesManager.addNotes(this.context.instruments.selectedIndex, notes);
 
         /** @type {NoteComponent[]} */
@@ -365,6 +367,7 @@ export class PianoRollArea extends Component {
      * @param {number} interactionType InteractionType
      */
     adjustNoteBegin(ev, noteComponent, interactionType) {
+        if (this.context.instruments.getSelected() === null) return;
         this.context.playbackEngine.sendPreviewMidiNote(noteComponent.note.noteNumber);
 
         if (!this.isNoteSelected(noteComponent)) {
@@ -745,6 +748,8 @@ export class PianoRollArea extends Component {
         this.noteComponents.length = 0;
 
         const instrument = this.context.instruments.getSelected();
+        if (instrument === null) return;
+
         for (const note of instrument.notes) {
             const noteComponent = new NoteComponent(note);
             this.updateNoteBounds(noteComponent);

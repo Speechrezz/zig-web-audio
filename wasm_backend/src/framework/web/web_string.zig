@@ -8,18 +8,18 @@ pub const WebString = packed struct {
 
 const JsonWriteError = std.json.Stringify.Error;
 
-pub fn returnJsonString(
+pub fn toJsonString(
     allocator: std.mem.Allocator,
     context: anytype,
     comptime toJsonFn: fn (@TypeOf(context), *std.json.Stringify) JsonWriteError!void,
 ) WebString {
-    return returnJsonStringImpl(allocator, context, toJsonFn) catch |err| {
+    return toJsonStringImpl(allocator, context, toJsonFn) catch |err| {
         logging.logDebug("[web_string.returnJsonString] Error creating string: {}", .{err});
         return .{ .ptr = undefined, .len = 0 };
     };
 }
 
-fn returnJsonStringImpl(
+fn toJsonStringImpl(
     allocator: std.mem.Allocator,
     context: anytype,
     comptime toJsonFn: fn (@TypeOf(context), *std.json.Stringify) JsonWriteError!void,
@@ -70,7 +70,7 @@ test "returnJsonString" {
         12.0,
     ));
 
-    const web_string = try returnJsonStringImpl(
+    const web_string = try toJsonStringImpl(
         allocator,
         &container,
         ParameterContainer.toJson,

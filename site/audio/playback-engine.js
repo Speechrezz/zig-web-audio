@@ -394,6 +394,7 @@ export class PlaybackEngine {
         if (!isAudioContextRunning()) return;
 
         const instrument = this.instruments.getSelected();
+        if (instrument === null) return;
 
         if (timestampMs !== undefined) {
             const sampleRate = getAudioContext().sampleRate;
