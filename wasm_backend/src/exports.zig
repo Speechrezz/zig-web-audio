@@ -1,6 +1,8 @@
 const std = @import("std");
 const logging = @import("framework").logging;
 const audio = @import("framework").audio;
+const state = @import("framework").state;
+const web = @import("framework").web;
 const ProcessorContainerWeb = @import("framework").ProcessorContainerWeb;
 const instruments_registry = @import("processor/instrument_registry.zig");
 const instrumentTypeToProcessorWeb = instruments_registry.instrumentTypeToProcessorWeb;
@@ -74,4 +76,22 @@ export fn removeInstrument(instrument_index: usize) void {
 export fn clearInstruments() void {
     logging.logDebug("[WASM] Clearing all instruments...", .{});
     // TODO
+}
+
+export fn getInstrumentParameters(instrument_index: usize) u64 {
+    const instrument = processor_container_web.getProcessor(instrument_index);
+    const parameters = &instrument.audio_processor.parameters;
+    const web_string = web.string.returnJsonString(
+        wasm_allocator,
+        parameters,
+        state.ParameterContainer.toJson,
+    );
+    return @bitCast(web_string);
+}
+
+export fn freeString(ptr: [*]u8, len: usize) void {
+    web.string.freeWebString(wasm_allocator, .{
+        .ptr = ptr,
+        .len = len,
+    });
 }

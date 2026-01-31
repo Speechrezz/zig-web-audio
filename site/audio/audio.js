@@ -33,6 +33,10 @@ export async function initializeAudio() {
 
     audioWorkletNode.connect(audioContext.destination);
     console.log("Audio initialized!");
+
+    audioWorkletNode.port.onmessage = (ev) => {
+        console.log("Event:", ev, "\ndata:", ev.data);
+    }
 }
 
 /**

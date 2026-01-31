@@ -1,7 +1,7 @@
 const std = @import("std");
 const logging = @import("logging.zig");
 
-const WebString = struct {
+pub const WebString = packed struct {
     ptr: [*]u8,
     len: usize,
 };
@@ -15,7 +15,7 @@ pub fn returnJsonString(
 ) WebString {
     return returnJsonStringImpl(allocator, context, toJsonFn) catch |err| {
         logging.logDebug("[web_string.returnJsonString] Error creating string: {}", .{err});
-        return .{ .ptr = 0, .len = 0 };
+        return .{ .ptr = undefined, .len = 0 };
     };
 }
 

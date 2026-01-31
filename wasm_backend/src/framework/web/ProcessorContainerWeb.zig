@@ -129,3 +129,7 @@ pub fn clearProcessors(self: *@This()) void {
     }
     self.processor_list.clearRetainingCapacity();
 }
+
+pub fn getProcessor(self: *@This(), index: usize) *AudioProcessorWrapper {
+    return &self.processor_list.items[index];
+}
