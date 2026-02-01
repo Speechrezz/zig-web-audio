@@ -11,4 +11,7 @@ export const WorkletMessageType = Object.freeze({
     addInstrument: "addInstrument",
     removeInstrument: "removeInstrument",
     clearInstruments: "clearInstruments",
+
+    // --Parameter--
+    setParameterValue: "setParameter",
 });

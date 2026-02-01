@@ -54,7 +54,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                         context: msg.context,
                     }
 
-                    this.port.postMessage({type: WorkletMessageType.addInstrument, success: true, data});
+                    this.port.postMessage({ type: WorkletMessageType.addInstrument, success: true, data });
                     break;
                 }
                 case WorkletMessageType.removeInstrument:
@@ -62,6 +62,25 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     break;
                 case WorkletMessageType.clearInstruments:
                     this.exports.clearInstruments();
+                    break;
+
+                case WorkletMessageType.setParameterValue:
+                    const instrumentIndex = msg.context.instrumentIndex;
+                    const parameterIndex = msg.context.parameterIndex;
+                    this.exports.setParameterValue(instrumentIndex, parameterIndex, msg.context.value);
+
+                    const value = this.exports.getParameterValue(instrumentIndex, parameterIndex);
+                    const valueNormalized = this.exports.getParameterValueNormalized(instrumentIndex, parameterIndex);
+
+                    const data = {
+                        value: {
+                            value: value,
+                            normalized: valueNormalized,
+                        },
+                        context: msg.context,
+                    }
+
+                    this.port.postMessage({ type: WorkletMessageType.setParameterValue, data });
                     break;
             }
         };

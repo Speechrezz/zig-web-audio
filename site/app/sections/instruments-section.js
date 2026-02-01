@@ -74,17 +74,17 @@ export class InstrumentsSection {
 
             div.appendChild(header);
 
-            const gainParam = instrument.state.params.gain;
+            const gainParam = instrument.paramMap.get("gain");
             const gain = document.createElement("input");
             gain.type = "range";
             gain.min = "0";
             gain.max = "1";
             gain.step = "any";
-            gain.value = gainParam.value_default;
+            gain.value = gainParam.state.value_normalized;
             gain.classList.add("slider");
 
             gain.oninput = (ev) => {
-                console.log(ev);
+                gainParam.set(ev.target.value);
             }
 
             div.appendChild(gain);

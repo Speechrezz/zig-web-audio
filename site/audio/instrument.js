@@ -3,6 +3,7 @@ import { InstrumentDetailsList, InstrumentType, InstrumentEvent } from "./audio-
 import { WorkletMessageType } from "./worklet-message.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { Note } from "./note.js";
+import { AudioParameter } from "./audio-parameter.js"
 
 const UNDO_ID = "instrument";
 const UndoType = Object.freeze({
@@ -41,6 +42,12 @@ export class Instrument {
     /** @type {{params: any}} */
     state;
 
+    /** @type {AudioParameter[]} */
+    params = [];
+
+    /** @type {Map<string, AudioParameter>} */
+    paramMap = new Map();
+
     /**
      * All the drawn/saved notes
      * @type {Note[]}
@@ -74,6 +81,13 @@ export class Instrument {
         this.type = type;
         this.name = name;
         this.state = state;
+
+        // Initialize parameters
+        for (const paramState of Object.values(this.state.params)) {
+            const param = new AudioParameter(paramState, this);
+            this.params.push(param);
+            this.paramMap.set(paramState.id, param);
+        }
     }
 
     noteStart(noteNumber, channel) {
@@ -153,7 +167,21 @@ export class InstrumentsContainer {
         }
 
         // Listen to audio worklet
-        getAudioWorkletNode().port.addEventListener("message", (ev) => this.addInstrumentCallback(ev));
+        getAudioWorkletNode().port.addEventListener("message", (ev) => this.audioWorkletCallback(ev));
+    }
+
+    /**
+     * @param {MessageEvent} ev 
+     */
+    audioWorkletCallback(ev) {
+        switch (ev.data.type) {
+            case WorkletMessageType.addInstrument:
+                this.addInstrumentCallback(ev);
+                break;
+            case WorkletMessageType.setParameterValue:
+                this.setParameterValueCallback(ev);
+                break;
+        }
     }
 
     /**
@@ -287,6 +315,20 @@ export class InstrumentsContainer {
 
     getList() {
         return this.instruments;
+    }
+
+    /**
+     * @param {MessageEvent} ev 
+     */
+    setParameterValueCallback(ev) {
+        const data = ev.data.data;
+        const instrumentIndex = data.context.instrumentIndex;
+        const parameterIndex = data.context.parameterIndex;
+
+        const { value, normalized: valueNormalized } = data.value;
+
+        const param = this.instruments[instrumentIndex].params[parameterIndex];
+        param.updateInternalValue(value, valueNormalized);
     }
 
     /**

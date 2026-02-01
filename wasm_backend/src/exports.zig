@@ -88,6 +88,39 @@ export fn getInstrumentState(instrument_index: usize) u64 {
     return @bitCast(web_string);
 }
 
+// Parameter
+
+export fn setParameterValue(instrument_index: usize, parameter_index: usize, value: f32) bool {
+    // TODO
+
+    const instrument = processor_container_web.getProcessor(instrument_index);
+    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
+
+    param.setValue(value);
+
+    return true;
+}
+
+export fn getParameterValue(instrument_index: usize, parameter_index: usize) f32 {
+    // TODO
+
+    const instrument = processor_container_web.getProcessor(instrument_index);
+    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
+
+    return param.getValue();
+}
+
+export fn getParameterValueNormalized(instrument_index: usize, parameter_index: usize) f32 {
+    // TODO
+
+    const instrument = processor_container_web.getProcessor(instrument_index);
+    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
+
+    return param.getValueNormalized();
+}
+
+// General
+
 export fn freeString(ptr: [*]u8, len: usize) void {
     web.string.freeWebString(wasm_allocator, .{
         .ptr = ptr,
