@@ -1,5 +1,5 @@
 import { Component } from "./component.js";
-import { Note } from "../audio/playback-engine.js";
+import { Note } from "../audio/note.js";
 
 export class NoteComponent extends Component{
     /**

@@ -2,6 +2,7 @@ import { getAudioWorkletNode } from "./audio.js";
 import { InstrumentDetailsList, InstrumentType, InstrumentEvent } from "./audio-constants.js";
 import { WorkletMessageType } from "./worklet-message.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
+import { Note } from "./note.js";
 
 const UNDO_ID = "instrument";
 const UndoType = Object.freeze({
@@ -37,6 +38,9 @@ export class Instrument {
     /** @type {string} */
     name;
 
+    /** @type {{params: any}} */
+    state;
+
     /**
      * All the drawn/saved notes
      * @type {Note[]}
@@ -62,11 +66,14 @@ export class Instrument {
     queuedNoteEvents = [];
 
     /**
+     * @param {InstrumentType} type 
      * @param {string} name 
+     * @param {any} state 
      */
-    constructor(type, name) {
+    constructor(type, name, state) {
         this.type = type;
         this.name = name;
+        this.state = state;
     }
 
     noteStart(noteNumber, channel) {
@@ -98,17 +105,21 @@ export class Instrument {
             index: this.index,
             type: this.type,
             name: this.name,
+            state: this.state,
             notes: this.notes,
             noteIdCounter: this.noteIdCounter,
         };
     }
 
     static deserialize(json) {
-        const newInstrument = new Instrument(json.type, json.name);
+        const newInstrument = new Instrument(json.type, json.name, json.state);
 
         newInstrument.index = json.index;
-        newInstrument.notes = json.notes;
         newInstrument.noteIdCounter = json.noteIdCounter;
+
+        for (const note of json.notes) {
+            newInstrument.notes.push(Note.deserialize(note));
+        }
 
         return newInstrument;
     }
@@ -149,17 +160,21 @@ export class InstrumentsContainer {
      * @param {number} instrumentIndex 
      * @param {InstrumentType} instrumentType
      * @param {boolean} addToUndo
+     * @param {null | any} serialized
      */
-    addInstrument(instrumentIndex, instrumentType, addToUndo = true) {
+    addInstrument(instrumentIndex, instrumentType, addToUndo = true, serialized = null) {
         if (instrumentIndex < 0) {
             instrumentIndex = this.instruments.length;
         }
 
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.addInstrument,
-            instrumentIndex,
-            instrumentType,
-            addToUndo,
+            context: {
+                instrumentIndex,
+                instrumentType,
+                addToUndo,
+                serialized,
+            }
         });
     }
 
@@ -174,14 +189,23 @@ export class InstrumentsContainer {
             return;
         }
 
-        const instrumentState = ev.data.state;
-        const instrumentType = instrumentState.instrumentType;
-        const instrumentIndex = instrumentState.instrumentIndex;
-        const addToUndo = instrumentState.addToUndo;
-        console.log("instrumentState:", instrumentState);
+        console.log("instrument data:", ev.data.data);
+        const data = ev.data.data;
+        const instrumentState = data.state;
+        const instrumentType = data.context.instrumentType;
+        const instrumentIndex = data.context.instrumentIndex;
+        const addToUndo = data.context.addToUndo;
+        const serialized = data.context.serialized;
 
-        const instrumentDetails = InstrumentDetailsList[instrumentType];
-        const newInstrument = new Instrument(instrumentType, instrumentDetails.name);
+        /** @type {Instrument} */
+        let newInstrument;
+        if (serialized === null) {
+            const instrumentDetails = InstrumentDetailsList[instrumentType];
+            newInstrument = new Instrument(instrumentType, instrumentDetails.name, instrumentState);
+        }
+        else { // Load existing instrument with existing state
+            newInstrument = Instrument.deserialize(serialized);
+        }
 
         this.instruments.splice(instrumentIndex, 0, newInstrument);
         this.updateInstrumentIndices();
@@ -303,8 +327,7 @@ export class InstrumentsContainer {
                 this.removeInstrument(transaction.diff.index, false);
                 break;
             case UndoType.removeInstrument: {
-                const newInstrument = Instrument.deserialize(transaction.diff);
-                this.addInstrumentInternal(newInstrument.index, newInstrument, false);
+                this.addInstrument(transaction.diff.index, transaction.diff.type, false, transaction.diff);
                 break;
             }
         }        
@@ -317,8 +340,7 @@ export class InstrumentsContainer {
     redo(transaction) {
         switch (transaction.type) {
             case UndoType.addInstrument: {
-                const newInstrument = Instrument.deserialize(transaction.diff);
-                this.addInstrumentInternal(newInstrument.index, newInstrument, false);
+                this.addInstrument(transaction.diff.index, transaction.diff.type, false, transaction.diff);
                 break;
             }
             case UndoType.removeInstrument:

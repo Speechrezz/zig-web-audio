@@ -60,14 +60,34 @@ export class InstrumentsSection {
             div.classList.add("instrument-section");
             div.onclick = (e) => this.instrumentClicked(e, i);
 
+            const header = document.createElement("div");
+            header.classList.add("instrument-section-header");
+
             const span = document.createElement("span");
             span.innerHTML = instrument.name;
-            div.appendChild(span);
+            header.appendChild(span);
 
             const deleteButton = document.createElement("button");
             deleteButton.innerHTML = "x";
             deleteButton.onclick = (e) => this.deleteInstrumentClicked(e, i);
-            div.appendChild(deleteButton);
+            header.appendChild(deleteButton);
+
+            div.appendChild(header);
+
+            const gainParam = instrument.state.params.gain;
+            const gain = document.createElement("input");
+            gain.type = "range";
+            gain.min = "0";
+            gain.max = "1";
+            gain.step = "any";
+            gain.value = gainParam.value_default;
+            gain.classList.add("slider");
+
+            gain.oninput = (ev) => {
+                console.log(ev);
+            }
+
+            div.appendChild(gain);
 
             this.instrumentList.appendChild(div);
         }
@@ -104,6 +124,7 @@ export class InstrumentsSection {
      */
     instrumentClicked(e, index) {
         if (e.target.tagName === "BUTTON") return;
+        if (e.target.tagName === "INPUT") return;
 
         this.context.instruments.selectInstrument(index);
     }

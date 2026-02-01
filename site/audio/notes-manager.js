@@ -1,6 +1,6 @@
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { InstrumentsContainer } from "./instrument.js";
-import { Note } from "./playback-engine.js";
+import { Note } from "./note.js";
 
 const UNDO_ID = "notes-manager";
 const UndoType = Object.freeze({
