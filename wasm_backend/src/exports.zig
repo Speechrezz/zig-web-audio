@@ -91,8 +91,6 @@ export fn getInstrumentState(instrument_index: usize) u64 {
 // Parameter
 
 export fn setParameterValue(instrument_index: usize, parameter_index: usize, value: f32) bool {
-    // TODO
-
     const instrument = processor_container_web.getProcessor(instrument_index);
     const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 
@@ -101,9 +99,16 @@ export fn setParameterValue(instrument_index: usize, parameter_index: usize, val
     return true;
 }
 
-export fn getParameterValue(instrument_index: usize, parameter_index: usize) f32 {
-    // TODO
+export fn setParameterValueNormalized(instrument_index: usize, parameter_index: usize, value: f32) bool {
+    const instrument = processor_container_web.getProcessor(instrument_index);
+    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 
+    param.setValueNormalized(value);
+
+    return true;
+}
+
+export fn getParameterValue(instrument_index: usize, parameter_index: usize) f32 {
     const instrument = processor_container_web.getProcessor(instrument_index);
     const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 
@@ -111,8 +116,6 @@ export fn getParameterValue(instrument_index: usize, parameter_index: usize) f32
 }
 
 export fn getParameterValueNormalized(instrument_index: usize, parameter_index: usize) f32 {
-    // TODO
-
     const instrument = processor_container_web.getProcessor(instrument_index);
     const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 

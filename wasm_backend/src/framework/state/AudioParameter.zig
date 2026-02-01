@@ -98,6 +98,9 @@ pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify, index: us
     try write_stream.objectField("value_normalized");
     try write_stream.write(self.value_normalized);
 
+    try write_stream.objectField("value");
+    try write_stream.write(self.getValue());
+
     try write_stream.endObject();
 }
 
