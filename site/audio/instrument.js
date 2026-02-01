@@ -325,7 +325,7 @@ export class InstrumentsContainer {
         const instrumentIndex = data.context.instrumentIndex;
         const parameterIndex = data.context.parameterIndex;
 
-        const { value, normalized: valueNormalized } = data.value;
+        const { value, normalized: valueNormalized } = data.state;
 
         const param = this.instruments[instrumentIndex].params[parameterIndex];
         param.updateInternalValue(value, valueNormalized);

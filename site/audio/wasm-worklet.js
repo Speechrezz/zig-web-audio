@@ -67,13 +67,18 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                 case WorkletMessageType.setParameterValue:
                     const instrumentIndex = msg.context.instrumentIndex;
                     const parameterIndex = msg.context.parameterIndex;
-                    this.exports.setParameterValue(instrumentIndex, parameterIndex, msg.context.value);
+                    if (msg.context.isNormalized === true) {
+                        this.exports.setParameterValueNormalized(instrumentIndex, parameterIndex, msg.context.value);
+                    }
+                    else {
+                        this.exports.setParameterValue(instrumentIndex, parameterIndex, msg.context.value);
+                    }
 
                     const value = this.exports.getParameterValue(instrumentIndex, parameterIndex);
                     const valueNormalized = this.exports.getParameterValueNormalized(instrumentIndex, parameterIndex);
 
                     const data = {
-                        value: {
+                        state: {
                             value: value,
                             normalized: valueNormalized,
                         },

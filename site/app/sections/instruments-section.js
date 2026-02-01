@@ -84,7 +84,7 @@ export class InstrumentsSection {
             gain.classList.add("slider");
 
             gain.oninput = (ev) => {
-                gainParam.set(ev.target.value);
+                gainParam.set(ev.target.value, true);
             }
 
             div.appendChild(gain);

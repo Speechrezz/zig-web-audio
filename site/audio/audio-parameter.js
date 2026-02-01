@@ -40,13 +40,14 @@ export class AudioParameter {
         return this.state.value_normalized;
     }
 
-    set(newValue) {
+    set(newValue, isNormalized) {
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.setParameterValue,
             context: {
                 instrumentIndex: this.instrument.index,
                 parameterIndex: this.state.index,
                 value: newValue,
+                isNormalized,
             }
         });
     }
