@@ -29,7 +29,7 @@ export class AudioParameter {
     constructor(state, instrument) {
         this.state = state;
         this.instrument = instrument;
-        console.log("state:", this.state);
+        console.log("[AudioParameter.constructor()] state:", this.state);
     }
 
     get() {
@@ -55,5 +55,9 @@ export class AudioParameter {
     updateInternalValue(value, valueNormalized) {
         this.state.value = value;
         this.state.value_normalized = valueNormalized;
+    }
+
+    updateBackendState() {
+        this.set(this.state.value_normalized, true);
     }
 }

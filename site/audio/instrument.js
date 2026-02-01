@@ -73,11 +73,13 @@ export class Instrument {
     queuedNoteEvents = [];
 
     /**
+     * @param {number} index 
      * @param {InstrumentType} type 
      * @param {string} name 
      * @param {any} state 
      */
-    constructor(type, name, state) {
+    constructor(index, type, name, state) {
+        this.index = index;
         this.type = type;
         this.name = name;
         this.state = state;
@@ -126,13 +128,15 @@ export class Instrument {
     }
 
     static deserialize(json) {
-        const newInstrument = new Instrument(json.type, json.name, json.state);
-
-        newInstrument.index = json.index;
+        const newInstrument = new Instrument(json.index, json.type, json.name, json.state);
         newInstrument.noteIdCounter = json.noteIdCounter;
 
         for (const note of json.notes) {
             newInstrument.notes.push(Note.deserialize(note));
+        }
+
+        for (const param of newInstrument.params) {
+            param.updateBackendState();
         }
 
         return newInstrument;
@@ -229,7 +233,7 @@ export class InstrumentsContainer {
         let newInstrument;
         if (serialized === null) {
             const instrumentDetails = InstrumentDetailsList[instrumentType];
-            newInstrument = new Instrument(instrumentType, instrumentDetails.name, instrumentState);
+            newInstrument = new Instrument(instrumentIndex, instrumentType, instrumentDetails.name, instrumentState);
         }
         else { // Load existing instrument with existing state
             newInstrument = Instrument.deserialize(serialized);
