@@ -3,7 +3,7 @@ const PITCH_MAX = 108; // C8
 const NUM_PITCHES = PITCH_MAX - PITCH_MIN + 1;
 
 const BASE_BEAT_WIDTH = 32;
-const BASE_NOTE_HEIGHT = 24;
+const BASE_NOTE_HEIGHT = 20;
 const BASE_LENGTH_IN_BEATS = 64;
 
 export class Config {

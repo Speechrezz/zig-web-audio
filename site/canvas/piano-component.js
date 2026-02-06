@@ -1,4 +1,5 @@
-import { Component, Rectangle, Point } from "./component.js";
+import { Component } from "./component.js";
+import { Rectangle } from "./rectangle.js";
 import { AppContext } from "../app/app-context.js"
 import { MouseEvent } from "./mouse-event.js";
 import { MidiEvent, MidiEventType } from "../audio/midi.js";

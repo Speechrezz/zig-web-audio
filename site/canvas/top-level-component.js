@@ -1,4 +1,5 @@
-import { Component, Rectangle } from "./component.js"
+import { Component } from "./component.js"
+import { Rectangle } from "./rectangle.js";
 import { MouseAction, MouseEvent, MouseScrollEvent } from "./mouse-event.js";
 
 export class TopLevelComponent extends Component {

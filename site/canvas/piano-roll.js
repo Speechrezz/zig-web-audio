@@ -1,4 +1,5 @@
-import { Rectangle, Point } from "./component.js"
+import { Rectangle } from "./rectangle.js";
+import { Point } from "./point.js";
 import { AppContext } from "../app/app-context.js"
 import { TopLevelComponent } from "./top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";
@@ -98,7 +99,7 @@ export class PianoRoll extends TopLevelComponent {
             this.mouseStart.x = ev.x;
             this.mouseStart.y = ev.y;
 
-            this.viewOffsetAnchor.set(this.pianoRollView.pianoRollArea.translation);
+            this.viewOffsetAnchor.set(this.viewOffset);
         }
     }
 
@@ -128,13 +129,12 @@ export class PianoRoll extends TopLevelComponent {
     }
 
     updateViewOffset(x, y) {
-        const maxX = this.pianoRollView.pianoRollArea.bounds.width  - this.pianoRollView.bounds.width;
-        const maxY = this.pianoRollView.pianoRollArea.bounds.height - this.pianoRollView.bounds.height;
+        const maxY = this.context.config.calculateHeight() - this.pianoRollView.bounds.height;
 
-        this.viewOffset.x = Math.min(0, Math.max(-maxX, x));
+        this.viewOffset.x = x;
         this.viewOffset.y = Math.min(0, Math.max(-maxY, y));
 
-        this.pianoRollView.pianoRollArea.translation.set(this.viewOffset);
+        this.pianoRollView.setViewOffset(this.viewOffset);
         this.pianoComponent.translation.y = this.viewOffset.y;
         this.repaint();
     }
