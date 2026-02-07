@@ -63,7 +63,7 @@ export class PianoRollView extends Component {
      */
     selectedNotes = [];
 
-    lastBeatLength = 1;
+    lastPpqLength = 0;
     
     /**
      * @param {AppContext} context 
@@ -81,6 +81,8 @@ export class PianoRollView extends Component {
 
         this.context.config.addZoomListener(() => this.zoomChanged());
         this.zoomChanged();
+
+        this.lastPpqLength = this.context.config.ppqResolution;
     }
 
     /**
@@ -102,16 +104,6 @@ export class PianoRollView extends Component {
             ctx.fillRect(0, y, this.bounds.width, config.noteHeight);
         }
 
-        // Darken out-of-bounds
-        ctx.fillStyle = "oklch(21% 0.034 264.665/0.05)"
-        if (this.viewOffset.x > 0) {
-            ctx.fillRect(0, 0, this.viewOffset.x, bounds.height);
-        }
-        const xEnd = fullWidth + this.viewOffset.x;
-        if (xEnd < bounds.width) {
-            ctx.fillRect(xEnd, 0, bounds.width - xEnd, bounds.height);
-        }
-
         // Beat grid
         const beatOffset = -this.viewOffset.x / config.beatWidth;
         const numBeats = bounds.width / config.beatWidth;
@@ -126,6 +118,16 @@ export class PianoRollView extends Component {
             ctx.moveTo(x, 0);
             ctx.lineTo(x, this.bounds.height);
             ctx.stroke();
+        }
+
+        // Darken out-of-bounds
+        ctx.fillStyle = "oklch(21% 0.034 264.665/0.1)"
+        if (this.viewOffset.x > 0) {
+            ctx.fillRect(0, 0, this.viewOffset.x, bounds.height);
+        }
+        const xEnd = fullWidth + this.viewOffset.x;
+        if (xEnd < bounds.width) {
+            ctx.fillRect(xEnd, 0, bounds.width - xEnd, bounds.height);
         }
 
         // Selection bounds
@@ -389,10 +391,14 @@ export class PianoRollView extends Component {
      * @param {NoteComponent} noteComponent 
      */
     updateNoteBounds(noteComponent) {
-        const x = this.beatToX(noteComponent.note.timeStart);
+        const config = this.context.config;
+
+        const x = this.beatToX(config.ppqToBeats(noteComponent.note.timeStart));
         const y = this.noteNumberToY(noteComponent.note.noteNumber);
 
-        noteComponent.setBounds(new Rectangle(x, y, this.context.config.beatWidth * noteComponent.note.timeLength, this.context.config.noteHeight));
+        const width = config.beatWidth * config.ppqToBeats(noteComponent.note.timeLength);
+
+        noteComponent.setBounds(new Rectangle(x, y, width, this.context.config.noteHeight));
     }
 
     /**
@@ -461,10 +467,13 @@ export class PianoRollView extends Component {
     }
 
     addNoteAt(x, y) {
-        const beat = Math.floor(this.xScreenToBeat(x));
+        const config = this.context.config;
+
+        const beat = this.xScreenToBeat(x);
+        const ppq = config.floorBeatsToNearestSnapPpq(beat);
         const noteNumber = this.yScreenToNoteNumber(y);
 
-        const note = Note.create(beat, this.lastBeatLength, noteNumber);
+        const note = Note.create(ppq, this.lastPpqLength, noteNumber);
         return this.addNotes([note])[0];
     }
 
@@ -571,10 +580,12 @@ export class PianoRollView extends Component {
      * @param {MouseEvent} ev 
      */
     adjustNoteStepMoveNote(ev) {
+        const config = this.context.config;
+
         const offsetX = ev.x - this.interactionAnchor.x;
         const offsetY = ev.y - this.interactionAnchor.y;
 
-        const offsetBeats = Math.round(this.xToBeat(offsetX));
+        const offsetBeats = config.roundBeatsToNearestSnapPpq(this.xToBeat(offsetX));
         const offsetPitch = Math.round(-offsetY / this.context.config.noteHeight);
 
         const oldNoteNumber = this.selectedNoteMain.note.noteNumber;
@@ -593,13 +604,17 @@ export class PianoRollView extends Component {
      * @param {MouseEvent} ev 
      */
     adjustNoteStepNoteEnd(ev) {
-        const shortestLength = this.findShortestNoteInSelection();
+        const config = this.context.config;
 
-        let beatLengthOffset = Math.round(this.xScreenToBeat(ev.x) - Note.getTimeStop(this.selectedNoteMain.noteAnchor));
-        beatLengthOffset = Math.max(1 - shortestLength, beatLengthOffset);
+        const shortestLengthPpq = this.findShortestNoteInSelection();
+        const noteStopBeats = config.ppqToBeats(Note.getTimeStop(this.selectedNoteMain.noteAnchor));
+
+        const lengthOffsetBeats = this.xScreenToBeat(ev.x) - noteStopBeats;
+        let lengthOffsetPpq = config.roundBeatsToNearestSnapPpq(lengthOffsetBeats);
+        lengthOffsetPpq = Math.max(config.snapInPpq - shortestLengthPpq, lengthOffsetPpq);
 
         for (const selectedNote of this.selectedNotes) {
-            selectedNote.note.timeLength = selectedNote.noteAnchor.timeLength + beatLengthOffset;
+            selectedNote.note.timeLength = selectedNote.noteAnchor.timeLength + lengthOffsetPpq;
         }
     }
 
@@ -607,15 +622,19 @@ export class PianoRollView extends Component {
      * @param {MouseEvent} ev 
      */
     adjustNoteStepNoteStart(ev) {
-        const shortestLength = this.findShortestNoteInSelection();
+        const config = this.context.config;
 
-        let beatStartOffset = Math.round(this.xScreenToBeat(ev.x) - this.selectedNoteMain.noteAnchor.timeStart);
-        beatStartOffset = Math.min(beatStartOffset, shortestLength - 1);
+        const shortestLength = this.findShortestNoteInSelection();
+        const noteStartBeats = config.ppqToBeats(this.selectedNoteMain.noteAnchor.timeStart);
+
+        const startOffsetBeats = this.xScreenToBeat(ev.x) - noteStartBeats;
+        let startOffsetPpq = config.roundBeatsToNearestSnapPpq(startOffsetBeats);
+        startOffsetPpq = Math.min(startOffsetPpq, shortestLength - config.snapInPpq);
 
         for (const selectedNote of this.selectedNotes) {
-            const beatStop = Note.getTimeStop(selectedNote.noteAnchor);
-            selectedNote.note.timeStart = selectedNote.noteAnchor.timeStart + beatStartOffset;
-            selectedNote.note.timeLength = beatStop - selectedNote.note.timeStart;
+            const noteStopPpq = Note.getTimeStop(selectedNote.noteAnchor);
+            selectedNote.note.timeStart = selectedNote.noteAnchor.timeStart + startOffsetPpq;
+            selectedNote.note.timeLength = noteStopPpq - selectedNote.note.timeStart;
         }
     }
 
@@ -646,7 +665,7 @@ export class PianoRollView extends Component {
             this.notesManager.moveNotesGestureEnd(this.context.instruments.selectedIndex, noteDiffs);
         }
 
-        this.lastBeatLength = this.selectedNoteMain.note.timeLength;
+        this.lastPpqLength = this.selectedNoteMain.note.timeLength;
         this.interactionType = InteractionType.none;
     }
 
@@ -810,7 +829,7 @@ export class PianoRollView extends Component {
         const notesToPaste = cloneNotes(this.context.clipboardManager.getClipboard());
 
         for (const note of notesToPaste) {
-            note.timeStart += 1;
+            note.timeStart += this.context.config.snapInPpq;
         }
 
         const noteComponents = this.addNotes(notesToPaste);

@@ -4,9 +4,9 @@ const NUM_PITCHES = PITCH_MAX - PITCH_MIN + 1;
 
 const BASE_BEAT_WIDTH = 32;
 const BASE_NOTE_HEIGHT = 20;
-const BASE_LENGTH_IN_BEATS = 16; //64;
+const BASE_LENGTH_IN_BEATS = 64;
 
-const PPQ_RESOLUTION = 2; //96;
+const PPQ_RESOLUTION = 96;
 
 export class Config {
     pitchMin = PITCH_MIN;
@@ -20,6 +20,9 @@ export class Config {
     lengthInPpq = 0;
     ppqResolution = PPQ_RESOLUTION; // Parts per quarter note
 
+    snapInBeats = 1;
+    snapInPpq = 0;
+
     zoomLevelX = 1;
     zoomLevelY = 1;
 
@@ -32,14 +35,47 @@ export class Config {
         this.setPpqResolution(this.ppqResolution);
     }
 
+    /**
+     * @param {number} newResolution PPQ resolution
+     */
     setPpqResolution(newResolution) {
         this.ppqResolution = newResolution;
         this.lengthInPpq = this.beatsToPpq(this.lengthInBeats);
+        this.snapInPpq = this.beatsToPpq(this.snapInBeats);
     }
 
+    /**
+     * @param {number} newLength Length in beats
+     */
     setLengthInBeats(newLength) {
         this.lengthInBeats = newLength;
         this.lengthInPpq = this.beatsToPpq(this.lengthInBeats);
+    }
+
+    /**
+     * @param {number} snapInBeats 
+     */
+    setSnapInBeats(snapInBeats) {
+        this.snapInBeats = snapInBeats;
+        this.snapInPpq = this.beatsToPpq(this.snapInBeats);
+    }
+
+    /**
+     * @param {number} beats 
+     * @returns Time in PPQ quantized to the nearest snapping point
+     */
+    roundBeatsToNearestSnapPpq(beats) {
+        const ppq = this.beatsToPpq(beats);
+        return this.snapInPpq * Math.round(ppq / this.snapInPpq);
+    }
+
+    /**
+     * @param {number} beats 
+     * @returns Time in PPQ quantized to the nearest snapping point
+     */
+    floorBeatsToNearestSnapPpq(beats) {
+        const ppq = this.beatsToPpq(beats);
+        return this.snapInPpq * Math.floor(ppq / this.snapInPpq);
     }
 
     /**
@@ -91,7 +127,7 @@ export class Config {
     }
 
     calculateWidth() {
-        return this.lengthInPpq * this.beatWidth;
+        return this.lengthInBeats * this.beatWidth;
     }
 
     calculateHeight() {
