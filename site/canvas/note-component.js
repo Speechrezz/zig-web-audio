@@ -42,22 +42,22 @@ export class NoteComponent extends Component{
     }
 
     updateNoteAnchor() {
-        this.noteAnchor.beatStart = this.note.beatStart;
-        this.noteAnchor.beatLength = this.note.beatLength;
+        this.noteAnchor.timeStart = this.note.timeStart;
+        this.noteAnchor.timeLength = this.note.timeLength;
         this.noteAnchor.noteNumber = this.note.noteNumber;
     }
 
     hasMoved() {
-        return this.noteAnchor.beatStart  !== this.note.beatStart
-            || this.noteAnchor.beatLength !== this.note.beatLength
+        return this.noteAnchor.timeStart  !== this.note.timeStart
+            || this.noteAnchor.timeLength !== this.note.timeLength
             || this.noteAnchor.noteNumber !== this.note.noteNumber;
     }
 
     getNoteDiff() {
         const noteDiff = Note.clone(this.note);
 
-        noteDiff.beatStart  -= this.noteAnchor.beatStart;
-        noteDiff.beatLength -= this.noteAnchor.beatLength;
+        noteDiff.timeStart  -= this.noteAnchor.timeStart;
+        noteDiff.timeLength -= this.noteAnchor.timeLength;
         noteDiff.noteNumber -= this.noteAnchor.noteNumber;
 
         return noteDiff;

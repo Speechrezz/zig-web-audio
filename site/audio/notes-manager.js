@@ -163,8 +163,8 @@ export class NotesManager {
                     const note = instrument.notes.find((v) => v.id === noteDiff.id);
                     if (note === undefined) continue;
 
-                    note.beatStart  -= noteDiff.beatStart;
-                    note.beatLength -= noteDiff.beatLength;
+                    note.timeStart  -= noteDiff.timeStart;
+                    note.timeLength -= noteDiff.timeLength;
                     note.noteNumber -= noteDiff.noteNumber;
                 }
 
@@ -208,8 +208,8 @@ export class NotesManager {
                     const note = instrument.notes.find((v) => v.id === noteDiff.id);
                     if (note === undefined) continue;
 
-                    note.beatStart  += noteDiff.beatStart;
-                    note.beatLength += noteDiff.beatLength;
+                    note.timeStart  += noteDiff.timeStart;
+                    note.timeLength += noteDiff.timeLength;
                     note.noteNumber += noteDiff.noteNumber;
                 }
 
@@ -223,8 +223,7 @@ export class NotesManager {
 
 /**
  * @param {Note[]} notes 
- * @returns {Note[]}
  */
 export function cloneNotes(notes) {
-    return Array.from(notes);
+    return structuredClone(notes);
 }

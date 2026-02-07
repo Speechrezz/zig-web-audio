@@ -389,10 +389,10 @@ export class PianoRollView extends Component {
      * @param {NoteComponent} noteComponent 
      */
     updateNoteBounds(noteComponent) {
-        const x = this.beatToX(noteComponent.note.beatStart);
+        const x = this.beatToX(noteComponent.note.timeStart);
         const y = this.noteNumberToY(noteComponent.note.noteNumber);
 
-        noteComponent.setBounds(new Rectangle(x, y, this.context.config.beatWidth * noteComponent.note.beatLength, this.context.config.noteHeight));
+        noteComponent.setBounds(new Rectangle(x, y, this.context.config.beatWidth * noteComponent.note.timeLength, this.context.config.noteHeight));
     }
 
     /**
@@ -580,7 +580,7 @@ export class PianoRollView extends Component {
         const oldNoteNumber = this.selectedNoteMain.note.noteNumber;
 
         for (const selectedNote of this.selectedNotes) {
-            selectedNote.note.beatStart  = selectedNote.noteAnchor.beatStart + offsetBeats;
+            selectedNote.note.timeStart  = selectedNote.noteAnchor.timeStart + offsetBeats;
             selectedNote.note.noteNumber = selectedNote.noteAnchor.noteNumber + offsetPitch;
         }
 
@@ -595,11 +595,11 @@ export class PianoRollView extends Component {
     adjustNoteStepNoteEnd(ev) {
         const shortestLength = this.findShortestNoteInSelection();
 
-        let beatLengthOffset = Math.round(this.xScreenToBeat(ev.x) - Note.getBeatStop(this.selectedNoteMain.noteAnchor));
+        let beatLengthOffset = Math.round(this.xScreenToBeat(ev.x) - Note.getTimeStop(this.selectedNoteMain.noteAnchor));
         beatLengthOffset = Math.max(1 - shortestLength, beatLengthOffset);
 
         for (const selectedNote of this.selectedNotes) {
-            selectedNote.note.beatLength = selectedNote.noteAnchor.beatLength + beatLengthOffset;
+            selectedNote.note.timeLength = selectedNote.noteAnchor.timeLength + beatLengthOffset;
         }
     }
 
@@ -609,21 +609,21 @@ export class PianoRollView extends Component {
     adjustNoteStepNoteStart(ev) {
         const shortestLength = this.findShortestNoteInSelection();
 
-        let beatStartOffset = Math.round(this.xScreenToBeat(ev.x) - this.selectedNoteMain.noteAnchor.beatStart);
+        let beatStartOffset = Math.round(this.xScreenToBeat(ev.x) - this.selectedNoteMain.noteAnchor.timeStart);
         beatStartOffset = Math.min(beatStartOffset, shortestLength - 1);
 
         for (const selectedNote of this.selectedNotes) {
-            const beatStop = Note.getBeatStop(selectedNote.noteAnchor);
-            selectedNote.note.beatStart = selectedNote.noteAnchor.beatStart + beatStartOffset;
-            selectedNote.note.beatLength = beatStop - selectedNote.note.beatStart;
+            const beatStop = Note.getTimeStop(selectedNote.noteAnchor);
+            selectedNote.note.timeStart = selectedNote.noteAnchor.timeStart + beatStartOffset;
+            selectedNote.note.timeLength = beatStop - selectedNote.note.timeStart;
         }
     }
 
     findShortestNoteInSelection() {
-        let shortestLength = this.selectedNotes[0].noteAnchor.beatLength;
+        let shortestLength = this.selectedNotes[0].noteAnchor.timeLength;
         for (const selectedNote of this.selectedNotes) {
-            if (selectedNote.noteAnchor.beatLength < shortestLength) {
-                shortestLength = selectedNote.noteAnchor.beatLength;
+            if (selectedNote.noteAnchor.timeLength < shortestLength) {
+                shortestLength = selectedNote.noteAnchor.timeLength;
             }
         }
 
@@ -646,7 +646,7 @@ export class PianoRollView extends Component {
             this.notesManager.moveNotesGestureEnd(this.context.instruments.selectedIndex, noteDiffs);
         }
 
-        this.lastBeatLength = this.selectedNoteMain.note.beatLength;
+        this.lastBeatLength = this.selectedNoteMain.note.timeLength;
         this.interactionType = InteractionType.none;
     }
 
@@ -810,7 +810,7 @@ export class PianoRollView extends Component {
         const notesToPaste = cloneNotes(this.context.clipboardManager.getClipboard());
 
         for (const note of notesToPaste) {
-            note.beatStart += 1;
+            note.timeStart += 1;
         }
 
         const noteComponents = this.addNotes(notesToPaste);

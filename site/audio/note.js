@@ -6,16 +6,16 @@ export class Note {
     id;
     
     /**
-     * Position of the start of the note in beats 
+     * Position of the start of the note in PPQ time units 
      * @type {number}
      */
-    beatStart;
+    timeStart;
 
     /**
-     * Length of the note in beats
+     * Length of the note in PPQ time units
      * @type {number}
      */
-    beatLength;
+    timeLength;
 
     /**
      * MIDI note number
@@ -37,48 +37,41 @@ export class Note {
 
     /**
      * @param {number} id Unique note ID
-     * @param {number} beatStart Position of note start in beats 
-     * @param {number} beatLength Length of note in beats
+     * @param {number} timeStart Position of note start in PPQ 
+     * @param {number} timeLength Length of note in PPQ
      * @param {number} noteNumber MIDI note number
      * @param {number} velocity Normalized velocity 0..1
      * @param {number} channel MIDI channel
      */
-    constructor(id, beatStart, beatLength, noteNumber, velocity, channel) {
+    constructor(id, timeStart, timeLength, noteNumber, velocity, channel) {
         this.id = id;
-        this.beatStart = beatStart;
-        this.beatLength = beatLength;
+        this.timeStart = timeStart;
+        this.timeLength = timeLength;
         this.noteNumber = noteNumber;
         this.velocity = velocity;
         this.channel = channel;
     }
 
     /**
-     * @param {number} beatStart Position of note start in beats 
-     * @param {number} beatLength Length of note in beats
+     * @param {number} timeStart Position of note start in PPQ 
+     * @param {number} timeLength Length of note in PPQ
      * @param {number} noteNumber MIDI note number
      * @param {number} velocity Normalized velocity 0..1
      * @param {number} channel MIDI channel
      */
-    static create(beatStart, beatLength, noteNumber, velocity = 0.8, channel = 0) {
-        return new Note(-1, beatStart, beatLength, noteNumber, velocity, channel)
+    static create(timeStart, timeLength, noteNumber, velocity = 0.8, channel = 0) {
+        return new Note(-1, timeStart, timeLength, noteNumber, velocity, channel)
     }
 
     /**
-     * @param {number} beatStart Position of note start in beats 
-     * @param {number} beatLength Length of note in beats
+     * @param {number} timeStart Position of note start in PPQ 
+     * @param {number} timeLength Length of note in PPQ
      * @param {number} noteNumber MIDI note number
      * @param {number} velocity MIDI velocity 0..127
      * @param {number} channel MIDI channel
      */
-    static createFromMidi(beatStart, beatLength, noteNumber, velocity = 100, channel = 0) {
-        return new Note(-1, beatStart, beatLength, noteNumber, velocity / 127, channel)
-    }
-
-    clone() {
-        const newNote = new Note(this.beatStart, this.beatLength, this.noteNumber, 0, this.channel);
-        newNote.velocity = this.velocity;
-        newNote.id = this.id;
-        return newNote;
+    static createFromMidi(timeStart, timeLength, noteNumber, velocity = 100, channel = 0) {
+        return new Note(-1, timeStart, timeLength, noteNumber, velocity / 127, channel)
     }
 
     /**
@@ -102,8 +95,9 @@ export class Note {
 
     /**
      * @param {Note} note 
+     * @returns Note stop position in PPQ time units
      */
-    static getBeatStop(note) {
-        return note.beatStart + note.beatLength;
+    static getTimeStop(note) {
+        return note.timeStart + note.timeLength;
     }
 }
