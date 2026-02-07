@@ -4,9 +4,9 @@
  */
 export const MouseAction = Object.freeze({
     none: 0,
-    draw: 1,
-    move: 2,
-    remove: 3,
+    primary: 1,
+    secondary: 2,
+    move: 3,
     select: 4,
     scroll: 5,
 });

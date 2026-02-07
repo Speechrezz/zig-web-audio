@@ -76,8 +76,8 @@ export class PianoRoll extends TopLevelComponent {
     canHandleMouseAction(mouseAction) {
         switch (mouseAction) {
             case MouseAction.none:
-            case MouseAction.draw:
-            case MouseAction.remove:
+            case MouseAction.primary:
+            case MouseAction.secondary:
                 return MouseActionPolicy.acceptPropagate;
 
             case MouseAction.move:

@@ -59,7 +59,16 @@ export class TopLevelComponent extends Component {
             }
         }
 
-        return ev.button + 1;
+        switch (ev.button) {
+            case 0:
+                return MouseAction.primary;
+            case 1:
+                return MouseAction.move;
+            case 2:
+                return MouseAction.secondary;
+        }
+
+        return MouseAction.none;
     }
 
     /**

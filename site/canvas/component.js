@@ -81,7 +81,7 @@ export class Component {
     canHandleMouseAction(mouseAction) {
         switch (mouseAction) {
             case MouseAction.none:
-            case MouseAction.draw:
+            case MouseAction.primary:
                 return MouseActionPolicy.acceptPropagate;
             default:
                 return MouseActionPolicy.ignorePropagate;
