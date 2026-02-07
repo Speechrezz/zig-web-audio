@@ -221,8 +221,6 @@ export class PlaybackEngine {
         const positionInPpq = this.config.beatsToPpqPrecise(playHead.positionInBeats);
         const nextPositionInPpq = this.config.beatsToPpqPrecise(nextPositionInBeats);
 
-        // console.log(playHead.positionInBeats, nextPositionInBeats, positionInPpq, nextPositionInPpq);
-        
         for (const instrument of this.instruments.getList()) {
             const noteStartEvents = this.getNoteStartInInterval(instrument, positionInPpq, nextPositionInPpq);
             const noteEvents = this.getNoteStopInInterval(instrument, positionInPpq, nextPositionInPpq);
@@ -249,7 +247,6 @@ export class PlaybackEngine {
 
         const beatOffset = this.config.ppqToBeats(noteEvent.timestampPpq) - this.playHead.positionInBeats;
         const eventTimeSec = playHeadTimeSec + this.playHead.beatsToSeconds(beatOffset);
-        console.log("timestampPpq:", noteEvent.timestampPpq, ", beatOffset:", beatOffset, ", eventTimeSec:", eventTimeSec);
 
         let midiEvent;
         if (noteEvent.isNoteOn) {
@@ -286,17 +283,14 @@ export class PlaybackEngine {
                 if (note.timeStart >= ppqStart && note.timeStart < ppqEnd) {
                     noteEvents.push(new NoteEvent(note.timeStart, true, note.noteNumber, note.velocity, note.channel));
                     queuedEvents.push(new NoteEvent(noteStop, false, note.noteNumber, note.velocity, note.channel));
-                    console.log("queue1:", noteStop);
                 }
             } else {
                 const isInProjectLength = note.timeStart >= 0 && note.timeStart < lengthInPpq;
                 const isInInterval = note.timeStart < ppqEnd || note.timeStart >= ppqStart;
                 if (isInProjectLength && isInInterval) {
-                    console.log(ppqStart, ppqEnd);
                     const adjustedNoteStart = note.timeStart + lengthInPpq;
                     noteEvents.push(new NoteEvent(adjustedNoteStart, true, note.noteNumber, note.velocity, note.channel));
                     queuedEvents.push(new NoteEvent(noteStop, false, note.noteNumber, note.velocity, note.channel));
-                    console.log("queue2:", noteStop);
                 }
             }
         }
