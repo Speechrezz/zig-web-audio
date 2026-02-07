@@ -36,18 +36,42 @@ export class Note {
     channel;
 
     /**
+     * @param {number} id Unique note ID
+     * @param {number} beatStart Position of note start in beats 
+     * @param {number} beatLength Length of note in beats
+     * @param {number} noteNumber MIDI note number
+     * @param {number} velocity Normalized velocity 0..1
+     * @param {number} channel MIDI channel
+     */
+    constructor(id, beatStart, beatLength, noteNumber, velocity, channel) {
+        this.id = id;
+        this.beatStart = beatStart;
+        this.beatLength = beatLength;
+        this.noteNumber = noteNumber;
+        this.velocity = velocity;
+        this.channel = channel;
+    }
+
+    /**
+     * @param {number} beatStart Position of note start in beats 
+     * @param {number} beatLength Length of note in beats
+     * @param {number} noteNumber MIDI note number
+     * @param {number} velocity Normalized velocity 0..1
+     * @param {number} channel MIDI channel
+     */
+    static create(beatStart, beatLength, noteNumber, velocity = 0.8, channel = 0) {
+        return new Note(-1, beatStart, beatLength, noteNumber, velocity, channel)
+    }
+
+    /**
      * @param {number} beatStart Position of note start in beats 
      * @param {number} beatLength Length of note in beats
      * @param {number} noteNumber MIDI note number
      * @param {number} velocity MIDI velocity 0..127
      * @param {number} channel MIDI channel
      */
-    constructor(beatStart, beatLength, noteNumber, velocity = 100, channel = 0) {
-        this.beatStart = beatStart;
-        this.beatLength = beatLength;
-        this.noteNumber = noteNumber;
-        this.velocity = velocity / 127.0; // Normalize
-        this.channel = channel;
+    static createFromMidi(beatStart, beatLength, noteNumber, velocity = 100, channel = 0) {
+        return new Note(-1, beatStart, beatLength, noteNumber, velocity / 127, channel)
     }
 
     clone() {
@@ -57,18 +81,29 @@ export class Note {
         return newNote;
     }
 
+    /**
+     * @param {Note} note 
+     * @returns {Note}
+     */
+    static clone(note) {
+        return {...note};
+    }
+
     static deserialize(json) {
-        const newNote = new Note(json.beatStart, json.beatLength, json.noteNumber, 0, json.channel);
-        newNote.velocity = json.velocity;
-        newNote.id = json.id;
-        return newNote;
+        return new Note(json.id, json.beatStart, json.beatLength, json.noteNumber, json.velocity, json.channel);
     }
 
-    getMidiVelocity() {
-        return this.velocity * 127.0;
+    /**
+     * @param {Note} note 
+     */
+    static getMidiVelocity(note) {
+        return note.velocity * 127.0;
     }
 
-    getBeatStop() {
-        return this.beatStart + this.beatLength;
+    /**
+     * @param {Note} note 
+     */
+    static getBeatStop(note) {
+        return note.beatStart + note.beatLength;
     }
 }

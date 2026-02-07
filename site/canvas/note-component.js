@@ -11,7 +11,7 @@ export class NoteComponent extends Component{
     /**
      * Used for adjusting note
      */
-    noteAnchor = new Note(0, 0, 0);
+    noteAnchor = Note.create(0, 0, 0);
 
     isSelected = false;
 
@@ -54,7 +54,7 @@ export class NoteComponent extends Component{
     }
 
     getNoteDiff() {
-        const noteDiff = this.note.clone();
+        const noteDiff = Note.clone(this.note);
 
         noteDiff.beatStart  -= this.noteAnchor.beatStart;
         noteDiff.beatLength -= this.noteAnchor.beatLength;

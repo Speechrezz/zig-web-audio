@@ -221,13 +221,10 @@ export class NotesManager {
     }
 }
 
+/**
+ * @param {Note[]} notes 
+ * @returns {Note[]}
+ */
 export function cloneNotes(notes) {
-    /** @type {Note[]} */
-    const cloned = [];
-
-    for (const note of notes) {
-        cloned.push(note.clone());
-    }
-
-    return cloned;
+    return Array.from(notes);
 }

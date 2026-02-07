@@ -3,6 +3,7 @@ import { Instrument, InstrumentsContainer } from "./instrument.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
 import { AudioEvent } from "./audio-constants.js";
+import { Note } from "./note.js";
 
 class NoteEvent {
     noteNumber = 0;
@@ -259,7 +260,7 @@ export class PlaybackEngine {
         const queuedEvents = instrument.queuedNoteEvents;
 
         for (const note of notes) {
-            const noteStop = note.getBeatStop();
+            const noteStop = Note.getBeatStop(note);
             if (beatStart <= beatEnd) {
                 if (note.beatStart >= beatStart && note.beatStart < beatEnd) {
                     noteEvents.push(new NoteEvent(note.beatStart, true, note.noteNumber, note.velocity, note.channel));

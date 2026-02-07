@@ -464,7 +464,7 @@ export class PianoRollView extends Component {
         const beat = Math.floor(this.xScreenToBeat(x));
         const noteNumber = this.yScreenToNoteNumber(y);
 
-        const note = new Note(beat, this.lastBeatLength, noteNumber);
+        const note = Note.create(beat, this.lastBeatLength, noteNumber);
         return this.addNotes([note])[0];
     }
 
@@ -595,7 +595,7 @@ export class PianoRollView extends Component {
     adjustNoteStepNoteEnd(ev) {
         const shortestLength = this.findShortestNoteInSelection();
 
-        let beatLengthOffset = Math.round(this.xScreenToBeat(ev.x) - this.selectedNoteMain.noteAnchor.getBeatStop());
+        let beatLengthOffset = Math.round(this.xScreenToBeat(ev.x) - Note.getBeatStop(this.selectedNoteMain.noteAnchor));
         beatLengthOffset = Math.max(1 - shortestLength, beatLengthOffset);
 
         for (const selectedNote of this.selectedNotes) {
@@ -613,7 +613,7 @@ export class PianoRollView extends Component {
         beatStartOffset = Math.min(beatStartOffset, shortestLength - 1);
 
         for (const selectedNote of this.selectedNotes) {
-            const beatStop = selectedNote.noteAnchor.getBeatStop();
+            const beatStop = Note.getBeatStop(selectedNote.noteAnchor);
             selectedNote.note.beatStart = selectedNote.noteAnchor.beatStart + beatStartOffset;
             selectedNote.note.beatLength = beatStop - selectedNote.note.beatStart;
         }
@@ -796,7 +796,7 @@ export class PianoRollView extends Component {
         /** @type {Note[]} */
         const notesToCopy = [];
         for (const noteComponent of this.selectedNotes) {
-            notesToCopy.push(noteComponent.note.clone());
+            notesToCopy.push(Note.clone(noteComponent.note));
         }
 
         this.context.clipboardManager.setClipboard("notes", notesToCopy);
