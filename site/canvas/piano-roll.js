@@ -80,8 +80,9 @@ export class PianoRoll extends TopLevelComponent {
             case MouseAction.secondary:
                 return MouseActionPolicy.acceptPropagate;
 
-            case MouseAction.move:
             case MouseAction.scroll:
+            case MouseAction.translate:
+            case MouseAction.magnify:
                 return MouseActionPolicy.acceptBlock;
                 
             default:
@@ -93,7 +94,7 @@ export class PianoRoll extends TopLevelComponent {
      * @param {MouseEvent} ev 
      */
     mouseDown(ev) {
-        if (ev.mouseAction === MouseAction.move) {
+        if (ev.mouseAction === MouseAction.translate) {
             document.documentElement.style.cursor = "grabbing";
 
             this.mouseStart.x = ev.x;
@@ -104,7 +105,7 @@ export class PianoRoll extends TopLevelComponent {
     }
 
     mouseUp(ev) {
-        if (ev.mouseAction === MouseAction.move) {
+        if (ev.mouseAction === MouseAction.translate) {
             document.documentElement.style.cursor = "auto";
         }
     }
@@ -113,7 +114,7 @@ export class PianoRoll extends TopLevelComponent {
      * @param {MouseEvent} ev 
      */
     mouseDrag(ev) {
-        if (ev.mouseAction === MouseAction.move) {
+        if (ev.mouseAction === MouseAction.translate) {
             const offsetX = ev.x - this.mouseStart.x;
             const offsetY = ev.y - this.mouseStart.y;
 
@@ -126,6 +127,13 @@ export class PianoRoll extends TopLevelComponent {
      */
     mouseScroll(ev) {
         this.updateViewOffset(this.viewOffset.x - ev.deltaX, this.viewOffset.y - ev.deltaY);
+    }
+
+    /**
+     * @param {MouseScrollEvent} ev 
+     */
+    mouseMagnify(ev) {
+        this.context.config.multiplyZoomLevel(ev.deltaY, 1);
     }
 
     updateViewOffset(x, y) {

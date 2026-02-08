@@ -104,6 +104,8 @@ export class Component {
     mouseClick(ev) {}
     /** @param {MouseScrollEvent} ev */
     mouseScroll(ev) {}
+    /** @param {MouseScrollEvent} ev */
+    mouseMagnify(ev) {}
 
     // ---Component methods---
 

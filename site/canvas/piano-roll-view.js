@@ -170,7 +170,11 @@ export class PianoRollView extends Component {
     }
 
     zoomChanged() {
+        for (const noteComponent of this.noteComponents) {
+            this.updateNoteBounds(noteComponent);
+        }
 
+        this.repaint();
     }
 
     /**

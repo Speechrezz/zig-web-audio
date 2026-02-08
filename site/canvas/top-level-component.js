@@ -63,7 +63,7 @@ export class TopLevelComponent extends Component {
             case 0:
                 return MouseAction.primary;
             case 1:
-                return MouseAction.move;
+                return MouseAction.translate;
             case 2:
                 return MouseAction.secondary;
         }
@@ -181,21 +181,41 @@ export class TopLevelComponent extends Component {
     mouseWheelInternal(ev) {
         ev.preventDefault();
 
-        const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.scroll)
-        if (componentWithCoords === null) return;
+        if (ev.ctrlKey) {
+            const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.magnify)
+            if (componentWithCoords === null) return;
 
-        const deltaScale = 0.75;
+            const magnifyX = 2 ** (-ev.deltaX * 0.002);
+            const magnifyY = 2 ** (-ev.deltaY * 0.002);
 
-        const mouseScrollEvent = new MouseScrollEvent(
-            componentWithCoords.x, 
-            componentWithCoords.y, 
-            ev.offsetX, 
-            ev.offsetY,
-            ev.deltaX * deltaScale,
-            ev.deltaY * deltaScale,
-        );
+            const mouseScrollEvent = new MouseScrollEvent(
+                componentWithCoords.x, 
+                componentWithCoords.y, 
+                ev.offsetX, 
+                ev.offsetY,
+                magnifyX,
+                magnifyY,
+            );
 
-        componentWithCoords.component.mouseScroll(mouseScrollEvent);
+            componentWithCoords.component.mouseMagnify(mouseScrollEvent);
+        }
+        else {
+            const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.scroll)
+            if (componentWithCoords === null) return;
+
+            const deltaScale = 0.75;
+
+            const mouseScrollEvent = new MouseScrollEvent(
+                componentWithCoords.x, 
+                componentWithCoords.y, 
+                ev.offsetX, 
+                ev.offsetY,
+                ev.deltaX * deltaScale,
+                ev.deltaY * deltaScale,
+            );
+
+            componentWithCoords.component.mouseScroll(mouseScrollEvent);
+        }
     }
 
     topLevelRepaint() {

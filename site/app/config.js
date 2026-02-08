@@ -97,6 +97,34 @@ export class Config {
     }
 
     /**
+     * @param {number} zoomX 
+     * @param {number} zoomY 
+     */
+    setZoomLevel(zoomX, zoomY) {
+        this.zoomLevelX = zoomX;
+        this.zoomLevelY = zoomY;
+
+        this.beatWidth = Math.round(this.zoomLevelX * BASE_BEAT_WIDTH);
+        this.noteHeight = Math.round(this.zoomLevelY * BASE_NOTE_HEIGHT);
+
+        this.notifyZoomListeners();
+    }
+
+    /**
+     * @param {number} zoomX 
+     * @param {number} zoomY 
+     */
+    multiplyZoomLevel(zoomX, zoomY) {
+        this.zoomLevelX *= zoomX;
+        this.zoomLevelY *= zoomY;
+
+        this.beatWidth = Math.round(this.zoomLevelX * BASE_BEAT_WIDTH);
+        this.noteHeight = Math.round(this.zoomLevelY * BASE_NOTE_HEIGHT);
+
+        this.notifyZoomListeners();
+    }
+
+    /**
      * @param {(() => void)} callback
      */
     addZoomListener(callback) {

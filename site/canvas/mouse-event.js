@@ -4,11 +4,12 @@
  */
 export const MouseAction = Object.freeze({
     none: 0,
-    primary: 1,
-    secondary: 2,
-    move: 3,
-    select: 4,
-    scroll: 5,
+    primary: 1,   // Primary mouse click
+    secondary: 2, // Secondary mouse click
+    select: 3,    // Selecting
+    scroll: 4,    // Mouse scrolling
+    translate: 5, // Translating view (like middle-mouse click)
+    magnify: 6,   // Zooming in/out
 });
 
 /**
