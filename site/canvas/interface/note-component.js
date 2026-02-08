@@ -1,5 +1,5 @@
-import { Component } from "./component.js";
-import { Note } from "../audio/note.js";
+import { Component } from "../framework/component.js";
+import { Note } from "../../audio/note.js";
 
 export class NoteComponent extends Component{
     /**

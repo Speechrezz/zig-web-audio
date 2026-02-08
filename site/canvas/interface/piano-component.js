@@ -1,8 +1,8 @@
-import { Component } from "./component.js";
-import { Rectangle } from "./rectangle.js";
-import { AppContext } from "../app/app-context.js"
-import { MouseEvent } from "./mouse-event.js";
-import { MidiEvent, MidiEventType } from "../audio/midi.js";
+import { Component } from "../framework/component.js";
+import { Rectangle } from "../framework/rectangle.js";
+import { AppContext } from "../../app/app-context.js"
+import { MouseEvent } from "../framework/mouse-event.js";
+import { MidiEvent, MidiEventType } from "../../audio/midi.js";
 
 export class PianoComponent extends Component {
     /**

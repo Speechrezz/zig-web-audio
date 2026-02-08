@@ -1,12 +1,12 @@
-import { Rectangle } from "./rectangle.js";
-import { Point } from "./point.js";
-import { AppContext } from "../app/app-context.js"
-import { TopLevelComponent } from "./top-level-component.js";
+import { Rectangle } from "../framework/rectangle.js";
+import { Point } from "../framework/point.js";
+import { AppContext } from "../../app/app-context.js"
+import { TopLevelComponent } from "../framework/top-level-component.js";
 import { PianoRollView } from "./piano-roll-view.js";
 import { PianoComponent } from "./piano-component.js";
-import { MouseAction, MouseEvent, MouseActionPolicy, MouseScrollEvent } from "./mouse-event.js";
-import { AppCommand, AppEvent } from "../app/app-event.js";
-import { AudioEvent } from "../audio/audio-constants.js";
+import { MouseAction, MouseEvent, MouseActionPolicy, MouseScrollEvent } from "../framework/mouse-event.js";
+import { AppCommand, AppEvent } from "../../app/app-event.js";
+import { AudioEvent } from "../../audio/audio-constants.js";
 
 export class PianoRoll extends TopLevelComponent {
     /**

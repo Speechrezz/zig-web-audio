@@ -1,13 +1,13 @@
-import { Component } from "./component.js";
-import { Rectangle } from "./rectangle.js";
-import { Point } from "./point.js";
-import { AppContext } from "../app/app-context.js"
-import { cloneNotes, NotesManager } from "../audio/notes-manager.js";
+import { Component } from "../framework/component.js";
+import { Rectangle } from "../framework/rectangle.js";
+import { Point } from "../framework/point.js";
+import { AppContext } from "../../app/app-context.js"
+import { cloneNotes, NotesManager } from "../../audio/notes-manager.js";
 import { NoteComponent } from "./note-component.js";
-import { InstrumentEvent } from "../audio/audio-constants.js";
-import { MouseAction, MouseActionPolicy } from "./mouse-event.js";
-import { AppCommand } from "../app/app-event.js";
-import { Note } from "../audio/note.js";
+import { InstrumentEvent } from "../../audio/audio-constants.js";
+import { MouseAction, MouseActionPolicy } from "../framework/mouse-event.js";
+import { AppCommand } from "../../app/app-event.js";
+import { Note } from "../../audio/note.js";
 
 const UNDO_ID = "piano-roll-view";
 const UndoType = Object.freeze({
