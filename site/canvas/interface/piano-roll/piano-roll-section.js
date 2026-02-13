@@ -1,31 +1,28 @@
-import { Rectangle } from "../framework/rectangle.js";
-import { Point } from "../framework/point.js";
-import { AppContext } from "../../app/app-context.js"
-import { TopLevelComponent } from "../framework/top-level-component.js";
-import { PianoRollView } from "./piano-roll-view.js";
+import { Rectangle } from "../../framework/rectangle.js";
+import { Point } from "../../framework/point.js";
+import { Component } from "../../framework/component.js";
+import { AppContext } from "../../../app/app-context.js"
+import { PianoRoll } from "./piano-roll.js";
 import { PianoComponent } from "./piano-component.js";
-import { MouseAction, MouseEvent, MouseActionPolicy, MouseScrollEvent } from "../framework/mouse-event.js";
-import { AppCommand, AppEvent } from "../../app/app-event.js";
-import { AudioEvent } from "../../audio/audio-constants.js";
+import { MouseAction, MouseEvent, MouseActionPolicy, MouseScrollEvent } from "../../framework/mouse-event.js";
+import { AppCommand, AppEvent } from "../../../app/app-event.js";
+import { AudioEvent } from "../../../audio/audio-constants.js";
 
-export class PianoRoll extends TopLevelComponent {
+export class PianoRollSection extends Component {
     /**
      * @type {AppContext}
      */
     context;
     
     /**
-     * @type {PianoRollView}
+     * @type {PianoRoll}
      */
-    pianoRollView;
+    pianoRoll;
 
     /**
      * @type {PianoComponent}
      */
     pianoComponent;
-
-    beatSnapNum = 1;
-    beatSnapDen = 1;
 
     viewOffset = new Point(0, 0);
     viewOffsetAnchor = new Point(0, 0);
@@ -33,38 +30,30 @@ export class PianoRoll extends TopLevelComponent {
 
     /**
      * 
-     * @param {HTMLCanvasElement} canvasElement 
      * @param {AppContext} context 
      */
-    constructor(canvasElement, context) {
-        super(canvasElement);
+    constructor(context) {
+        super();
         this.context = context;
 
         this.context.eventRouter.addListener(this);
         this.context.playbackEngine.addListener(AudioEvent.PlayHead, () => this.repaint());
 
-        this.pianoRollView = new PianoRollView(context);
-        this.addChildComponent(this.pianoRollView);
+        this.pianoRoll = new PianoRoll(context);
+        this.addChildComponent(this.pianoRoll);
 
         this.pianoComponent = new PianoComponent(context);
         this.addChildComponent(this.pianoComponent);
-
-        this.canvasResized();
-        this.repaint();
     }
 
-    draw(ctx) {
-        ctx.clearRect(0, 0, this.bounds.width, this.bounds.height);
-    }
-
-    resize() {
+    resized() {
         this.updateViewOffset(this.viewOffset.x, this.viewOffset.y);
 
         const pianoWidth = 96;
 
         const bounds = this.getLocalBounds();
         const pianoBounds = bounds.removeFromLeft(pianoWidth);
-        this.pianoRollView.setBounds(bounds.clone());
+        this.pianoRoll.setBounds(bounds.clone());
         this.pianoComponent.setBounds(new Rectangle(pianoBounds.x, pianoBounds.y, pianoBounds.width, this.pianoComponent.bounds.height));
     }
 
@@ -137,12 +126,12 @@ export class PianoRoll extends TopLevelComponent {
     }
 
     updateViewOffset(x, y) {
-        const maxY = this.context.config.calculateHeight() - this.pianoRollView.bounds.height;
+        const maxY = this.context.config.calculateHeight() - this.pianoRoll.bounds.height;
 
         this.viewOffset.x = x;
         this.viewOffset.y = Math.min(0, Math.max(-maxY, y));
 
-        this.pianoRollView.setViewOffset(this.viewOffset);
+        this.pianoRoll.setViewOffset(this.viewOffset);
         this.pianoComponent.translation.y = this.viewOffset.y;
         this.repaint();
     }

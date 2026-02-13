@@ -59,7 +59,7 @@ export class Component {
     /**
      * Override to add custom behavior on bounds change.
      */
-    resize() {}
+    resized() {}
 
     /**
      * Override to change the default hitbox.
@@ -179,14 +179,13 @@ export class Component {
     }
 
     /**
-     * 
      * @param {Rectangle} newBounds 
      */
     setBounds(newBounds) {
         if (this.bounds.eql(newBounds)) return;
 
         this.bounds = newBounds;
-        this.resize();
+        this.resized();
     }
 
     /**

@@ -2,7 +2,7 @@ import { Config } from "./config.js"
 import { initializeAudio, toggleAudioContext, isAudioContextRunning } from "../audio/audio.js"
 import { MidiInput } from "../audio/midi-input.js"
 import { PlaybackEngine } from "../audio/playback-engine.js"
-import { PianoRoll } from "../canvas/interface/piano-roll.js"
+import { AppInterface } from "../canvas/interface/app-interface.js"
 import { KeyboardListener } from "./keyboard-listener.js"
 import { AppEventRouter } from "./app-event-router.js"
 import { AppContext } from "./app-context.js"
@@ -18,8 +18,8 @@ export class App {
     /** @type {MidiInput | undefined} */
     midiInput = undefined;
 
-    /** @type {PianoRoll | undefined} */
-    pianoRoll = undefined;
+    /** @type {AppInterface | undefined} */
+    appInterface = undefined;
 
     /** @type {InstrumentsSection | undefined} */
     instrumentsSection = undefined;
@@ -77,7 +77,7 @@ export class App {
         );
 
         this.instrumentsSection = new InstrumentsSection(appContext);
-        this.pianoRoll = new PianoRoll(this.canvasElement, appContext);
+        this.appInterface = new AppInterface(appContext, this.canvasElement);
         
         playButton.onclick = () => this.playbackEngine.play();
         stopButton.onclick = () => this.playbackEngine.stop();
@@ -101,6 +101,6 @@ export class App {
         const ctx = this.canvasElement.getContext("2d");
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        this.pianoRoll.canvasResized();
+        this.appInterface.canvasResized();
     }
 }

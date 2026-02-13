@@ -25,6 +25,14 @@ export class Rectangle {
         return this.y + this.height;
     }
 
+    getCenterX() {
+        return this.x + this.width * 0.5;
+    }
+
+    getCenterY() {
+        return this.y + this.height * 0.5;
+    }
+
     /**
      * @param {Number} x 
      * @param {Number} y 
@@ -45,18 +53,81 @@ export class Rectangle {
     /**
      * @param {Number} x 
      */
-    removeFromLeft(x) {
+    removeFromTop(height) {
         const removed = new Rectangle(
             this.x,
             this.y,
-            x,
+            this.width,
+            height,
+        );
+
+        this.y += height;
+        this.height -= height;
+
+        return removed;
+    }
+
+    /**
+     * @param {Number} x 
+     */
+    removeFromBottom(height) {
+        const removed = new Rectangle(
+            this.x,
+            this.y + this.height - height,
+            this.width,
+            height,
+        );
+
+        this.height -= height;
+
+        return removed;
+    }
+
+    /**
+     * @param {Number} width 
+     */
+    removeFromLeft(width) {
+        const removed = new Rectangle(
+            this.x,
+            this.y,
+            width,
             this.height,
         );
 
-        this.x += x;
-        this.width -= x;
+        this.x += width;
+        this.width -= width;
 
         return removed;
+    }
+
+    /**
+     * @param {Number} width 
+     */
+    removeFromRight(width) {
+        const removed = new Rectangle(
+            this.x + this.width - width,
+            this.y,
+            width,
+            this.height,
+        );
+
+        this.width -= width;
+
+        return removed;
+    }
+
+    /**
+     * @param {number} x 
+     * @param {number} y 
+     * @returns 
+     */
+    reduced(x, y) {
+        return new Rectangle(
+            this.x + x,
+            this.y + y,
+            this.width - 2 * x,
+            this.height - 2 * y,
+        );
     }
 
     /**
