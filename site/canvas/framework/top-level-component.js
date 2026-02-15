@@ -3,19 +3,18 @@ import { Rectangle } from "./rectangle.js";
 import { MouseAction, MouseEvent, MouseScrollEvent } from "./mouse-event.js";
 
 export class TopLevelComponent extends Component {
-    /**
-     * @type {HTMLCanvasElement}
-     */
+    /** @type {HTMLCanvasElement} */
     canvas;
 
     /** @type {MouseAction} */
     mouseAction = MouseAction.none;
     mouseDownButton = 0;
 
-    /**
-     * @type {Component | null}
-     */
+    /** @type {Component | null} */
     selectedComponent = null;
+
+    /** @type {Component | null} */
+    hoveredComponent = null;
 
     isRepaintPending = false;
 
@@ -151,6 +150,10 @@ export class TopLevelComponent extends Component {
         this.mouseAction = MouseAction.none;
         this.selectedComponent = null;
         this.canvas.releasePointerCapture(ev.pointerId);
+
+        // TODO: This will trigger `mouseMove` even if mouse has not moved.
+        // But this is kind of necessary for the `mouseEnter` and `mouseExit` events to trigger.
+        this.mouseMoveInternal(ev);
     }
 
     /**
@@ -161,6 +164,20 @@ export class TopLevelComponent extends Component {
         if (this.mouseAction === MouseAction.none) {
             const componentWithEvent = this.pointerEventToEventHandler(ev, this.mouseAction);
             if (componentWithEvent !== null) {
+                if (componentWithEvent.component !== this.hoveredComponent) {
+                    if (this.hoveredComponent) {
+                        this.hoveredComponent.mouseExit(componentWithEvent);
+                        this.hoveredComponent.mouseOverFlag = false;
+                    }
+                    
+                    this.hoveredComponent = componentWithEvent.component;
+
+                    if (this.hoveredComponent) {
+                        this.hoveredComponent.mouseEnter(componentWithEvent);
+                        this.hoveredComponent.mouseOverFlag = true;
+                    }
+                }
+                
                 componentWithEvent.component.mouseMove(componentWithEvent.mouseEvent);
             }
         }
