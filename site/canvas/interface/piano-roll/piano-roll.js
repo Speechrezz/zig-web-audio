@@ -1,6 +1,7 @@
 import { Component } from "../../framework/component.js";
 import { Rectangle } from "../../framework/rectangle.js";
 import { Point } from "../../framework/point.js";
+import { CursorStyle, setCursorStyle } from "../../framework/cursor-style.js"
 import { AppContext } from "../../../app/app-context.js"
 import { cloneNotes, NotesManager } from "../../../audio/notes-manager.js";
 import { NoteComponent } from "./note-component.js";
@@ -302,19 +303,19 @@ export class PianoRoll extends Component {
     interactionTypeToCursor(interactionType, isMouseDown = true) {
         switch (interactionType) {
             default:
-                return "auto";
+                return CursorStyle.normal;
             case InteractionType.none:
-                return "auto";
+                return CursorStyle.normal;
             case InteractionType.newNote:
             case InteractionType.adjustNoteStart:
             case InteractionType.adjustNoteEnd:
-                return "ew-resize";
+                return CursorStyle.resizeEW;
             case InteractionType.moveNote:
-                return isMouseDown ? "grabbing" : "grab";
+                return isMouseDown ? CursorStyle.grabbing : CursorStyle.grab;
             case InteractionType.removeNote:
-                return "not-allowed";
+                return CursorStyle.notAllowed;
             case InteractionType.select:
-                return "crosshair";
+                return CursorStyle.crosshair;
         }
     }
 
@@ -324,10 +325,10 @@ export class PianoRoll extends Component {
     updateMouseHighlightCursor(ev) {
         const existingNote = this.findNoteAtScreen(ev.x, ev.y);
         if (existingNote === null) {
-            document.documentElement.style.cursor = this.interactionTypeToCursor(InteractionType.none, false);
+            setCursorStyle(this.interactionTypeToCursor(InteractionType.none, false));
         } else {
             const interactionType = this.getGrabType(ev.x, existingNote);
-            document.documentElement.style.cursor = this.interactionTypeToCursor(interactionType, false);
+            setCursorStyle(this.interactionTypeToCursor(interactionType, false));
         }
     }
 
@@ -535,7 +536,7 @@ export class PianoRoll extends Component {
         this.interactionAnchor.x = ev.x;
         this.interactionAnchor.y = ev.y;
         
-        document.documentElement.style.cursor = this.interactionTypeToCursor(interactionType);
+        setCursorStyle(this.interactionTypeToCursor(interactionType));
         this.repaint();
     }
 
@@ -670,7 +671,7 @@ export class PianoRoll extends Component {
      * @param {MouseEvent} ev 
      */
     removeNoteBegin(ev) {
-        document.documentElement.style.cursor = this.interactionTypeToCursor(InteractionType.removeNote);
+        setCursorStyle(this.interactionTypeToCursor(InteractionType.removeNote));
         this.clearSelection();
 
         this.notesManager.removeNotesGestureBegin(this.context.instruments.selectedIndex);
@@ -708,7 +709,7 @@ export class PianoRoll extends Component {
      */
     selectionBegin(ev) {
         this.clearSelection();
-        document.documentElement.style.cursor = this.interactionTypeToCursor(InteractionType.select);
+        setCursorStyle(this.interactionTypeToCursor(InteractionType.select));
         this.interactionAnchor.x = ev.x;
         this.interactionAnchor.y = ev.y;
         this.selectionBounds = new Rectangle();

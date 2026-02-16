@@ -1,5 +1,6 @@
 import { Component } from "../component.js";
 import { MouseEvent } from "../mouse-event.js";
+import { CursorStyle, setCursorStyle } from "../cursor-style.js"
 
 export class Button extends Component {
     /** @type {undefined | () => void} */
@@ -57,10 +58,12 @@ export class Button extends Component {
     /** @param {MouseEvent} ev */
     mouseEnter(ev) {
         this.repaint();
+        setCursorStyle(CursorStyle.pointer);
     }
 
     /** @param {MouseEvent} ev */
     mouseExit(ev) {
         this.repaint();
+        setCursorStyle(CursorStyle.normal);
     }
 }

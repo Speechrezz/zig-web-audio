@@ -1,6 +1,7 @@
 import { Rectangle } from "../../framework/rectangle.js";
 import { Point } from "../../framework/point.js";
 import { Component } from "../../framework/component.js";
+import { CursorStyle, setCursorStyle } from "../../framework/cursor-style.js"
 import { AppContext } from "../../../app/app-context.js"
 import { PianoRoll } from "./piano-roll.js";
 import { PianoComponent } from "./piano-component.js";
@@ -84,7 +85,7 @@ export class PianoRollSection extends Component {
      */
     mouseDown(ev) {
         if (ev.mouseAction === MouseAction.translate) {
-            document.documentElement.style.cursor = "grabbing";
+            setCursorStyle(CursorStyle.grabbing);
 
             this.mouseStart.x = ev.x;
             this.mouseStart.y = ev.y;
@@ -95,7 +96,7 @@ export class PianoRollSection extends Component {
 
     mouseUp(ev) {
         if (ev.mouseAction === MouseAction.translate) {
-            document.documentElement.style.cursor = "auto";
+            setCursorStyle(CursorStyle.normal);
         }
     }
 
