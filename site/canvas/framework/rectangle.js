@@ -131,6 +131,17 @@ export class Rectangle {
     }
 
     /**
+     * @param {number} x 
+     * @param {number} y 
+     */
+    reduce(x, y) {
+        this.x += x;
+        this.y += y;
+        this.width -= 2 * x;
+        this.height -= 2 * y;
+    }
+
+    /**
      * @param {Rectangle} other 
      */
     eql(other) {

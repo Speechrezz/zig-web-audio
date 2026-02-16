@@ -138,6 +138,10 @@ export class Component {
         return this.mouseOverFlag || this.mouseDraggingFlag;
     }
 
+    isMouseDown() {
+        return this.mouseDraggingFlag;
+    }
+
     /**
      * @param {Component} childComponent 
      */

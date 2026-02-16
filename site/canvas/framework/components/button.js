@@ -15,15 +15,33 @@ export class Button extends Component {
     draw(ctx) {
         const bounds = this.getLocalBounds();
 
-        ctx.fillStyle = this.isMouseOverOrDragging() ? "oklch(87.2% 0.01 258.338)" : "oklch(96.7% 0.003 264.542)";
-        ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        if (this.isMouseDown()) {
+            ctx.fillStyle = "oklch(70.7% 0.022 261.325)";
+        }
+        else if (this.isMouseOver()) {
+            ctx.fillStyle = "oklch(87.2% 0.01 258.338)";
+        }
+        else {
+            ctx.fillStyle = "oklch(96.7% 0.003 264.542)";
+        }
+
+        ctx.beginPath();
+        ctx.roundRect(bounds.x, bounds.y, bounds.width, bounds.height, 4);
+        ctx.fill();
 
         ctx.strokeStyle = "oklch(55.1% 0.027 264.364)";
-        ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        ctx.lineWidth = 1;
+        bounds.reduce(0.5, 0.5);
+
+        ctx.beginPath();
+        ctx.roundRect(bounds.x, bounds.y, bounds.width, bounds.height, 4);
+        ctx.stroke();
     }
 
     /** @param {MouseEvent} ev */
-    // mouseDown(ev) {}
+    mouseDown(ev) {
+        this.repaint();
+    }
 
     /** @param {MouseEvent} ev */
     mouseUp(ev) {
@@ -32,17 +50,17 @@ export class Button extends Component {
                 this.onClick();
             }
         }
+
+        this.repaint();
     }
 
     /** @param {MouseEvent} ev */
     mouseEnter(ev) {
-        console.log("Button.mouseEnter()");
         this.repaint();
     }
 
     /** @param {MouseEvent} ev */
     mouseExit(ev) {
-        console.log("Button.mouseExit()");
         this.repaint();
     }
 }
