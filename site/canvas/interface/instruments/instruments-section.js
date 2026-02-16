@@ -1,8 +1,7 @@
 import { AppContext } from "../../../app/app-context.js";
 import { InstrumentDetailsList, InstrumentEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
-import { Button } from "../../framework/components/button.js";
-import { PopupMenu } from "../../framework/components/popup-menu.js";
+import { ComboBox } from "../../framework/components/combo-box.js";
 import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
@@ -13,11 +12,8 @@ export class InstrumentsSection extends Component {
     /** @type {Rectangle} */
     headerBounds;
 
-    /** @type {Button} */
-    addInstrumentButton = new Button("+");
-
-    /** @type {PopupMenu} */
-    addInstrumentDropdown = new PopupMenu();
+    /** @type {ComboBox} */
+    addInstrumentComboBox = new ComboBox("+");
 
     /**
      * @param {AppContext} context 
@@ -26,12 +22,8 @@ export class InstrumentsSection extends Component {
         super();
         this.context = context;
 
-        this.addInstrumentButton.onClick = () => this.openInstrumentsDropdown();
-        this.addChildComponent(this.addInstrumentButton);
-        
+        this.addChildComponent(this.addInstrumentComboBox);
         this.initializeDropdown();
-        this.addInstrumentDropdown.onSelectedChanged = (index) => this.instrumentDropdownItemClicked(index);
-        this.addInstrumentDropdown.addComponentToGroup(this.addInstrumentButton);
 
         this.context.instruments.addListener(InstrumentEvent.InstrumentsChanged, () => this.instrumentsChanged());
         this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.updateSelectedInstrument());
@@ -78,21 +70,15 @@ export class InstrumentsSection extends Component {
         this.headerBounds = bounds.removeFromTop(48);
 
         bounds.removeFromTop(16);
-        this.addInstrumentButton.setBounds(bounds.removeFromTop(48).reduced(8, 0));
+        this.addInstrumentComboBox.setBounds(bounds.removeFromTop(48).reduced(8, 0));
     }
 
     initializeDropdown() {
+        const popupMenu = this.addInstrumentComboBox.popupMenu;
         for (const instrumentDetails of InstrumentDetailsList)
-        {
-            this.addInstrumentDropdown.menuItems.push(instrumentDetails.name);
-        }
-    }
+            popupMenu.menuItems.push(instrumentDetails.name);
 
-    openInstrumentsDropdown() {
-        if (this.addInstrumentDropdown.isOpen())
-            this.addInstrumentDropdown.hideMenu();
-        else
-            this.addInstrumentDropdown.showMenuAtComponent(this.addInstrumentButton);
+        popupMenu.onSelectedChanged = (index) => this.instrumentDropdownItemClicked(index);
     }
 
     /**
