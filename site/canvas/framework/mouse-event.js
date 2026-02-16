@@ -13,6 +13,14 @@ export const MouseAction = Object.freeze({
 });
 
 /**
+ * @typedef {"mouseDown" | "mouseUp" | "mouseMove"} GlobalMouseEventType
+ */
+
+/** 
+ * @typedef {((GlobalMouseEventType, mouseAction: MouseAction) => void)} GlobalMouseListener
+ */
+
+/**
  * @readonly
  * @enum {number}
  */

@@ -6,6 +6,9 @@ export class TopLevelComponent extends Component {
     /** @type {HTMLCanvasElement} */
     canvas;
 
+    /** @type {import("./mouse-event.js").GlobalMouseListener[]} */
+    globalMouseListeners = [];
+
     /** @type {MouseAction} */
     mouseAction = MouseAction.none;
     mouseDownButton = 0;
@@ -110,6 +113,23 @@ export class TopLevelComponent extends Component {
     }
 
     /**
+     * @param {import("./mouse-event.js").GlobalMouseListener} listener 
+     */
+    addGlobalMouseListener(listener) {
+        this.globalMouseListeners.push(listener);
+    }
+    
+    /**
+     * @param {import("./mouse-event.js").GlobalMouseListener} listener 
+     */
+    removeGlobalMouseListener(listener) {
+        const index = this.globalMouseListeners.indexOf(listener);
+        if (index === -1) return;
+
+        this.globalMouseListeners.splice(index, 1);
+    }
+
+    /**
      * @param {PointerEvent} ev 
      */
     mouseDownInternal(ev) {
@@ -122,6 +142,9 @@ export class TopLevelComponent extends Component {
         const mouseAction = this.pointerEventToMouseAction(ev);
         this.mouseAction = mouseAction;
         this.mouseDownButton = ev.button;
+
+        for (const globalListener of this.globalMouseListeners)
+            globalListener("mouseDown", mouseAction);
 
         const componentWithEvent = this.pointerEventToEventHandler(ev, this.mouseAction);
         if (componentWithEvent === null) return;
@@ -139,6 +162,9 @@ export class TopLevelComponent extends Component {
     mouseUpInternal(ev) {
         ev.preventDefault();
         if (ev.button !== this.mouseDownButton) return;
+
+        for (const globalListener of this.globalMouseListeners)
+            globalListener("mouseUp", this.mouseAction);
 
         if (this.selectedComponent !== null) {
             const mouseEvent = this.pointerEventToMouseEvent(ev, this.selectedComponent, this.mouseAction);

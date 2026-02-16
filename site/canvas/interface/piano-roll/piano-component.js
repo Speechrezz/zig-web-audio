@@ -42,7 +42,7 @@ export class PianoComponent extends Component {
         ctx.strokeStyle = "oklch(87.2% 0.01 258.338)";
         ctx.lineWidth = 1;
         ctx.textBaseline = "hanging";
-        ctx.font = "18px serif";
+        ctx.font = "18px system-ui";
 
         ctx.beginPath()
         ctx.moveTo(this.bounds.width - 0.5, 0);

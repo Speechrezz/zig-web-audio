@@ -1,7 +1,8 @@
 import { AppContext } from "../../../app/app-context.js";
-import { InstrumentEvent } from "../../../audio/audio-constants.js";
+import { InstrumentDetailsList, InstrumentEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";
+import { PopupMenu } from "../../framework/components/popup-menu.js";
 import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
@@ -13,7 +14,10 @@ export class InstrumentsSection extends Component {
     headerBounds;
 
     /** @type {Button} */
-    addInstrumentButton;
+    addInstrumentButton = new Button("+");
+
+    /** @type {PopupMenu} */
+    addInstrumentDropdown = new PopupMenu();
 
     /**
      * @param {AppContext} context 
@@ -22,9 +26,12 @@ export class InstrumentsSection extends Component {
         super();
         this.context = context;
 
-        this.addInstrumentButton = new Button();
-        this.addInstrumentButton.onClick = () => console.log("Add instrument clicked!");
+        this.addInstrumentButton.onClick = () => this.openInstrumentsDropdown();
         this.addChildComponent(this.addInstrumentButton);
+        
+        this.initializeDropdown();
+        this.addInstrumentDropdown.onSelectedChanged = (index) => this.instrumentDropdownItemClicked(index);
+        this.addInstrumentDropdown.addComponentToGroup(this.addInstrumentButton);
 
         this.context.instruments.addListener(InstrumentEvent.InstrumentsChanged, () => this.instrumentsChanged());
         this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.updateSelectedInstrument());
@@ -41,7 +48,7 @@ export class InstrumentsSection extends Component {
         ctx.fillStyle = "oklch(13% 0.028 261.692)";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.font = "24px serif";
+        ctx.font = "bold 24px system-ui";
         ctx.fillText("Instruments", this.headerBounds.getCenterX(), this.headerBounds.getCenterY());
 
         ctx.strokeStyle = "oklch(70.7% 0.022 261.325)";
@@ -72,6 +79,28 @@ export class InstrumentsSection extends Component {
 
         bounds.removeFromTop(16);
         this.addInstrumentButton.setBounds(bounds.removeFromTop(48).reduced(8, 0));
+    }
+
+    initializeDropdown() {
+        for (const instrumentDetails of InstrumentDetailsList)
+        {
+            this.addInstrumentDropdown.menuItems.push(instrumentDetails.name);
+        }
+    }
+
+    openInstrumentsDropdown() {
+        if (this.addInstrumentDropdown.isOpen())
+            this.addInstrumentDropdown.hideMenu();
+        else
+            this.addInstrumentDropdown.showMenuAtComponent(this.addInstrumentButton);
+    }
+
+    /**
+     * @param {null | number} index 
+     */
+    instrumentDropdownItemClicked(index) {
+        if (index === null) return;
+        this.context.instruments.addInstrument(-1, index);
     }
 
     instrumentsChanged() {

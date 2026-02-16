@@ -162,6 +162,43 @@ export class Component {
     }
 
     /**
+     * Add component to top-level component to make it "global"
+     * (on top of everything else).
+     * Useful for things like making pop-up menus and such.
+     * @param {Component} component 
+     */
+    addGlobalComponent(component) {
+        const topLevelComponent = this.getTopLevelComponent();
+        topLevelComponent.addChildComponent(component);
+    }
+
+    /**
+     * @param {Component} component 
+     */
+    removeGlobalComponent(component) {
+        const topLevelComponent = this.getTopLevelComponent();
+        topLevelComponent.removeChildComponent(component);
+    }
+
+    /**
+     * Add a global mouse listener callback.
+     * Useful for things like making pop-up menus and such.
+     * @param {import("./mouse-event.js").GlobalMouseListener} listener 
+     */
+    addGlobalMouseListener(listener) {
+        const topLevelComponent = this.getTopLevelComponent();
+        topLevelComponent.addGlobalMouseListener(listener);
+    }
+
+    /**
+     * @param {import("./mouse-event.js").GlobalMouseListener} listener 
+     */
+    removeGlobalMouseListener(listener) {
+        const topLevelComponent = this.getTopLevelComponent();
+        topLevelComponent.removeGlobalMouseListener(listener);
+    }
+
+    /**
      * Gets top level component.
      * @returns {Component}
      */
