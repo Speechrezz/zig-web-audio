@@ -1,6 +1,7 @@
 import { Instrument } from "../../../audio/instrument.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";
+import { Slider } from "../../framework/components/slider.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
 export class InstrumentControls extends Component {
@@ -12,6 +13,9 @@ export class InstrumentControls extends Component {
 
     /** @type {Rectangle} */
     headerBounds = new Rectangle;
+
+    /** @type {Slider} */
+    gainSlider = new Slider;
 
     /** @type {bool} */
     isSelected = false;
@@ -35,6 +39,13 @@ export class InstrumentControls extends Component {
             if (this.onDelete !== null)
                 this.onDelete(this.instrument.index);
         }
+
+        this.addChildComponent(this.gainSlider);
+        this.gainSlider.attach(this.instrument.paramMap.get("gain"));
+    }
+
+    deinit() {
+        this.gainSlider.deinit();
     }
 
     /**
@@ -69,6 +80,7 @@ export class InstrumentControls extends Component {
 
         this.headerBounds = bounds.removeFromTop(24);
         this.deleteButton.setBounds(this.headerBounds.removeFromRight(24));
+        this.gainSlider.setBounds(bounds.removeFromBottom(24));
     }
 
     /** @param {MouseEvent} ev */

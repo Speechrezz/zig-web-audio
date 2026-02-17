@@ -329,10 +329,10 @@ export class InstrumentsContainer {
         const instrumentIndex = data.context.instrumentIndex;
         const parameterIndex = data.context.parameterIndex;
 
-        const { value, normalized: valueNormalized } = data.state;
+        const { value, normalized: valueNormalized, stateCount } = data.state;
 
         const param = this.instruments[instrumentIndex].params[parameterIndex];
-        param.updateInternalValue(value, valueNormalized);
+        param.updateFromAudioThread(value, valueNormalized, stateCount);
     }
 
     /**

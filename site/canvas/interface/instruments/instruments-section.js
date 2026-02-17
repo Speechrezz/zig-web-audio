@@ -103,10 +103,7 @@ export class InstrumentsSection extends Component {
 
     instrumentsChanged() {
         const instruments = this.context.instruments.getList();
-
-        for (const component of this.instrumentComponents)
-            this.removeChildComponent(component);
-        this.instrumentComponents.length = 0;
+        this.clearInstruments();
 
         for (const instrument of instruments) {
             const component = new InstrumentControls(instrument);
@@ -148,5 +145,14 @@ export class InstrumentsSection extends Component {
      */
     deleteInstrument(index) {
         this.context.instruments.removeInstrument(index);
+    }
+
+    clearInstruments() {
+        for (const component of this.instrumentComponents) {
+            component.deinit();
+            this.removeChildComponent(component);
+        }
+
+        this.instrumentComponents.length = 0;
     }
 }

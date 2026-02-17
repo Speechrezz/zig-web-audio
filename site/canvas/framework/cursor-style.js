@@ -13,7 +13,7 @@ export const CursorStyle = Object.freeze({
     grab: "grab",
     grabbing: "grabbing",
     resizeEW: "ew-resize",
-    resizeNS: "resize-ns",
+    resizeNS: "ns-resize",
 });
 
 /**

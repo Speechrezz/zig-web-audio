@@ -51,6 +51,22 @@ export class Rectangle {
     }
 
     /**
+     * @param {number} x 
+     */
+    setRight(x) {
+        this.x += this.width - x;
+        this.width = x;
+    }
+
+    /**
+     * @param {number} y 
+     */
+    setTop(y) {
+        this.y += this.height - y;
+        this.height = y;
+    }
+
+    /**
      * @param {Number} x 
      */
     removeFromTop(height) {

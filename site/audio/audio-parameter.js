@@ -22,6 +22,15 @@ export class AudioParameter {
     /** @type {Instrument} */
     instrument;
 
+    /** @type {((stateCount: number) => void)[]} */
+    listeners = [];
+
+    /**
+     * Increments each time the state changes, useful for syncing threads.
+     * @type {number}
+     */
+    stateCount = 0;
+
     /**
      * @param {ParameterState} state 
      * @param {Instrument} instrument 
@@ -48,13 +57,38 @@ export class AudioParameter {
                 parameterIndex: this.state.index,
                 value: newValue,
                 isNormalized,
+                stateCount: this.stateCount++,
             }
         });
     }
 
-    updateInternalValue(value, valueNormalized) {
+    /**
+     * @param {(stateCount: number) => void} listener 
+     */
+    addListener(listener) {
+        this.listeners.push(listener);
+    }
+
+    /**
+     * @param {(stateCount: number) => void} listener 
+     */
+    removeListener(listener) {
+        const index = this.listeners.indexOf(listener);
+        if (index !== -1)
+            this.listeners.splice(index, 1);
+    }
+
+    /**
+     * @param {number} value 
+     * @param {number} valueNormalized 
+     * @param {number} stateCount 
+     */
+    updateFromAudioThread(value, valueNormalized, stateCount) {
         this.state.value = value;
         this.state.value_normalized = valueNormalized;
+
+        for (const listener of this.listeners)
+            listener(stateCount);
     }
 
     updateBackendState() {
