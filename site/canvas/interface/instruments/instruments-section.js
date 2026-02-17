@@ -102,7 +102,6 @@ export class InstrumentsSection extends Component {
     }
 
     instrumentsChanged() {
-        console.log("instrumentsChanged");
         const instruments = this.context.instruments.getList();
 
         for (const component of this.instrumentComponents)
@@ -136,7 +135,6 @@ export class InstrumentsSection extends Component {
     }
 
     updateSelectedInstrument() {
-        console.log("updateSelectedInstrument");
         const selectedIndex = this.context.instruments.selectedIndex;
 
         for (const component of this.instrumentComponents) {
