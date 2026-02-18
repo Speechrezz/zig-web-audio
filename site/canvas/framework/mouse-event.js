@@ -82,3 +82,15 @@ export class MouseScrollEvent {
         this.deltaY = deltaY;
     }
 }
+
+
+// Modifier key stuff
+
+const isMac = navigator.userAgent.toLowerCase().includes("mac");
+
+/**
+ * @param {PointerEvent} ev 
+ */
+export function isPrimaryModifierKeyDownPointerEvent(ev) {
+    return isMac ? ev.metaKey : ev.ctrlKey;
+}

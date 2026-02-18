@@ -1,6 +1,6 @@
 import { Component } from "./component.js"
 import { Rectangle } from "./rectangle.js";
-import { MouseAction, MouseEvent, MouseScrollEvent } from "./mouse-event.js";
+import { isPrimaryModifierKeyDownPointerEvent, MouseAction, MouseEvent, MouseScrollEvent } from "./mouse-event.js";
 
 export class TopLevelComponent extends Component {
     /** @type {HTMLCanvasElement} */
@@ -56,7 +56,7 @@ export class TopLevelComponent extends Component {
         if (ev.buttons === 0) return MouseAction.none;
 
         if (ev.button === 0) {
-            if (ev.ctrlKey) {
+            if (isPrimaryModifierKeyDownPointerEvent(ev)) {
                 return MouseAction.select;
             }
         }
@@ -224,7 +224,7 @@ export class TopLevelComponent extends Component {
     mouseWheelInternal(ev) {
         ev.preventDefault();
 
-        if (ev.ctrlKey) {
+        if (isPrimaryModifierKeyDownPointerEvent(ev)) {
             const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.magnify)
             if (componentWithCoords === null) return;
 
