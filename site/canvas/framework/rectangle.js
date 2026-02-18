@@ -158,6 +158,33 @@ export class Rectangle {
     }
 
     /**
+     * @param {number} width 
+     * @param {number} height 
+     */
+    withSizeKeepingCenter(width, height) {
+        return new Rectangle(
+            this.getCenterX() - width * 0.5,
+            this.getCenterY() - height * 0.5,
+            width,
+            height,
+        );
+    }
+
+    floor() {
+        this.x = Math.floor(this.x);
+        this.y = Math.floor(this.y);
+        this.width = Math.floor(this.width);
+        this.height = Math.floor(this.height);
+    }
+
+    round() {
+        this.x = Math.round(this.x);
+        this.y = Math.round(this.y);
+        this.width = Math.round(this.width);
+        this.height = Math.round(this.height);
+    }
+
+    /**
      * @param {Rectangle} other 
      */
     eql(other) {
