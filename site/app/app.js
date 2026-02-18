@@ -8,7 +8,6 @@ import { AppEventRouter } from "./app-event-router.js"
 import { AppContext } from "./app-context.js"
 import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
-import { InstrumentsSection } from "./sections/instruments-section.js"
 import { InstrumentsContainer } from "../audio/instrument.js"
 
 export class App {
@@ -20,9 +19,6 @@ export class App {
 
     /** @type {AppInterface | undefined} */
     appInterface = undefined;
-
-    /** @type {InstrumentsSection | undefined} */
-    instrumentsSection = undefined;
     
     /** @type {AppEventRouter} */
     eventRouter = new AppEventRouter();
@@ -76,7 +72,6 @@ export class App {
             this.clipboardManager,
         );
 
-        this.instrumentsSection = new InstrumentsSection(appContext);
         this.appInterface = new AppInterface(appContext, this.canvasElement);
         
         playButton.onclick = () => this.playbackEngine.play();
