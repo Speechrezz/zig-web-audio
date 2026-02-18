@@ -40,14 +40,10 @@ export class App {
 
     async initialize() {
         const startButton = document.getElementById("start-audio-button");
-        const playButton = document.getElementById("play-button");
-        const stopButton = document.getElementById("stop-button");
-        const bpmInput = document.getElementById("bpm-input");
         this.canvasElement = document.getElementById("pianoroll");
     
         const audioContextStateChanged = (isRunning) => {
-            playButton.disabled = !isRunning;
-            stopButton.disabled = !isRunning;
+            startButton.value = isRunning ? "Stop Audio Engine" : "Start Audio Engine";
         };
     
         await initializeAudio();
@@ -74,14 +70,6 @@ export class App {
 
         this.appInterface = new AppInterface(appContext, this.canvasElement);
         
-        playButton.onclick = () => this.playbackEngine.play();
-        stopButton.onclick = () => this.playbackEngine.stop();
-    
-        bpmInput.addEventListener("change", (event) => {
-            this.playbackEngine.setTempo(Number(event.target.value));
-        })
-        this.playbackEngine.setTempo(Number(bpmInput.value));
-    
         this.resizeCanvas();
         window.addEventListener("resize", () => this.resizeCanvas());
     }

@@ -42,7 +42,7 @@ export class Button extends Component {
             ctx.fillStyle = "oklch(13% 0.028 261.692)";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.font = "20px system-ui";
+            ctx.font = "16px system-ui";
             ctx.fillText(this.name, bounds.getCenterX(), bounds.getCenterY());
         }
 

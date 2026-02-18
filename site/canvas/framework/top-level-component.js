@@ -12,6 +12,7 @@ export class TopLevelComponent extends Component {
     /** @type {MouseAction} */
     mouseAction = MouseAction.none;
     mouseDownButton = 0;
+    isCursorLockedFlag = false;
 
     /** @type {Component | null} */
     selectedComponent = null;
@@ -154,6 +155,10 @@ export class TopLevelComponent extends Component {
         this.selectedComponent.mouseDraggingFlag = true;
 
         componentWithEvent.component.mouseDown(componentWithEvent.mouseEvent);
+        if (componentWithEvent.component.lockCursorOnMouseDown === true) {
+            this.canvas.requestPointerLock();
+            this.isCursorLockedFlag = true;
+        }
     }
 
     /**
@@ -162,6 +167,11 @@ export class TopLevelComponent extends Component {
     mouseUpInternal(ev) {
         ev.preventDefault();
         if (ev.button !== this.mouseDownButton) return;
+
+        if (this.isCursorLockedFlag === true) {
+            this.isCursorLockedFlag = false;
+            document.exitPointerLock();
+        }
 
         for (const globalListener of this.globalMouseListeners)
             globalListener("mouseUp", this.mouseAction);
@@ -212,6 +222,13 @@ export class TopLevelComponent extends Component {
                 const componentUnderCursor = this.getComponentAt(ev.offsetX, ev.offsetY);
                 const mouseEvent = this.pointerEventToMouseEvent(ev, this.selectedComponent, this.mouseAction);
 
+                if (this.isCursorLockedFlag === true) {
+                    mouseEvent.globalX += ev.movementX;
+                    mouseEvent.globalY += ev.movementY;
+                    mouseEvent.x += ev.movementX;
+                    mouseEvent.y += ev.movementY;
+                }
+                    
                 this.selectedComponent.mouseOverFlag = this.selectedComponent === componentUnderCursor;
                 this.selectedComponent.mouseDrag(mouseEvent);
             }

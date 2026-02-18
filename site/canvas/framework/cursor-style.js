@@ -4,6 +4,7 @@
  */
 export const CursorStyle = Object.freeze({
     normal: "auto",
+    none: "none",
     pointer: "pointer",
     crosshair: "crosshair",
     text: "text",

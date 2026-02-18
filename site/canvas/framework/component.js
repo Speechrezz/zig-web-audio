@@ -35,6 +35,11 @@ export class Component {
      */
     interceptsMouseEvents = true;
 
+    /**
+     * Set to `true` if this component should lock cursor on mouseDown.
+     */
+    lockCursorOnMouseDown = false;
+
     mouseOverFlag = false;
     mouseDraggingFlag = false;
 

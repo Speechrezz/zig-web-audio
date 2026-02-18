@@ -30,7 +30,7 @@ export class Slider extends Component {
     value = 0;
     valueNormalized = 0;
     valueMin = 0;
-    valueMax = 0;
+    valueMax = 1;
     valueDefault = 0;
 
     /** @type {null | (stateCount: number) => void} */

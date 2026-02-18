@@ -2,6 +2,7 @@ import { AppContext } from "../../../app/app-context.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";
 import { ComboBox } from "../../framework/components/combo-box.js";
+import { NumberBox } from "../../framework/components/number-box.js";
 import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
@@ -11,6 +12,7 @@ export class HeaderSection extends Component {
 
     playButton = new Button("Play");
     stopButton = new Button("Stop");
+    tempoBox = new NumberBox;
 
     /**
      * @param {AppContext} context 
@@ -21,9 +23,17 @@ export class HeaderSection extends Component {
 
         this.addChildComponent(this.playButton);
         this.addChildComponent(this.stopButton);
+        this.addChildComponent(this.tempoBox);
 
         this.playButton.onClick = () => this.context.playbackEngine.play();
         this.stopButton.onClick = () => this.context.playbackEngine.stop();
+
+        this.tempoBox.valueToText = (value) => `${Math.round(value)} BPM`;
+        this.tempoBox.valueMin = 20;
+        this.tempoBox.valueMax = 600;
+        this.tempoBox.value = 120;
+
+        this.tempoBox.onChange = () => this.context.playbackEngine.setTempo(this.tempoBox.value);
     }
 
     /**
@@ -62,11 +72,13 @@ export class HeaderSection extends Component {
         const buttonHeight = 32;
         const margin = 8;
 
-        const totalWidth = 2 * buttonWidth + 1 * margin;
+        const totalWidth = 3 * buttonWidth + 2 * margin;
         const bounds = this.getLocalBounds().withSizeKeepingCenter(totalWidth, buttonHeight);
 
         this.playButton.setBounds(bounds.removeFromLeft(buttonWidth));
         bounds.removeFromLeft(margin);
         this.stopButton.setBounds(bounds.removeFromLeft(buttonWidth));
+        bounds.removeFromLeft(margin);
+        this.tempoBox.setBounds(bounds.removeFromLeft(buttonWidth));
     }
 }
