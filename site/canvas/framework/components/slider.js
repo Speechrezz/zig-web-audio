@@ -173,7 +173,7 @@ export class Slider extends Component {
     }
 
     setValueInternal(valueNormalized) {
-        valueNormalized = Math.min(Math.max(valueNormalized), 1);
+        valueNormalized = Math.min(Math.max(valueNormalized, 0), 1);
         if (this.valueNormalized === valueNormalized) return;
 
         this.valueNormalized = valueNormalized;
