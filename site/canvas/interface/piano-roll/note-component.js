@@ -30,14 +30,19 @@ export class NoteComponent extends Component{
      * @param {CanvasRenderingContext2D} ctx 
      */
     draw(ctx) {
+        const bounds = this.getLocalBounds();
+
         ctx.fillStyle = this.isSelected ? "oklch(80.9% 0.105 251.813)" : "oklch(70.7% 0.165 254.624)";
         ctx.strokeStyle = "oklch(62.3% 0.214 259.815)";
         ctx.lineWidth = 1;
 
-        const offset = ctx.lineWidth * 0.5;
         ctx.beginPath();
-        ctx.roundRect(offset, offset, this.bounds.width - ctx.lineWidth, this.bounds.height - ctx.lineWidth, 4);
+        ctx.roundRect(bounds.x, bounds.y, bounds.width, bounds.height, 4);
         ctx.fill();
+
+        bounds.reduce(ctx.lineWidth * 0.5, ctx.lineWidth * 0.5);
+        ctx.beginPath();
+        ctx.roundRect(bounds.x, bounds.y, bounds.width, bounds.height, 4);
         ctx.stroke();
     }
 
