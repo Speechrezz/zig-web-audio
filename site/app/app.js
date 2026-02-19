@@ -40,10 +40,12 @@ export class App {
 
     async initialize() {
         const startButton = document.getElementById("start-audio-button");
+        const startContainer = document.getElementById("start-audio-container");
         this.canvasElement = document.getElementById("pianoroll");
     
         const audioContextStateChanged = (isRunning) => {
-            startButton.value = isRunning ? "Stop Audio Engine" : "Start Audio Engine";
+            if (isRunning)
+                startContainer.style.display = "none";
         };
     
         await initializeAudio();

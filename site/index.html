@@ -11,55 +11,50 @@
   initialize();
 </script>
 
-<body id="body">
-  <div id="main-container">
-    <div style="margin-top: 1rem">
-      <div>
-        <input id="start-audio-button" type="button" value="Start">
-      </div>
+<body>
+  <main>
+    <div id="pianoroll-container">
+      <canvas id="pianoroll" width="100" height="100" tabindex="0"></canvas>
     </div>
-    <div id="editor-container">
-      <div id="pianoroll-container">
-        <canvas id="pianoroll" width="100" height="100" tabindex="0"></canvas>
-      </div>
+    <div id="start-audio-container">
+      <input id="start-audio-button" type="button" value="Start Audio Engine">
     </div>
-  </div>
+  </main>
 </body>
 
 <style>
-  html, body {
+  html, body, main {
     margin: 0;
-    height: 100%;
     width: 100%;
+    height: 100%;
   }
 
-  body {
-    min-height: 100%;
-    display: flex;
-    flex-direction: column;
+  main {
+    display: grid;
   }
 
-  #main-container {
-    flex: 1 1 auto;      /* take remaining height */
-    display: flex;
-    flex-direction: column;
-    min-height: 0;       /* IMPORTANT: allows children to shrink */
-    padding: 0 0;        /* optional */
-  }
-
-  #editor-container {
-    flex: 1 1 auto;
-    display: flex;
+  main > * {
+    grid-area: 1 / 1;
+    min-width: 0;
     min-height: 0;
-    margin-top: 1rem;
-    position: relative;
+  }
+
+  #start-audio-container {
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px); /* For compatibility */
+  }
+
+  #start-audio-button {
+    margin: auto;
+    padding: 1rem;
+    font-size: large;
   }
 
   #pianoroll-container {
-    flex: 1 1 auto;      /* fill remaining space inside main */
-    min-height: 0;       /* IMPORTANT for overflow/100% height children */
-    position: relative;
-    border: 1px solid oklch(70.7% 0.022 261.325);
+    height: 100%;
+    width: 100%;
   }
 
   #pianoroll {
