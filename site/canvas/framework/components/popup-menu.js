@@ -138,6 +138,11 @@ export class PopupMenu extends Component {
     }
 
     /** @param {MouseEvent} ev */
+    mouseDrag(ev) {
+        this.mouseMove(ev);
+    }
+
+    /** @param {MouseEvent} ev */
     mouseUp(ev) {
         const itemIndex = this.pointToItemIndex(ev.x, ev.y);
         if (this.onSelectedChanged !== null) {
