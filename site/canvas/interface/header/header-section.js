@@ -48,8 +48,14 @@ export class HeaderSection extends Component {
         ctx.fillStyle = "oklch(55.1% 0.027 264.364)";
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
-        ctx.font = "24px system-ui";
+        ctx.font = "600 24px system-ui";
         ctx.fillText("Chordic", bounds.x + 8, bounds.getCenterY());
+
+        ctx.strokeStyle = "oklch(87.2% 0.01 258.338)";
+        ctx.beginPath();
+        ctx.moveTo(0, bounds.getBottom() - 0.5);
+        ctx.lineTo(bounds.getRight(), bounds.getBottom() - 0.5);
+        ctx.stroke();
     }
 
     /**

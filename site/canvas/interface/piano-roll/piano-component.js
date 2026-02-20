@@ -33,11 +33,12 @@ export class PianoComponent extends Component {
      */
     draw(ctx) {
         const config = this.context.config;
+        const bounds = this.getLocalBounds();
 
         ctx.fillStyle = "oklch(96.7% 0.003 264.542)";
-        ctx.fillRect(0, 0, this.bounds.width, this.bounds.height);
+        ctx.fillRect(0, 0, bounds.width, bounds.height);
 
-        const blackNoteWidth = Math.round(this.bounds.width * 0.6);
+        const blackNoteWidth = Math.round(bounds.width * 0.6);
         ctx.fillStyle = "oklch(37.3% 0.034 259.733)";
         ctx.strokeStyle = "oklch(87.2% 0.01 258.338)";
         ctx.lineWidth = 1;
@@ -45,8 +46,8 @@ export class PianoComponent extends Component {
         ctx.font = "18px system-ui";
 
         ctx.beginPath()
-        ctx.moveTo(this.bounds.width - 0.5, 0);
-        ctx.lineTo(this.bounds.width - 0.5, this.bounds.height);
+        ctx.moveTo(bounds.width - 0.5, 0);
+        ctx.lineTo(bounds.width - 0.5, bounds.height);
         ctx.stroke();
 
         for (let p = config.pitchMin; p <= config.pitchMax; p++) {
@@ -56,17 +57,17 @@ export class PianoComponent extends Component {
                 const separatorY = y + config.noteHeight * 0.5;
                 ctx.beginPath()
                 ctx.moveTo(blackNoteWidth, separatorY);
-                ctx.lineTo(this.bounds.width, separatorY);
+                ctx.lineTo(bounds.width, separatorY);
                 ctx.stroke();
 
                 ctx.fillRect(0, y, blackNoteWidth, config.noteHeight);
             } else if (p % 12 === 4 || p % 12 === 11) {
                 ctx.beginPath()
                 ctx.moveTo(0, y);
-                ctx.lineTo(this.bounds.width, y);
+                ctx.lineTo(bounds.width, y);
                 ctx.stroke();
             } else if (p % 12 === 0) {
-                ctx.fillText(`C${(p / 12) - 1}`, this.bounds.width - 30, y);
+                ctx.fillText(`C${(p / 12) - 1}`, bounds.width - 30, y);
             }
         }
 
@@ -76,9 +77,14 @@ export class PianoComponent extends Component {
             ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.3)";
             for (const activeNote of instrument.activeNotes) {
                 const y = (config.pitchMax - activeNote.noteNumber) * config.noteHeight;
-                ctx.fillRect(0, y, this.bounds.width, config.noteHeight);
+                ctx.fillRect(0, y, bounds.width, config.noteHeight);
             }
         }
+
+        ctx.beginPath();
+        ctx.moveTo(0.5, 0);
+        ctx.lineTo(0.5, bounds.getBottom());
+        ctx.stroke();
     }
 
     zoomChanged() {

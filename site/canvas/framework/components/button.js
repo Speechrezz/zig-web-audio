@@ -25,13 +25,13 @@ export class Button extends Component {
         const bounds = this.getLocalBounds();
 
         if (!this.isMouseOver()) {
-            ctx.fillStyle = "oklch(96.7% 0.003 264.542)";
+            ctx.fillStyle = "white";
         }
         else if (this.isMouseDown()) {
-            ctx.fillStyle = "oklch(70.7% 0.022 261.325)";
-        }
-        else {
             ctx.fillStyle = "oklch(87.2% 0.01 258.338)";
+        }
+        else { // Mouse is hovering over
+            ctx.fillStyle = "oklch(92.8% 0.006 264.531)";
         }
 
         ctx.beginPath();
@@ -46,7 +46,7 @@ export class Button extends Component {
             ctx.fillText(this.name, bounds.getCenterX(), bounds.getCenterY());
         }
 
-        ctx.strokeStyle = "oklch(55.1% 0.027 264.364)";
+        ctx.strokeStyle = "oklch(70.7% 0.022 261.325)";
         ctx.lineWidth = 1;
         bounds.reduce(0.5, 0.5);
 

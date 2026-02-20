@@ -48,13 +48,10 @@ export class InstrumentsSection extends Component {
         ctx.fillStyle = "oklch(98.5% 0.002 247.839)";
         ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
 
-        ctx.fillStyle = "oklch(92.8% 0.006 264.531)";
-        ctx.fillRect(this.headerBounds.x, this.headerBounds.y, this.headerBounds.width, this.headerBounds.height);
-
         ctx.fillStyle = "oklch(13% 0.028 261.692)";
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
-        ctx.font = "20px system-ui";
+        ctx.font = "600 20px system-ui";
         ctx.fillText("Instruments", this.headerBounds.x + 8, this.headerBounds.getCenterY());
     }
 
@@ -75,11 +72,10 @@ export class InstrumentsSection extends Component {
 
     resized() {
         const bounds = this.getLocalBounds();
-        this.headerBounds = bounds.removeFromTop(48);
+        this.headerBounds = bounds.removeFromTop(40);
 
-        const addComboBoxBounds = this.headerBounds.reduced(8, 8).removeFromRight(32);
+        const addComboBoxBounds = this.headerBounds.reduced(8, 8).removeFromRight(24);
         this.addInstrumentComboBox.setBounds(addComboBoxBounds);
-        
 
         this.instrumentsBounds = bounds;
         this.updateInstrumentBounds();

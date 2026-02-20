@@ -52,13 +52,18 @@ export class NumberBox extends Component {
     draw(ctx) {
         const bounds = this.getLocalBounds();
 
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.roundRect(bounds.x, bounds.y, bounds.width, bounds.height, 4);
+        ctx.fill();
+
         ctx.fillStyle = "oklch(13% 0.028 261.692)";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.font = "16px system-ui";
         ctx.fillText(this.valueToText(this.value), bounds.getCenterX(), bounds.getCenterY());
 
-        ctx.strokeStyle = "oklch(55.1% 0.027 264.364)";
+        ctx.strokeStyle = "oklch(70.7% 0.022 261.325)";
         ctx.lineWidth = 1;
         bounds.reduce(0.5, 0.5);
 
