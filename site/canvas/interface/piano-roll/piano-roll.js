@@ -133,14 +133,6 @@ export class PianoRoll extends Component {
             ctx.strokeRect(this.selectionBounds.x, this.selectionBounds.y, this.selectionBounds.width, this.selectionBounds.height);
         }
 
-        // Playhead
-        const playHead = this.context.playbackEngine.playHead;
-        if (playHead.isPlaying) {
-            const x = playHead.positionInBeats * config.beatWidth + this.viewOffset.x;
-            ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.5)";
-            ctx.fillRect(x, 0, 8, this.bounds.height);
-        }
-
         // Draw notes
         for (const noteComponent of this.noteComponents) {
             ctx.save();
@@ -152,6 +144,14 @@ export class PianoRoll extends Component {
             noteComponent.draw(ctx);
 
             ctx.restore();
+        }
+
+        // PlayHead
+        const playHead = this.context.playbackEngine.playHead;
+        if (playHead.isPlaying) {
+            const x = playHead.positionInBeats * config.beatWidth + this.viewOffset.x;
+            ctx.fillStyle = "oklch(83.7% 0.128 66.29)";
+            ctx.fillRect(x - 1, 0, 3, this.bounds.height);
         }
     }
 

@@ -8,21 +8,19 @@ import { PianoComponent } from "./piano-component.js";
 import { MouseAction, MouseEvent, MouseActionPolicy, MouseScrollEvent } from "../../framework/mouse-event.js";
 import { AppCommand, AppEvent } from "../../../app/app-event.js";
 import { AudioEvent } from "../../../audio/audio-constants.js";
+import { Timeline } from "./timeline.js";
 
 export class PianoRollSection extends Component {
-    /**
-     * @type {AppContext}
-     */
+    /** @type {AppContext} */
     context;
+
+    /** @type {Timeline} */
+    timeline;
     
-    /**
-     * @type {PianoRoll}
-     */
+    /** @type {PianoRoll} */
     pianoRoll;
 
-    /**
-     * @type {PianoComponent}
-     */
+    /** @type {PianoComponent} */
     pianoComponent;
 
     viewOffset = new Point(0, 0);
@@ -30,7 +28,6 @@ export class PianoRollSection extends Component {
     mouseStart = new Point(0, 0);
 
     /**
-     * 
      * @param {AppContext} context 
      */
     constructor(context) {
@@ -45,6 +42,9 @@ export class PianoRollSection extends Component {
 
         this.pianoComponent = new PianoComponent(context);
         this.addChildComponent(this.pianoComponent);
+
+        this.timeline = new Timeline(context);
+        this.addChildComponent(this.timeline);
     }
 
     resized() {
@@ -53,9 +53,13 @@ export class PianoRollSection extends Component {
         const pianoWidth = 96;
 
         const bounds = this.getLocalBounds();
+        this.timeline.setBounds(bounds.removeFromTop(24));
+
         const pianoBounds = bounds.removeFromLeft(pianoWidth);
         this.pianoRoll.setBounds(bounds.clone());
         this.pianoComponent.setBounds(new Rectangle(pianoBounds.x, pianoBounds.y, pianoBounds.width, this.pianoComponent.bounds.height));
+
+        this.timeline.pianorollBounds = this.pianoRoll.bounds;
     }
 
     /**
@@ -132,6 +136,7 @@ export class PianoRollSection extends Component {
         this.viewOffset.x = x;
         this.viewOffset.y = Math.min(0, Math.max(-maxY, y));
 
+        this.timeline.setViewOffset(this.viewOffset);
         this.pianoRoll.setViewOffset(this.viewOffset);
         this.pianoComponent.translation.y = this.viewOffset.y;
         this.repaint();

@@ -88,7 +88,7 @@ export class PianoComponent extends Component {
     }
 
     zoomChanged() {
-        this.setBounds(new Rectangle(0, 0, this.bounds.width, this.context.config.calculateHeight()));
+        this.setBounds(new Rectangle(this.bounds.x, this.bounds.y, this.bounds.width, this.context.config.calculateHeight()));
     }
 
     /**
