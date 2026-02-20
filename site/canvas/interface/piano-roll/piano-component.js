@@ -3,6 +3,7 @@ import { Rectangle } from "../../framework/rectangle.js";
 import { AppContext } from "../../../app/app-context.js"
 import { MouseEvent } from "../../framework/mouse-event.js";
 import { MidiEvent, MidiEventType } from "../../../audio/midi.js";
+import { AudioEvent } from "../../../audio/audio-constants.js";
 
 export class PianoComponent extends Component {
     /**
@@ -25,6 +26,9 @@ export class PianoComponent extends Component {
 
         this.context.config.addZoomListener(() => this.zoomChanged());
         this.zoomChanged();
+
+        // Repaint when user plays their MIDI device
+        this.context.playbackEngine.addListener(AudioEvent.MidiDeviceMessage, () => this.repaint());
     }
 
     /**

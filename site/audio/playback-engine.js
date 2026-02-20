@@ -367,6 +367,8 @@ export class PlaybackEngine {
         else if (midiEvent.isNoteOff()) {
             instrument.noteStop(midiEvent.getNoteNumber(), midiEvent.getChannel());
         }
+
+        this.notifyListeners(AudioEvent.MidiDeviceMessage);
     }
 
     /**
