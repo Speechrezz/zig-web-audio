@@ -29,6 +29,7 @@ export class InstrumentsSection extends Component {
         super();
         this.context = context;
 
+        this.addInstrumentComboBox.popupMenu.overrideWidth = 160;
         this.addChildComponent(this.addInstrumentComboBox);
         this.initializeDropdown();
 
@@ -44,18 +45,17 @@ export class InstrumentsSection extends Component {
     draw(ctx) {
         const bounds = this.getLocalBounds();
 
+        ctx.fillStyle = "oklch(98.5% 0.002 247.839)";
+        ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+
         ctx.fillStyle = "oklch(92.8% 0.006 264.531)";
         ctx.fillRect(this.headerBounds.x, this.headerBounds.y, this.headerBounds.width, this.headerBounds.height);
 
         ctx.fillStyle = "oklch(13% 0.028 261.692)";
-        ctx.textAlign = "center";
+        ctx.textAlign = "left";
         ctx.textBaseline = "middle";
-        ctx.font = "bold 24px system-ui";
-        ctx.fillText("Instruments", this.headerBounds.getCenterX(), this.headerBounds.getCenterY());
-
-        ctx.strokeStyle = "oklch(70.7% 0.022 261.325)";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+        ctx.font = "20px system-ui";
+        ctx.fillText("Instruments", this.headerBounds.x + 8, this.headerBounds.getCenterY());
     }
 
     /**
@@ -76,6 +76,10 @@ export class InstrumentsSection extends Component {
     resized() {
         const bounds = this.getLocalBounds();
         this.headerBounds = bounds.removeFromTop(48);
+
+        const addComboBoxBounds = this.headerBounds.reduced(8, 8).removeFromRight(32);
+        this.addInstrumentComboBox.setBounds(addComboBoxBounds);
+        
 
         this.instrumentsBounds = bounds;
         this.updateInstrumentBounds();
@@ -127,8 +131,6 @@ export class InstrumentsSection extends Component {
             component.setBounds(bounds.removeFromTop(96));
             bounds.removeFromTop(8);
         }
-
-        this.addInstrumentComboBox.setBounds(bounds.removeFromTop(48));
     }
 
     updateSelectedInstrument() {

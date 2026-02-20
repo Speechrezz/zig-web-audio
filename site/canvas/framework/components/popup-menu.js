@@ -12,6 +12,9 @@ export class PopupMenu extends Component {
     itemHeight = 32;
 
     /** @type {null | number} */
+    overrideWidth = null;
+
+    /** @type {null | number} */
     highlightedIndex = null;
 
     /** @type {null | (index: null | number) => void} */
@@ -94,6 +97,9 @@ export class PopupMenu extends Component {
         const parentBounds = component.getGlobalBounds();
         parentBounds.translate(0, parentBounds.height);
         parentBounds.height = Math.max(this.itemHeight, this.itemHeight * this.menuItems.length);
+        if (this.overrideWidth !== null)
+            parentBounds.width = this.overrideWidth;
+
         this.setBounds(parentBounds);
 
         this.isOpenFlag = true;
