@@ -101,6 +101,6 @@ export class Timeline extends Component {
     mouseDown(ev) {
         const fullOffsetX = this.viewOffset.x + this.pianorollBounds.x;
         const beat = (ev.x - fullOffsetX) / this.context.config.beatWidth;
-        console.log("beat:", beat);
+        this.context.playbackEngine.setPlayHeadPosition(beat);
     }
 }

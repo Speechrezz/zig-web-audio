@@ -52,10 +52,11 @@ export class PlayHead {
     isPlaying = false;
 
     // ---Position info---
-    positionInBeats = 0;
-    timePassedSec = 0;    // Time since started playing
-    timePassedSteps = 0;  // Steps since started playing
-    contextTimeStart = 0; // Audio context time when started playing
+    positionInBeats = 0;      // Current PlayHead position
+    timePassedSec = 0;        // Time since started playing
+    timePassedSteps = 0;      // Steps since started playing
+    contextTimeStart = 0;     // Audio context time when started playing
+    startPositionInBeats = 0; // Position where PlayHead should start playing
 
     // ---Internal info used by PlaybackEngine---
     timePerStepSec = 1 / 60.0;
@@ -182,6 +183,36 @@ export class PlaybackEngine {
         this.playHead.bpm = newTempo;
     }
 
+    /**
+     * @param {number} positionInBeats 
+     * @param {boolean} shouldQuantize 
+     */
+    setPlayHeadPosition(positionInBeats, shouldQuantize = true) {
+        const playHead = this.playHead;
+
+        let positionInPpq;
+        if (shouldQuantize)
+            positionInPpq = this.config.roundBeatsToNearestSnapPpq(positionInBeats);
+        else
+            positionInPpq = this.config.beatsToPpq(positionInBeats);
+
+        positionInPpq = Math.min(Math.max(positionInPpq, 0), this.config.lengthInPpq);
+        positionInBeats = this.config.ppqToBeats(positionInPpq);
+
+        if (playHead.positionInPpq === positionInPpq) return;
+
+        playHead.positionInBeats = positionInBeats;
+        playHead.positionInPpq = positionInPpq;
+        playHead.startPositionInBeats = positionInBeats;
+
+        if (playHead.isPlaying) {
+            playHead.anchorInSec = playHead.timePassedSec;
+            playHead.anchorInBeats = playHead.positionInBeats;
+        }
+
+        this.notifyListeners(AudioEvent.PlayHead);
+    }
+
     play() {
         const playHead = this.playHead;
         if (playHead.isPlaying) return;
@@ -229,10 +260,10 @@ export class PlaybackEngine {
             instrument.queuedNoteEvents.length = 0;
         }
 
-        playHead.positionInBeats = 0;
+        playHead.positionInBeats = playHead.isPlaying ? playHead.startPositionInBeats : 0;
         playHead.timePassedSec   = 0;
         playHead.timePassedSteps = 0;
-        playHead.anchorInBeats   = 0;
+        playHead.anchorInBeats   = playHead.positionInBeats;
         playHead.anchorInSec     = 0;
         playHead.isPlaying = false;
 
