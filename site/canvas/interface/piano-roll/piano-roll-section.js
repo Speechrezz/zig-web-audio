@@ -163,19 +163,13 @@ export class PianoRollSection extends Component {
     handleEvent(appEvent) {
         switch (appEvent.command) {
             case AppCommand.playPause:
-                this.playPause();
+                this.playStop();
                 break;
         }
     }
 
-    playPause() {
-        const playbackEngine = this.context.playbackEngine;
-        if (playbackEngine.playHead.isPlaying) {
-            playbackEngine.stop();
-        }
-        else {
-            playbackEngine.play();
-        }
+    playStop() {
+        this.context.playbackEngine.playStop();
     }
 }
 

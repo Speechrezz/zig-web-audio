@@ -1,4 +1,5 @@
 import { AppContext } from "../../../app/app-context.js";
+import { AudioEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";
 import { ComboBox } from "../../framework/components/combo-box.js";
@@ -25,8 +26,13 @@ export class HeaderSection extends Component {
         this.addChildComponent(this.stopButton);
         this.addChildComponent(this.tempoBox);
 
-        this.playButton.onClick = () => this.context.playbackEngine.play();
+        this.playButton.onClick = () => this.context.playbackEngine.playPause();
         this.stopButton.onClick = () => this.context.playbackEngine.stop();
+
+        this.context.playbackEngine.addListener(AudioEvent.PlayStop, () => {
+            const isPlaying = this.context.playbackEngine.playHead.isPlaying
+            this.playButton.setName(isPlaying ? "Pause" : "Play");
+        })
 
         this.tempoBox.valueToText = (value) => `${Math.round(value)} BPM`;
         this.tempoBox.valueMin = 20;

@@ -18,6 +18,13 @@ export class Button extends Component {
         this.name = name;
     }
 
+    setName(newName) {
+        if (this.name === newName) return;
+
+        this.name = newName;
+        this.repaint();
+    }
+
     /**
      * @param {CanvasRenderingContext2D} ctx 
      */

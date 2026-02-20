@@ -53,7 +53,8 @@ export class PlayHead {
 
     // ---Position info---
     positionInBeats = 0;
-    timePassedSec = 0; // Time since started playing
+    timePassedSec = 0;    // Time since started playing
+    timePassedSteps = 0;  // Steps since started playing
     contextTimeStart = 0; // Audio context time when started playing
 
     // ---Internal info used by PlaybackEngine---
@@ -185,16 +186,39 @@ export class PlaybackEngine {
         const playHead = this.playHead;
         if (playHead.isPlaying) return;
 
-        playHead.positionInBeats = 0;
         playHead.timePassedSec   = 0;
         playHead.timePassedSteps = 0;
-        playHead.anchorInBeats   = 0;
+        playHead.anchorInBeats   = playHead.positionInBeats;
         playHead.anchorInSec     = 0;
         playHead.contextTimeStart = getContextTime();
         playHead.isPlaying = true;
+        this.notifyListeners(AudioEvent.PlayStop);
 
         this.timer = setInterval(() => this.step(), playHead.timePerStepSec * 1e3);
         this.step();
+    }
+
+    pause() {
+        this.playHead.isPlaying = false;
+
+        sendStopAllNotes();
+        clearInterval(this.timer);
+        this.notifyListeners(AudioEvent.PlayHead);
+        this.notifyListeners(AudioEvent.PlayStop);
+    }
+
+    /**
+     * Toggles play/pause states.
+     * @returns `true` if now playing.
+     */
+    playPause() {
+        if (this.playHead.isPlaying) {
+            this.pause();
+            return false;
+        }
+        
+        this.play();
+        return true;
     }
 
     stop() {
@@ -205,11 +229,31 @@ export class PlaybackEngine {
             instrument.queuedNoteEvents.length = 0;
         }
 
-        sendStopAllNotes();
-
+        playHead.positionInBeats = 0;
+        playHead.timePassedSec   = 0;
+        playHead.timePassedSteps = 0;
+        playHead.anchorInBeats   = 0;
+        playHead.anchorInSec     = 0;
         playHead.isPlaying = false;
+
+        sendStopAllNotes();
         clearInterval(this.timer);
         this.notifyListeners(AudioEvent.PlayHead);
+        this.notifyListeners(AudioEvent.PlayStop);
+    }
+
+    /**
+     * Toggles play/stop states.
+     * @returns `true` if now playing.
+     */
+    playStop() {
+        if (this.playHead.isPlaying) {
+            this.stop();
+            return false;
+        }
+        
+        this.play();
+        return true;
     }
 
     step() {

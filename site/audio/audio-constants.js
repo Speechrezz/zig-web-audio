@@ -23,7 +23,8 @@ export const InstrumentDetailsList = Object.freeze([
  */
 export const AudioEvent = Object.freeze({
     PlayHead: 0,
-    MidiDeviceMessage: 1,
+    PlayStop: 1,
+    MidiDeviceMessage: 2,
 });
 
 /**
