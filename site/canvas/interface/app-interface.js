@@ -54,7 +54,7 @@ export class AppInterface extends TopLevelComponent {
         const bounds = this.getLocalBounds();
 
         this.header.setBounds(bounds.removeFromTop(64));
-        this.devicePanel.setBounds(bounds.removeFromBottom(196));
+        this.devicePanel.setBounds(bounds.removeFromBottom(256));
 
         this.instruments.setBounds(bounds.removeFromLeft(196));
         this.pianoRoll.setBounds(bounds.clone());

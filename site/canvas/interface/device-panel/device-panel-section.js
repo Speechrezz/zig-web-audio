@@ -1,10 +1,14 @@
 import { AppContext } from "../../../app/app-context.js";
 import { InstrumentEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
+import { DeviceWrapper } from "./device-wrapper.js";
 
 export class DevicePanelSection extends Component {
     /** @type {AppContext} */
     context;
+
+    /** @type {DeviceWrapper[]} */
+    deviceList = [];
 
     /**
      * @param {AppContext} context 
@@ -23,7 +27,7 @@ export class DevicePanelSection extends Component {
         const bounds = this.getLocalBounds();
         const selectedInstrument = this.context.instruments.getSelected();
 
-        ctx.fillStyle = "oklch(98.5% 0.002 247.839)";
+        ctx.fillStyle = "oklch(96.7% 0.003 264.542)";
         ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
 
         ctx.fillStyle = "oklch(70.7% 0.022 261.325)";
@@ -31,14 +35,6 @@ export class DevicePanelSection extends Component {
         ctx.textBaseline = "middle";
         ctx.font = "24px system-ui";
         ctx.fillText(selectedInstrument ? "TODO: Device Panel" : "No instrument selected...", bounds.getCenterX(), bounds.getCenterY());
-
-        if (selectedInstrument !== null) {
-            ctx.fillStyle = "oklch(13% 0.028 261.692)";
-            ctx.textAlign = "left";
-            ctx.textBaseline = "middle";
-            ctx.font = "18px system-ui";
-            ctx.fillText(selectedInstrument.name, bounds.x + 8, bounds.getCenterY());
-        }
 
         ctx.strokeStyle = "oklch(87.2% 0.01 258.338)";
         ctx.beginPath();
@@ -48,9 +44,35 @@ export class DevicePanelSection extends Component {
     }
 
     resized() {
+        this.updateDeviceBounds();
+        this.repaint();
     }
 
     instrumentSelected() {
+        for (const device of this.deviceList)
+            this.removeChildComponent(device);
+        this.deviceList.length = 0;
+
+        const selectedInstrument = this.context.instruments.getSelected();
+        if (selectedInstrument) {
+            const device = new DeviceWrapper(this.context);
+            device.setName(selectedInstrument.name);
+            this.addChildComponent(device);
+
+            this.deviceList.push(device);
+        }
+
+        this.updateDeviceBounds();
         this.repaint();
+    }
+
+    updateDeviceBounds() {
+        const bounds = this.getLocalBounds();
+        bounds.reduce(8, 8);
+        
+        for (const device of this.deviceList) {
+            device.setBounds(bounds.removeFromLeft(320));
+            bounds.removeFromLeft(8);
+        }
     }
 }
