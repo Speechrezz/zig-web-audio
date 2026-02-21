@@ -208,7 +208,7 @@ export class PlaybackEngine {
         if (playHead.isPlaying) {
             playHead.anchorInSec = playHead.timePassedSec;
             playHead.anchorInBeats = playHead.positionInBeats;
-            sendStopAllNotes();
+            this.sendStopAllNotes();
         }
 
         this.notifyListeners(AudioEvent.PlayHead);
@@ -256,7 +256,11 @@ export class PlaybackEngine {
     stop() {
         const playHead = this.playHead;
 
-        playHead.positionInBeats = playHead.isPlaying ? playHead.startPositionInBeats : 0;
+        const shouldResetPosition = playHead.positionInBeats === playHead.startPositionInBeats;
+        if (shouldResetPosition)
+            playHead.startPositionInBeats = 0;
+
+        playHead.positionInBeats = playHead.startPositionInBeats;
         playHead.timePassedSec   = 0;
         playHead.timePassedSteps = 0;
         playHead.anchorInBeats   = playHead.positionInBeats;
