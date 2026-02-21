@@ -233,7 +233,7 @@ export class PlaybackEngine {
     pause() {
         this.playHead.isPlaying = false;
 
-        sendStopAllNotes();
+        this.sendStopAllNotes();
         clearInterval(this.timer);
         this.notifyListeners(AudioEvent.PlayHead);
         this.notifyListeners(AudioEvent.PlayStop);
@@ -256,11 +256,6 @@ export class PlaybackEngine {
     stop() {
         const playHead = this.playHead;
 
-        for (const instrument of this.instruments.getList()) {
-            instrument.activeNotes.length = 0;
-            instrument.queuedNoteEvents.length = 0;
-        }
-
         playHead.positionInBeats = playHead.isPlaying ? playHead.startPositionInBeats : 0;
         playHead.timePassedSec   = 0;
         playHead.timePassedSteps = 0;
@@ -268,7 +263,7 @@ export class PlaybackEngine {
         playHead.anchorInSec     = 0;
         playHead.isPlaying = false;
 
-        sendStopAllNotes();
+        this.sendStopAllNotes();
         clearInterval(this.timer);
         this.notifyListeners(AudioEvent.PlayHead);
         this.notifyListeners(AudioEvent.PlayStop);
@@ -312,6 +307,15 @@ export class PlaybackEngine {
         
         playHead.positionInBeats = nextPositionInBeats;
         playHead.timePassedSec = nextTimePassedSec;
+    }
+
+    sendStopAllNotes() {
+        for (const instrument of this.instruments.getList()) {
+            instrument.activeNotes.length = 0;
+            instrument.queuedNoteEvents.length = 0;
+        }
+
+        sendStopAllNotes();
     }
 
     /**
