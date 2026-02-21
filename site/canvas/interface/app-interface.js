@@ -1,5 +1,6 @@
 import { AppContext } from "../../app/app-context.js";
 import { TopLevelComponent } from "../framework/top-level-component.js";
+import { DevicePanelSection } from "./device-panel/device-panel-section.js";
 import { HeaderSection } from "./header/header-section.js";
 import { InstrumentsSection } from "./instruments/instruments-section.js";
 import { PianoRollSection } from "./piano-roll/piano-roll-section.js";
@@ -17,6 +18,9 @@ export class AppInterface extends TopLevelComponent {
     /** @type {InstrumentsSection} */
     instruments;
 
+    /** @type {DevicePanelSection} */
+    devicePanel;
+
     /**
      * @param {AppContext} context 
      * @param {HTMLCanvasElement} canvas 
@@ -28,10 +32,12 @@ export class AppInterface extends TopLevelComponent {
         this.header = new HeaderSection(context);
         this.pianoRoll = new PianoRollSection(context);
         this.instruments = new InstrumentsSection(context);
+        this.devicePanel = new DevicePanelSection(context);
 
         this.addChildComponent(this.header);
         this.addChildComponent(this.pianoRoll);
         this.addChildComponent(this.instruments);
+        this.addChildComponent(this.devicePanel);
 
         this.canvasResized();
         this.repaint();
@@ -46,7 +52,9 @@ export class AppInterface extends TopLevelComponent {
 
     resized() {
         const bounds = this.getLocalBounds();
+
         this.header.setBounds(bounds.removeFromTop(64));
+        this.devicePanel.setBounds(bounds.removeFromBottom(196));
 
         this.instruments.setBounds(bounds.removeFromLeft(196));
         this.pianoRoll.setBounds(bounds.clone());
