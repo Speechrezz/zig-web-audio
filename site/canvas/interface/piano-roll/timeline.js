@@ -15,6 +15,9 @@ export class Timeline extends Component {
     /** @type {Rectangle} */
     pianorollBounds = new Rectangle;
 
+    /** @type {boolean} */
+    allowDragFlag = true;
+
     /**
      * @param {AppContext} context 
      */
@@ -99,6 +102,20 @@ export class Timeline extends Component {
 
     /** @param {MouseEvent} ev */
     mouseDown(ev) {
+        this.mouseSetPlayHeadPosition(ev);
+
+        this.allowDragFlag = !this.context.playbackEngine.playHead.isPlaying;
+    }
+
+    /** @param {MouseEvent} ev */
+    mouseDrag(ev) {
+        if (!this.allowDragFlag) return
+
+        this.mouseSetPlayHeadPosition(ev);
+    }
+
+    /** @param {MouseEvent} ev */
+    mouseSetPlayHeadPosition(ev) {
         const fullOffsetX = this.viewOffset.x + this.pianorollBounds.x;
         const beat = (ev.x - fullOffsetX) / this.context.config.beatWidth;
         this.context.playbackEngine.setPlayHeadPosition(beat);

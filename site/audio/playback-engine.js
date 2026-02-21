@@ -208,6 +208,7 @@ export class PlaybackEngine {
         if (playHead.isPlaying) {
             playHead.anchorInSec = playHead.timePassedSec;
             playHead.anchorInBeats = playHead.positionInBeats;
+            sendStopAllNotes();
         }
 
         this.notifyListeners(AudioEvent.PlayHead);
