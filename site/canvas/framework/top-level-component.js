@@ -241,12 +241,13 @@ export class TopLevelComponent extends Component {
     mouseWheelInternal(ev) {
         ev.preventDefault();
 
-        if (isPrimaryModifierKeyDownPointerEvent(ev)) {
+        if (ev.ctrlKey || isPrimaryModifierKeyDownPointerEvent(ev)) {
             const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.magnify)
             if (componentWithCoords === null) return;
 
-            const magnifyX = 2 ** (-ev.deltaX * 0.002);
-            const magnifyY = 2 ** (-ev.deltaY * 0.002);
+            const deltaScale = isLikelyTrackpadScroll(ev.deltaY) ? 0.01 : 0.002;
+            const magnifyX = 2 ** (-ev.deltaX * deltaScale);
+            const magnifyY = 2 ** (-ev.deltaY * deltaScale);
 
             const mouseScrollEvent = new MouseScrollEvent(
                 componentWithCoords.x, 
@@ -263,15 +264,15 @@ export class TopLevelComponent extends Component {
             const componentWithCoords = this.getMouseEventHandler(ev.offsetX, ev.offsetY, MouseAction.scroll)
             if (componentWithCoords === null) return;
 
-            const deltaScale = 0.75;
+            const deltaScaleY = 0.8;
 
             const mouseScrollEvent = new MouseScrollEvent(
                 componentWithCoords.x, 
                 componentWithCoords.y, 
                 ev.offsetX, 
                 ev.offsetY,
-                ev.deltaX * deltaScale,
-                ev.deltaY * deltaScale,
+                ev.deltaX,
+                ev.deltaY * deltaScaleY,
             );
 
             componentWithCoords.component.mouseScroll(mouseScrollEvent);
@@ -291,3 +292,6 @@ export class TopLevelComponent extends Component {
     }
 }
 
+function isLikelyTrackpadScroll(deltaY) {
+    return Math.abs(deltaY) <= 50 ? 0.01 : 0.002;
+}
