@@ -292,6 +292,9 @@ export class TopLevelComponent extends Component {
     }
 }
 
+/**
+ * @param {number} deltaY 
+ */
 function isLikelyTrackpadScroll(deltaY) {
-    return Math.abs(deltaY) <= 50 ? 0.01 : 0.002;
+    return Math.abs(deltaY) <= 50;
 }
