@@ -199,10 +199,9 @@ export class PlaybackEngine {
         positionInPpq = Math.min(Math.max(positionInPpq, 0), this.config.lengthInPpq);
         positionInBeats = this.config.ppqToBeats(positionInPpq);
 
-        if (playHead.positionInPpq === positionInPpq) return;
+        if (playHead.positionInBeats === positionInBeats) return;
 
         playHead.positionInBeats = positionInBeats;
-        playHead.positionInPpq = positionInPpq;
         playHead.startPositionInBeats = positionInBeats;
 
         if (playHead.isPlaying) {
