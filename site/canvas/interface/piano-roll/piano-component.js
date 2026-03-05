@@ -24,9 +24,6 @@ export class PianoComponent extends Component {
         super();
         this.context = context;
 
-        this.context.config.addZoomListener(() => this.zoomChanged());
-        this.zoomChanged();
-
         // Repaint when user plays their MIDI device
         this.context.playbackEngine.addListener(AudioEvent.MidiDeviceMessage, () => this.repaint());
     }

@@ -73,9 +73,6 @@ export class PianoRoll extends Component {
         this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
         this.context.eventRouter.addListener(this);
 
-        this.context.config.addZoomListener(() => this.zoomChanged());
-        this.zoomChanged();
-
         this.lastPpqLength = this.context.config.ppqResolution;
     }
 

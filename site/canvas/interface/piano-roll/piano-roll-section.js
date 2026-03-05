@@ -45,6 +45,9 @@ export class PianoRollSection extends Component {
 
         this.timeline = new Timeline(context);
         this.addChildComponent(this.timeline);
+
+        this.context.config.addZoomListener(() => this.zoomChanged());
+        this.zoomChanged();
     }
 
     resized() {
@@ -127,7 +130,18 @@ export class PianoRollSection extends Component {
      * @param {MouseScrollEvent} ev 
      */
     mouseMagnify(ev) {
+        const pianoRollMouseX = ev.x - this.pianoRoll.bounds.x;
+        
+        const prevBeatWidth = this.context.config.beatWidth;
         this.context.config.multiplyZoomLevel(ev.deltaY, 1);
+        const newBeatWidth = this.context.config.beatWidth;
+        const widthChangeRatio = newBeatWidth / prevBeatWidth;
+
+        let newOffsetX = this.viewOffset.x - pianoRollMouseX;
+        newOffsetX *= widthChangeRatio;
+        newOffsetX += pianoRollMouseX;
+        newOffsetX = Math.round(newOffsetX);
+        this.updateViewOffset(newOffsetX, this.viewOffset.y);
     }
 
     updateViewOffset(x, y) {
@@ -170,6 +184,12 @@ export class PianoRollSection extends Component {
 
     playStop() {
         this.context.playbackEngine.playStop();
+    }
+
+    zoomChanged() {
+        this.pianoRoll.zoomChanged();
+        this.pianoComponent.zoomChanged();
+        this.timeline.zoomChanged();
     }
 }
 

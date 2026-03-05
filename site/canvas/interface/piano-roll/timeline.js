@@ -120,4 +120,8 @@ export class Timeline extends Component {
         const beat = (ev.x - fullOffsetX) / this.context.config.beatWidth;
         this.context.playbackEngine.setPlayHeadPosition(beat);
     }
+
+    zoomChanged() {
+        // TODO
+    }
 }
