@@ -46,10 +46,10 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     self.gain_param = try self.processor.parameters.add(allocator, .create("gain", "Gain", 0.0, 1.0, 0.2));
 }
 
-pub fn create(allocator: std.mem.Allocator) !*audio.AudioProcessor {
+pub fn create(allocator: std.mem.Allocator) !*@This() {
     const self = try allocator.create(@This());
     try self.init(allocator);
-    return &self.processor;
+    return self;
 }
 
 fn destroy(ctx: *anyopaque, allocator: std.mem.Allocator) void {
@@ -109,7 +109,8 @@ test "TrackProcessor" {
     const num_channels = 2;
     const block_size = 128;
 
-    var track = try @This().create(allocator);
+    var track_processor = try @This().create(allocator);
+    var track = &track_processor.processor;
     defer track.destroy(allocator);
 
     const spec: audio.ProcessSpec = .{

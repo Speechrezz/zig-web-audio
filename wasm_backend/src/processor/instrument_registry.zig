@@ -30,6 +30,24 @@ pub fn instrumentTypeToProcessorWeb(allocator: std.mem.Allocator, instrument_typ
     };
 }
 
+pub fn instrumentTypeToTrack(allocator: std.mem.Allocator, instrument_type: usize) !*audio.AudioProcessor {
+    const instrument = try instrumentTypeToProcessor(allocator, instrument_type);
+    const track = try audio.TrackProcessor.create(allocator);
+
+    track.generator_device = audio.TrackProcessor.Device.init(instrument);
+    return &track.processor;
+}
+
+pub fn instrumentTypeToTrackWeb(allocator: std.mem.Allocator, instrument_type: usize) ?*audio.AudioProcessor {
+    return instrumentTypeToTrack(allocator, instrument_type) catch |err| {
+        logging.logDebug(
+            "[WASM.instrumentTypeToTrack()] Failed to create instrument track '{}': {}",
+            .{ instrument_type, err },
+        );
+        return null;
+    };
+}
+
 test "Registering instrument test" {
     const allocator = std.testing.allocator;
 

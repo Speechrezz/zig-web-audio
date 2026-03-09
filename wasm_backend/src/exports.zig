@@ -5,7 +5,7 @@ const state = @import("framework").state;
 const web = @import("framework").web;
 const ProcessorContainerWeb = @import("framework").ProcessorContainerWeb;
 const instruments_registry = @import("processor/instrument_registry.zig");
-const instrumentTypeToProcessorWeb = instruments_registry.instrumentTypeToProcessorWeb;
+const instrumentTypeToTrackWeb = instruments_registry.instrumentTypeToTrackWeb;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
@@ -56,16 +56,13 @@ export fn stopAllNotes(allow_tail_off: bool) void {
 export fn addInstrument(instrument_index: usize, instrument_type: usize) bool {
     logging.logDebug("[WASM] Adding instrument {} at index {}...", .{ instrument_type, instrument_index });
 
-    const instrument_optional = instrumentTypeToProcessorWeb(
+    const track = instrumentTypeToTrackWeb(
         wasm_allocator,
         instrument_type,
     );
 
-    if (instrument_optional) |instrument| {
-        return processor_container_web.addProcessor(instrument_index, instrument);
-    }
-
-    return false;
+    if (track == null) return false;
+    return processor_container_web.addProcessor(instrument_index, track.?);
 }
 
 export fn removeInstrument(instrument_index: usize) void {
