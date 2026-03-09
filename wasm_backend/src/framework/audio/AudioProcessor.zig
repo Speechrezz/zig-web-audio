@@ -11,7 +11,6 @@ ptr: *anyopaque,
 vtable: *const VTable,
 
 parameters: state.ParameterContainer = .empty,
-gain_param: *state.AudioParameter = undefined,
 
 pub const VTable = struct {
     destroy: *const fn (*anyopaque, std.mem.Allocator) void,
@@ -22,7 +21,6 @@ pub const VTable = struct {
 
 pub fn init(
     self: *@This(),
-    allocator: std.mem.Allocator,
     id: []const u8,
     name: []const u8,
     ptr: *anyopaque,
@@ -34,8 +32,6 @@ pub fn init(
         .ptr = ptr,
         .vtable = vtable,
     };
-
-    self.gain_param = try self.parameters.add(allocator, .create("gain", "Gain", 0.0, 1.0, 0.2));
 }
 
 pub fn destroy(self: *@This(), allocator: std.mem.Allocator) void {

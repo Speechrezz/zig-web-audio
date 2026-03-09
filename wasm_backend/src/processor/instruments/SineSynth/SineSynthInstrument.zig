@@ -13,7 +13,6 @@ synth_processor: SynthProcessor(SynthVoice),
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
-        allocator,
         id,
         name,
         self,
@@ -25,6 +24,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         },
     );
 
+    _ = allocator;
     self.synth_processor.init();
 }
 
@@ -51,7 +51,6 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     _ = allocator;
 
     self.synth_processor.process(audio_view, midi_events);
-    audio_view.multiplyBy(self.processor.gain_param.getValue());
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {

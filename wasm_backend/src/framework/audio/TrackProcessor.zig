@@ -28,7 +28,6 @@ gain_param: *state.AudioParameter,
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
-        allocator,
         id,
         name,
         self,
@@ -89,6 +88,8 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     for (self.effect_device_list.items) |*device| {
         try device.processor.process(allocator, audio_view, midi_events);
     }
+
+    audio_view.multiplyBy(self.gain_param.getValue());
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
@@ -127,5 +128,5 @@ test "TrackProcessor" {
     try track.process(allocator, buffer.createView(), &[0]midi.MidiEvent{});
     track.stop(true);
 
-    try std.testing.expectApproxEqRel(0.2, track.gain_param.getValueNormalized(), 1e-5);
+    try std.testing.expectApproxEqRel(0.2, track_processor.gain_param.getValueNormalized(), 1e-5);
 }
