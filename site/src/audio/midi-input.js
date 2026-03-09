@@ -20,20 +20,23 @@ export class MidiInput {
     constructor(playbackEngine) {
         this.playbackEngine = playbackEngine;
 
-        navigator.requestMIDIAccess().then((midiAccess) => this.onMidiSuccess(midiAccess), (msg) => this.onMidiFailure(msg));
+        if ('requestMIDIAccess' in navigator)
+            navigator.requestMIDIAccess().then((midiAccess) => this.onMidiSuccess(midiAccess), (msg) => this.onMidiFailure(msg));
+        else
+            console.warn("[MidiInput] This browser does NOT support MIDI input.");
     }
 
     /**
      * @param {MIDIAccess} midiAccess 
      */
     onMidiSuccess(midiAccess) {
-        console.log("MIDI ready!");
+        console.log("[MidiInput] MIDI ready!");
         this.midiAccess = midiAccess;
         this.startLoggingMidiInput();
     }
 
     onMidiFailure(msg) {
-        console.error(`Failed to get MIDI access: ${msg}`);
+        console.error(`[MidiInput] Failed to get MIDI access: ${msg}`);
     }
 
     startLoggingMidiInput() {
