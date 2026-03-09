@@ -5,6 +5,7 @@ const MidiEvent = @import("framework").MidiEvent;
 const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
 const SynthVoice = @import("WavetableSynthVoice.zig");
 
+pub const id = "wavetableSynth";
 pub const name = "Wavetable Synth";
 
 processor: audio.AudioProcessor,
@@ -13,6 +14,7 @@ synth_processor: SynthProcessor(SynthVoice),
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
         allocator,
+        id,
         name,
         self,
         &.{

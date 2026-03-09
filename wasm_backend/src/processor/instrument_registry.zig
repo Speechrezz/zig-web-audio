@@ -9,9 +9,9 @@ pub const Error = std.mem.Allocator.Error || error{InstrumentTypeDoesNotExist};
 
 pub fn instrumentTypeToProcessor(allocator: std.mem.Allocator, instrument_type: usize) !*audio.AudioProcessor {
     switch (instrument_type) {
-        0 => return try SineSynthInstrument.create(allocator),
-        1 => return try TriangleSynthInstrument.create(allocator),
-        2 => return try WavetableSynthInstrument.create(allocator),
+        0 => return SineSynthInstrument.create(allocator),
+        1 => return TriangleSynthInstrument.create(allocator),
+        2 => return WavetableSynthInstrument.create(allocator),
 
         else => return Error.InstrumentTypeDoesNotExist,
     }

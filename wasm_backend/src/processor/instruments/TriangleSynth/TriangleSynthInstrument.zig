@@ -5,7 +5,8 @@ const MidiEvent = @import("framework").MidiEvent;
 const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
 const SynthVoice = @import("TriangleSynthVoice.zig");
 
-pub const name = "Sine Synth";
+pub const id = "triangleSynth";
+pub const name = "Triangle Synth";
 
 processor: audio.AudioProcessor,
 synth_processor: SynthProcessor(SynthVoice),
@@ -13,6 +14,7 @@ synth_processor: SynthProcessor(SynthVoice),
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
         allocator,
+        id,
         name,
         self,
         &.{

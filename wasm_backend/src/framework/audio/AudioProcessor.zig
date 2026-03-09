@@ -5,6 +5,7 @@ const state = @import("../state/state.zig");
 
 const Error = std.mem.Allocator.Error;
 
+id: []const u8,
 name: []const u8,
 ptr: *anyopaque,
 vtable: *const VTable,
@@ -19,8 +20,16 @@ pub const VTable = struct {
     stop: *const fn (*anyopaque, allow_tail_off: bool) void,
 };
 
-pub fn init(self: *@This(), allocator: std.mem.Allocator, name: []const u8, ptr: *anyopaque, vtable: *const VTable) !void {
+pub fn init(
+    self: *@This(),
+    allocator: std.mem.Allocator,
+    id: []const u8,
+    name: []const u8,
+    ptr: *anyopaque,
+    vtable: *const VTable,
+) !void {
     self.* = .{
+        .id = id,
         .name = name,
         .ptr = ptr,
         .vtable = vtable,
