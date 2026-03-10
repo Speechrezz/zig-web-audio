@@ -1,21 +1,21 @@
-#  ---Clean---
-echo "Clean"
+#!/usr/bin/env bash
+set -euo pipefail
 
+echo "Clean"
+mkdir -p out
 rm -rf out/*
 
-#  ---Bundle JavaScript---
 echo "Bundle JavaScript"
-
 bun build ./site/index.html --outdir ./out --minify
 bun build ./site/src/audio/wasm-worklet.js --outdir ./out --minify
 
-cp site/server.js out/
+cp ./site/server.js ./out/
 
-#  ---Compile WASM backend---
 echo "Compile WASM backend"
+(
+  cd ./wasm_backend
+  zig build test
+  zig build -Doptimize=ReleaseSmall
+)
 
-cd wasm_backend
-zig build test
-zig build -Doptimize=ReleaseSmall
-cd ../
-mv wasm_backend/zig-out/bin/*.wasm out/
+cp ./wasm_backend/zig-out/bin/*.wasm ./out/
