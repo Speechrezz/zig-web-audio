@@ -1,8 +1,10 @@
+// @ts-check
+
 import { AppContext } from "../../app/app-context.js";
 import { TopLevelComponent } from "../framework/top-level-component.js";
 import { DevicePanelSection } from "./device-panel/device-panel-section.js";
 import { HeaderSection } from "./header/header-section.js";
-import { InstrumentsSection } from "./instruments/instruments-section.js";
+import { TracksSection } from "./tracks/tracks-section.js";
 import { PianoRollSection } from "./piano-roll/piano-roll-section.js";
 
 export class AppInterface extends TopLevelComponent {
@@ -15,8 +17,8 @@ export class AppInterface extends TopLevelComponent {
     /** @type {PianoRollSection} */
     pianoRoll;
 
-    /** @type {InstrumentsSection} */
-    instruments;
+    /** @type {TracksSection} */
+    tracks;
 
     /** @type {DevicePanelSection} */
     devicePanel;
@@ -31,12 +33,12 @@ export class AppInterface extends TopLevelComponent {
     
         this.header = new HeaderSection(context);
         this.pianoRoll = new PianoRollSection(context);
-        this.instruments = new InstrumentsSection(context);
+        this.tracks = new TracksSection(context);
         this.devicePanel = new DevicePanelSection(context);
 
         this.addChildComponent(this.header);
         this.addChildComponent(this.pianoRoll);
-        this.addChildComponent(this.instruments);
+        this.addChildComponent(this.tracks);
         this.addChildComponent(this.devicePanel);
 
         this.canvasResized();
@@ -56,7 +58,7 @@ export class AppInterface extends TopLevelComponent {
         this.header.setBounds(bounds.removeFromTop(64));
         this.devicePanel.setBounds(bounds.removeFromBottom(256));
 
-        this.instruments.setBounds(bounds.removeFromLeft(196));
+        this.tracks.setBounds(bounds.removeFromLeft(196));
         this.pianoRoll.setBounds(bounds.clone());
     }
 }

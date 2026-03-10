@@ -1,25 +1,27 @@
+// @ts-check
+
 import { AppContext } from "../../../app/app-context.js";
 import { InstrumentDetailsList, InstrumentEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
 import { ComboBox } from "../../framework/components/combo-box.js";
 import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
 import { Rectangle } from "../../framework/rectangle.js";
-import { InstrumentControls } from "./instrument-controls.js";
+import { TrackControls } from "./track-controls.js";
 
-export class InstrumentsSection extends Component {
+export class TracksSection extends Component {
     /** @type {AppContext} */
     context;
 
     /** @type {Rectangle} */
-    headerBounds = null;
+    headerBounds = new Rectangle;
 
     /** @type {Rectangle} */
-    tracksBounds = null;
+    tracksBounds = new Rectangle;
 
     /** @type {ComboBox} */
     addInstrumentComboBox = new ComboBox("+");
 
-    /** @type {InstrumentControls[]} */
+    /** @type {TrackControls[]} */
     trackComponents = [];
 
     /**
@@ -106,7 +108,7 @@ export class InstrumentsSection extends Component {
         this.clearInstruments();
 
         for (const track of tracks) {
-            const component = new InstrumentControls(track);
+            const component = new TrackControls(track);
             component.onDelete = (index) => this.deleteInstrument(index);
             component.onClick = (index) => this.instrumentClicked(index);
 

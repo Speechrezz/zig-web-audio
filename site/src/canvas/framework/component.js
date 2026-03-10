@@ -1,3 +1,5 @@
+// @ts-check
+
 import { MouseEvent, MouseAction, MouseActionPolicy, MouseScrollEvent } from "./mouse-event.js"
 import { Rectangle } from "./rectangle.js";
 import { Point } from "./point.js";
@@ -81,7 +83,7 @@ export class Component {
     /**
      * Override to change mouse action handling policy
      * @param {MouseAction} mouseAction 
-     * @returns MouseHandlePolicy
+     * @returns {MouseActionPolicy}
      */
     canHandleMouseAction(mouseAction) {
         switch (mouseAction) {
@@ -219,7 +221,9 @@ export class Component {
      */
     repaint() {
         const topLevelComponent = this.getTopLevelComponent();
+        // @ts-ignore
         if (typeof topLevelComponent.topLevelRepaint === 'function') {
+            // @ts-ignore
             topLevelComponent.topLevelRepaint();
         }
     }
@@ -342,6 +346,7 @@ export class Component {
 
         // Should be unreachable
         console.error("[Component.getMouseEventHandler()] Reached unreachable code!");
+        return null;
     }
 
     /**
@@ -350,6 +355,7 @@ export class Component {
      */
     getGlobalBounds() {
         let globalBounds = this.getLocalBounds();
+        /** @type {Component} */
         let c = this;
 
         while (c.parentComponent !== null) {

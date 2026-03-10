@@ -1,3 +1,4 @@
+import { MouseEvent } from "../mouse-event.js";
 import { Button } from "./button.js";
 import { PopupMenu } from "./popup-menu.js";
 

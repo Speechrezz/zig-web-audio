@@ -1,10 +1,13 @@
+// @ts-check
+
 import { Track } from "../../../audio/track.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";
 import { Slider } from "../../framework/components/slider.js";
+import { MouseEvent } from "../../framework/mouse-event.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
-export class InstrumentControls extends Component {
+export class TrackControls extends Component {
     /** @type {Track} */
     track;
 
@@ -17,13 +20,13 @@ export class InstrumentControls extends Component {
     /** @type {Slider} */
     gainSlider = new Slider;
 
-    /** @type {bool} */
+    /** @type {boolean} */
     isSelected = false;
 
-    /** @type {null | (index: number) => void} */
+    /** @type {null | ((index: number) => void)} */
     onDelete = null;
 
-    /** @type {null | (index: number) => void} */
+    /** @type {null | ((index: number) => void)} */
     onClick = null;
 
     /**
@@ -41,6 +44,7 @@ export class InstrumentControls extends Component {
         }
 
         this.addChildComponent(this.gainSlider);
+        // @ts-ignore
         this.gainSlider.attach(this.track.paramMap.get("gain"));
     }
 
@@ -90,7 +94,7 @@ export class InstrumentControls extends Component {
     }
 
     /**
-     * @param {bool} isSelected 
+     * @param {boolean} isSelected 
      */
     setSelected(isSelected) {
         if (this.isSelected === isSelected) return;
