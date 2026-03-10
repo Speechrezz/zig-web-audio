@@ -33,7 +33,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     console.log("[WasmProcessor] onmessage:", msg); // TODO
                     break;
                 case WorkletMessageType.midi:
-                    this.exports.sendMidiEvent(msg.instrumentIndex, msg.data, BigInt(msg.time));
+                    this.exports.sendMidiEvent(msg.instrumentIndex, msg.data, msg.time);
                     break;
                 case WorkletMessageType.stopAllNotes:
                     this.exports.stopAllNotes(msg.allowTailOff);

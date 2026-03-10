@@ -14,13 +14,13 @@ export class InstrumentsSection extends Component {
     headerBounds = null;
 
     /** @type {Rectangle} */
-    instrumentsBounds = null;
+    tracksBounds = null;
 
     /** @type {ComboBox} */
     addInstrumentComboBox = new ComboBox("+");
 
     /** @type {InstrumentControls[]} */
-    instrumentComponents = [];
+    trackComponents = [];
 
     /**
      * @param {AppContext} context 
@@ -33,8 +33,8 @@ export class InstrumentsSection extends Component {
         this.addChildComponent(this.addInstrumentComboBox);
         this.initializeDropdown();
 
-        this.context.instruments.addListener(InstrumentEvent.InstrumentsChanged, () => this.instrumentsChanged());
-        this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.updateSelectedInstrument());
+        this.context.tracks.addListener(InstrumentEvent.InstrumentsChanged, () => this.instrumentsChanged());
+        this.context.tracks.addListener(InstrumentEvent.InstrumentSelected, () => this.updateSelectedInstrument());
 
         this.instrumentsChanged();
     }
@@ -52,7 +52,7 @@ export class InstrumentsSection extends Component {
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.font = "600 20px system-ui";
-        ctx.fillText("Instruments", this.headerBounds.x + 8, this.headerBounds.getCenterY());
+        ctx.fillText("Tracks", this.headerBounds.x + 8, this.headerBounds.getCenterY());
     }
 
     /**
@@ -77,7 +77,7 @@ export class InstrumentsSection extends Component {
         const addComboBoxBounds = this.headerBounds.reduced(8, 8).removeFromRight(24);
         this.addInstrumentComboBox.setBounds(addComboBoxBounds);
 
-        this.instrumentsBounds = bounds;
+        this.tracksBounds = bounds;
         this.updateInstrumentBounds();
     }
 
@@ -94,23 +94,23 @@ export class InstrumentsSection extends Component {
      */
     instrumentDropdownItemClicked(index) {
         if (index === null) return;
-        this.context.instruments.addInstrument(-1, index);
+        this.context.tracks.addInstrument(-1, index);
     }
 
     instrumentClicked(index) {
-        this.context.instruments.selectInstrument(index);
+        this.context.tracks.selectInstrument(index);
     }
 
     instrumentsChanged() {
-        const instruments = this.context.instruments.getList();
+        const tracks = this.context.tracks.getList();
         this.clearInstruments();
 
-        for (const instrument of instruments) {
-            const component = new InstrumentControls(instrument);
+        for (const track of tracks) {
+            const component = new InstrumentControls(track);
             component.onDelete = (index) => this.deleteInstrument(index);
             component.onClick = (index) => this.instrumentClicked(index);
 
-            this.instrumentComponents.push(component);
+            this.trackComponents.push(component);
             this.addChildComponent(component);
         }
 
@@ -119,21 +119,21 @@ export class InstrumentsSection extends Component {
     }
 
     updateInstrumentBounds() {
-        if (this.instrumentsBounds === null) return;
+        if (this.tracksBounds === null) return;
         
-        const bounds = this.instrumentsBounds.reduced(8, 8);
+        const bounds = this.tracksBounds.reduced(8, 8);
 
-        for (const component of this.instrumentComponents) {
+        for (const component of this.trackComponents) {
             component.setBounds(bounds.removeFromTop(96));
             bounds.removeFromTop(8);
         }
     }
 
     updateSelectedInstrument() {
-        const selectedIndex = this.context.instruments.selectedIndex;
+        const selectedIndex = this.context.tracks.selectedIndex;
 
-        for (const component of this.instrumentComponents) {
-            const isSelected = component.instrument.index === selectedIndex;
+        for (const component of this.trackComponents) {
+            const isSelected = component.track.index === selectedIndex;
             component.setSelected(isSelected);
         }
     }
@@ -142,15 +142,15 @@ export class InstrumentsSection extends Component {
      * @param {number} index 
      */
     deleteInstrument(index) {
-        this.context.instruments.removeInstrument(index);
+        this.context.tracks.removeInstrument(index);
     }
 
     clearInstruments() {
-        for (const component of this.instrumentComponents) {
+        for (const component of this.trackComponents) {
             component.deinit();
             this.removeChildComponent(component);
         }
 
-        this.instrumentComponents.length = 0;
+        this.trackComponents.length = 0;
     }
 }

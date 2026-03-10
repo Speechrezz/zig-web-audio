@@ -67,10 +67,10 @@ export class PianoRoll extends Component {
         
         this.context = context;
 
-        this.notesManager = new NotesManager(this.context.instruments, this.context.undoManager);
+        this.notesManager = new NotesManager(this.context.tracks, this.context.undoManager);
         this.notesManager.pianoRollCallback = () => { this.resetNotes(); this.repaint(); };
 
-        this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
+        this.context.tracks.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
         this.context.eventRouter.addListener(this);
 
         this.lastPpqLength = this.context.config.ppqResolution;
@@ -338,10 +338,10 @@ export class PianoRoll extends Component {
     resetNotes() {
         this.noteComponents.length = 0;
 
-        const instrument = this.context.instruments.getSelected();
-        if (instrument === null) return;
+        const track = this.context.tracks.getSelected();
+        if (track === null) return;
 
-        for (const note of instrument.notes) {
+        for (const note of track.notes) {
             const noteComponent = new NoteComponent(note);
             this.updateNoteBounds(noteComponent);
             this.noteComponents.push(noteComponent);
@@ -445,7 +445,7 @@ export class PianoRoll extends Component {
     addNotes(notes) {
         if (!this.isEditable()) return [];
 
-        this.notesManager.addNotes(this.context.instruments.selectedIndex, notes);
+        this.notesManager.addNotes(this.context.tracks.selectedIndex, notes);
 
         /** @type {NoteComponent[]} */
         const noteComponents = [];
@@ -484,7 +484,7 @@ export class PianoRoll extends Component {
             notes.push(noteComponent.note);
         }
 
-        this.notesManager.removeNotes(this.context.instruments.selectedIndex, notes);
+        this.notesManager.removeNotes(this.context.tracks.selectedIndex, notes);
     }
 
     /**
@@ -657,7 +657,7 @@ export class PianoRoll extends Component {
                 noteDiffs.push(noteComponent.getNoteDiff());        
             }
             
-            this.notesManager.moveNotesGestureEnd(this.context.instruments.selectedIndex, noteDiffs);
+            this.notesManager.moveNotesGestureEnd(this.context.tracks.selectedIndex, noteDiffs);
         }
 
         this.lastPpqLength = this.selectedNoteMain.note.timeLength;
@@ -671,7 +671,7 @@ export class PianoRoll extends Component {
         setCursorStyle(this.interactionTypeToCursor(InteractionType.removeNote));
         this.clearSelection();
 
-        this.notesManager.removeNotesGestureBegin(this.context.instruments.selectedIndex);
+        this.notesManager.removeNotesGestureBegin(this.context.tracks.selectedIndex);
 
         const noteToRemove = this.findNoteAtScreen(ev.x, ev.y);
         if (noteToRemove !== null) {

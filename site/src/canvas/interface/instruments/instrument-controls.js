@@ -1,12 +1,12 @@
-import { Instrument } from "../../../audio/instrument.js";
+import { Track } from "../../../audio/track.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";
 import { Slider } from "../../framework/components/slider.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
 export class InstrumentControls extends Component {
-    /** @type {Instrument} */
-    instrument;
+    /** @type {Track} */
+    track;
 
     /** @type {Button} */
     deleteButton = new Button("x");
@@ -27,21 +27,21 @@ export class InstrumentControls extends Component {
     onClick = null;
 
     /**
-     * @param {Instrument} instrument 
+     * @param {Track} track 
      */
-    constructor(instrument) {
+    constructor(track) {
         super();
 
-        this.instrument = instrument;
+        this.track = track;
 
         this.addChildComponent(this.deleteButton);
         this.deleteButton.onClick = () => {
             if (this.onDelete !== null)
-                this.onDelete(this.instrument.index);
+                this.onDelete(this.track.index);
         }
 
         this.addChildComponent(this.gainSlider);
-        this.gainSlider.attach(this.instrument.paramMap.get("gain"));
+        this.gainSlider.attach(this.track.paramMap.get("gain"));
     }
 
     deinit() {
@@ -63,7 +63,7 @@ export class InstrumentControls extends Component {
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.font = "16px system-ui";
-        ctx.fillText(this.instrument.name, this.headerBounds.x, this.headerBounds.getCenterY());
+        ctx.fillText(this.track.name, this.headerBounds.x, this.headerBounds.getCenterY());
 
         bounds.reduce(0.5, 0.5);
         ctx.lineWidth = 1;
@@ -86,7 +86,7 @@ export class InstrumentControls extends Component {
     /** @param {MouseEvent} ev */
     mouseDown(ev) {
         if (this.onClick !== null)
-            this.onClick(this.instrument.index);
+            this.onClick(this.track.index);
     }
 
     /**

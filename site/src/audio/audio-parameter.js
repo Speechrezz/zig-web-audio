@@ -1,5 +1,7 @@
+// @ts-check
+
 import { getAudioWorkletNode } from "./audio.js";
-import { Instrument } from "./instrument.js";
+import { Track } from "./track.js";
 import { WorkletMessageType } from "./worklet-message.js";
 
 /**
@@ -19,8 +21,8 @@ export class AudioParameter {
     /** @type {ParameterState} */
     state;
 
-    /** @type {Instrument} */
-    instrument;
+    /** @type {Track} */
+    track;
 
     /** @type {((stateCount: number) => void)[]} */
     listeners = [];
@@ -33,11 +35,11 @@ export class AudioParameter {
 
     /**
      * @param {ParameterState} state 
-     * @param {Instrument} instrument 
+     * @param {Track} track 
      */
-    constructor(state, instrument) {
+    constructor(state, track) {
         this.state = state;
-        this.instrument = instrument;
+        this.track = track;
         console.log("[AudioParameter.constructor()] state:", this.state);
     }
 
@@ -53,7 +55,7 @@ export class AudioParameter {
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.setParameterValue,
             context: {
-                instrumentIndex: this.instrument.index,
+                instrumentIndex: this.track.index,
                 parameterIndex: this.state.index,
                 value: newValue,
                 isNormalized,

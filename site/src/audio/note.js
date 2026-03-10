@@ -1,3 +1,5 @@
+// @ts-check
+
 export class Note {
     /**
      * Unique note ID (used for undo management)
@@ -99,5 +101,43 @@ export class Note {
      */
     static getTimeStop(note) {
         return note.timeStart + note.timeLength;
+    }
+}
+
+export class NoteEvent {
+    noteNumber = 0;
+    velocity = 0;
+    channel = 0;
+    timestampPpq = 0;
+    isNoteOn = true;
+
+    /**
+     * @param {number} timestampPpq 
+     * @param {boolean} isNoteOn 
+     * @param {number} noteNumber 
+     * @param {number} velocity 
+     * @param {number} channel 
+     */
+    constructor(timestampPpq, isNoteOn, noteNumber, velocity, channel = 0) {
+        this.noteNumber = noteNumber;
+        this.velocity = velocity;
+        this.channel = channel;
+        this.timestampPpq = timestampPpq;
+        this.isNoteOn = isNoteOn;
+    }
+
+    /**
+     * @param {NoteEvent} noteEvent 
+     */
+    static getMidiVelocity(noteEvent) {
+        return noteEvent.velocity * 127.0;
+    }
+
+    /**
+     * @param {NoteEvent} noteEvent 
+     * @returns {NoteEvent}
+     */
+    static clone(noteEvent) {
+        return {...noteEvent};
     }
 }

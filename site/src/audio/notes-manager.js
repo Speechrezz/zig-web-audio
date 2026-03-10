@@ -1,6 +1,6 @@
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
-import { InstrumentsContainer } from "./instrument.js";
 import { Note } from "./note.js";
+import { TracksContainer } from "./track.js";
 
 const UNDO_ID = "notes-manager";
 const UndoType = Object.freeze({
@@ -10,8 +10,8 @@ const UndoType = Object.freeze({
 });
 
 export class NotesManager {
-    /** @type {InstrumentsContainer} */
-    instruments;
+    /** @type {TracksContainer} */
+    tracks;
 
     /** @type {UndoManager} */
     undoManager;
@@ -20,36 +20,36 @@ export class NotesManager {
     removedNotesBuffer = [];
 
     /** @type {number} */
-    gestureInstrumentIndex = 0;
+    gestureTrackIndex = 0;
 
     /** @type {undefined | (() => void)} */
     pianoRollCallback = undefined;
 
     /**
-     * @param {InstrumentsContainer} instruments 
+     * @param {TracksContainer} tracks 
      * @param {UndoManager} undoManager 
      */
-    constructor(instruments, undoManager) {
-        this.instruments = instruments;
+    constructor(tracks, undoManager) {
+        this.tracks = tracks;
         this.undoManager = undoManager;
 
         this.undoManager.addListener(UNDO_ID, this);
     }
 
     /**
-     * @param {number} instrumentIndex 
+     * @param {number} trackIndex 
      * @param {Note[]} notes 
      * @param {boolean} newNotes `true` if the notes being added are brand-new.
      */
-    addNotes(instrumentIndex, notes, newNotes = true) {
-        const instrument = this.instruments.get(instrumentIndex);
+    addNotes(trackIndex, notes, newNotes = true) {
+        const track = this.tracks.get(trackIndex);
 
         for (const note of notes) {
             if (newNotes) {
-                note.id = instrument.getNextNoteId();
+                note.id = track.getNextNoteId();
             }
 
-            instrument.notes.push(note);
+            track.notes.push(note);
         }
 
         if (newNotes) {
@@ -57,7 +57,7 @@ export class NotesManager {
                 UNDO_ID, 
                 UndoType.addNotes, 
                 {
-                    instrumentIndex: instrumentIndex,
+                    trackIndex: trackIndex,
                     notes: cloneNotes(notes),
                 }
             ));
@@ -65,16 +65,16 @@ export class NotesManager {
     }
 
     /**
-     * @param {number} instrumentIndex 
+     * @param {number} trackIndex 
      * @param {Note[]} notes 
      * @param {boolean} addToUndo `true` if this remove event should be communicated to the undo manager.
      */
-    removeNotes(instrumentIndex, notes, addToUndo = true) {
-        const instrument = this.instruments.get(instrumentIndex);
+    removeNotes(trackIndex, notes, addToUndo = true) {
+        const track = this.tracks.get(trackIndex);
 
         for (const note of notes) {
-            const instrumentNoteIndex = instrument.notes.indexOf(note);
-            instrument.notes.splice(instrumentNoteIndex, 1);
+            const trackNoteIndex = track.notes.indexOf(note);
+            track.notes.splice(trackNoteIndex, 1);
         }
 
         if (addToUndo) {
@@ -82,15 +82,15 @@ export class NotesManager {
                 UNDO_ID, 
                 UndoType.removeNotes, 
                 {
-                    instrumentIndex: instrumentIndex,
+                    trackIndex: trackIndex,
                     notes: cloneNotes(notes),
                 }
             ));
         }
     }
 
-    removeNotesGestureBegin(instrumentIndex) {
-        this.gestureInstrumentIndex = instrumentIndex;
+    removeNotesGestureBegin(trackIndex) {
+        this.gestureTrackIndex = trackIndex;
         this.removedNotesBuffer.length = 0;
     }
 
@@ -99,7 +99,7 @@ export class NotesManager {
      */
     removeNotesGestureStep(note) {
         this.removedNotesBuffer.push(note);
-        this.removeNotes(this.gestureInstrumentIndex, [note], false);
+        this.removeNotes(this.gestureTrackIndex, [note], false);
     }
 
     removeNotesGestureEnd() {
@@ -109,22 +109,22 @@ export class NotesManager {
             UNDO_ID, 
             UndoType.removeNotes, 
             {
-                instrumentIndex: this.gestureInstrumentIndex,
+                trackIndex: this.gestureTrackIndex,
                 notes: cloneNotes(this.removedNotesBuffer),
             }
         ));
     }
 
     /**
-     * @param {number} instrumentIndex 
+     * @param {number} trackIndex 
      * @param {Note[]} noteDiffs 
      */
-    moveNotesGestureEnd(instrumentIndex, noteDiffs) {
+    moveNotesGestureEnd(trackIndex, noteDiffs) {
         this.undoManager.push(new AppTransaction(
             UNDO_ID, 
             UndoType.moveNotes, 
             {
-                instrumentIndex: instrumentIndex,
+                trackIndex: trackIndex,
                 notes: cloneNotes(noteDiffs),
             }
         ));
@@ -136,31 +136,31 @@ export class NotesManager {
      */
     undo(transaction) {
         /** @type {number} */
-        const instrumentIndex = transaction.diff.instrumentIndex;
-        const instrument = this.instruments.get(instrumentIndex);
+        const trackIndex = transaction.diff.trackIndex;
+        const track = this.tracks.get(trackIndex);
         /** @type {Note[]} */
         const notesDiff = transaction.diff.notes;
         
-        console.log("[undo]: instrumentIndex=", instrumentIndex, ", notesDiff=", notesDiff, ", transaction.type=", transaction.type);
+        console.log("[undo]: trackIndex=", trackIndex, ", notesDiff=", notesDiff, ", transaction.type=", transaction.type);
 
         switch (transaction.type) {
             case UndoType.addNotes: {
                 for (const noteDiff of notesDiff) {
-                    const note = instrument.notes.find((v) => v.id === noteDiff.id);
+                    const note = track.notes.find((v) => v.id === noteDiff.id);
                     if (note !== undefined) {
-                        this.removeNotes(instrumentIndex, [note], false);   
+                        this.removeNotes(trackIndex, [note], false);   
                     }
                 }
 
                 break;
             }
             case UndoType.removeNotes: {
-                this.addNotes(instrumentIndex, cloneNotes(notesDiff), false);
+                this.addNotes(trackIndex, cloneNotes(notesDiff), false);
                 break;
             }
             case UndoType.moveNotes: {
                 for (const noteDiff of notesDiff) {
-                    const note = instrument.notes.find((v) => v.id === noteDiff.id);
+                    const note = track.notes.find((v) => v.id === noteDiff.id);
                     if (note === undefined) continue;
 
                     note.timeStart  -= noteDiff.timeStart;
@@ -181,23 +181,23 @@ export class NotesManager {
      */
     redo(transaction) {
         /** @type {number} */
-        const instrumentIndex = transaction.diff.instrumentIndex;
-        const instrument = this.instruments.get(instrumentIndex);
+        const trackIndex = transaction.diff.trackIndex;
+        const track = this.tracks.get(trackIndex);
         /** @type {Note[]} */
         const notesDiff = transaction.diff.notes;
 
-        console.log("[redo]: instrumentIndex=", instrumentIndex, ", notesDiff=", notesDiff, ", transaction.type=", transaction.type);
+        console.log("[redo]: trackIndex=", trackIndex, ", notesDiff=", notesDiff, ", transaction.type=", transaction.type);
         
         switch (transaction.type) {
             case UndoType.addNotes: {
-                this.addNotes(instrumentIndex, cloneNotes(notesDiff), false);
+                this.addNotes(trackIndex, cloneNotes(notesDiff), false);
                 break;
             }
             case UndoType.removeNotes: {
                 for (const noteDiff of notesDiff) {
-                    const note = instrument.notes.find((v) => v.id === noteDiff.id);
+                    const note = track.notes.find((v) => v.id === noteDiff.id);
                     if (note !== undefined) {
-                        this.removeNotes(instrumentIndex, [note], false);   
+                        this.removeNotes(trackIndex, [note], false);   
                     }
                 }
 
@@ -205,7 +205,7 @@ export class NotesManager {
             }
             case UndoType.moveNotes: {
                 for (const noteDiff of notesDiff) {
-                    const note = instrument.notes.find((v) => v.id === noteDiff.id);
+                    const note = track.notes.find((v) => v.id === noteDiff.id);
                     if (note === undefined) continue;
 
                     note.timeStart  += noteDiff.timeStart;

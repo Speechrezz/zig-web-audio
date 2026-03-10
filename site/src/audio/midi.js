@@ -1,10 +1,12 @@
+// @ts-check
+
 import { WorkletMessageType } from "./worklet-message.js";
 import { getAudioContext, getAudioWorkletNode } from "./audio.js";
 
 /**
  * @param {number} instrumentIndex 
  * @param {MidiEvent} midiEvent 
- * @param {BigInt} timeStampSeconds Time since start of the audio context (in seconds)
+ * @param {number} timeStampSeconds Time since start of the audio context (in seconds)
  */
 export function sendMidiMessageSeconds(instrumentIndex, midiEvent, timeStampSeconds) {
     const sampleRate = getAudioContext().sampleRate;
@@ -14,14 +16,14 @@ export function sendMidiMessageSeconds(instrumentIndex, midiEvent, timeStampSeco
 /**
  * @param {number} instrumentIndex 
  * @param {MidiEvent} midiEvent 
- * @param {BigInt} timeStampSamples Time since start of the audio context (in samples)
+ * @param {number} timeStampSamples Time since start of the audio context (in samples)
  */
 export function sendMidiMessageSamples(instrumentIndex, midiEvent, timeStampSamples) {
     getAudioWorkletNode().port.postMessage({
         type: WorkletMessageType.midi,
         instrumentIndex: instrumentIndex,
         data: midiEvent.toPacked(),
-        time: timeStampSamples,
+        time: BigInt(timeStampSamples),
     });
 }
 
@@ -136,6 +138,7 @@ export class MidiEvent {
  * @param {MIDIMessageEvent} e 
  */
 export function prettyLogMidiEvent(e) {
+    // @ts-ignore
     const [status, data1, data2] = e.data;
     const cmd = status >> 4;
     const ch = (status & 0x0f) + 1;
@@ -150,7 +153,7 @@ export function prettyLogMidiEvent(e) {
     } else if (cmd === 0xE) {
         const value = (data2 << 7) | data1; // pitch bend 0..16383, center 8192
         console.log(`Pitch   ch ${ch}  value ${value}        (${timeStamp})`);
-    } else {
+    } else { // @ts-ignore
         console.log(`Raw     ch ${ch}  [${Array.from(e.data)}]       (${timeStamp})`);
     }
 }

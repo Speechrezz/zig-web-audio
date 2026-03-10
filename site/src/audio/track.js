@@ -1,11 +1,13 @@
+// @ts-check
+
 import { getAudioWorkletNode } from "./audio.js";
 import { InstrumentDetailsList, InstrumentType, InstrumentEvent } from "./audio-constants.js";
 import { WorkletMessageType } from "./worklet-message.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
-import { Note } from "./note.js";
+import { Note, NoteEvent } from "./note.js";
 import { AudioParameter } from "./audio-parameter.js"
 
-const UNDO_ID = "instrument";
+const UNDO_ID = "track";
 const UndoType = Object.freeze({
     addInstrument: "add", 
     removeInstrument: "remove", 
@@ -21,7 +23,8 @@ class NoteNumberAndChannel {
     }
 
     /**
-     * @param {NoteNumberAndChannel} other 
+     * @param {number} noteNumber 
+     * @param {number} channel 
      */
     eql(noteNumber, channel = 0) {
         return this.noteNumber === noteNumber
@@ -29,7 +32,7 @@ class NoteNumberAndChannel {
     }
 }
 
-export class Instrument {
+export class Track {
     /** @type {number} */
     index;
 
@@ -39,7 +42,7 @@ export class Instrument {
     /** @type {string} */
     name;
 
-    /** @type {{params: any}} */
+    /** @type {{parameters: any}} */
     state;
 
     /** @type {AudioParameter[]} */
@@ -92,6 +95,10 @@ export class Instrument {
         }
     }
 
+    /**
+     * @param {number} noteNumber 
+     * @param {number} channel 
+     */
     noteStart(noteNumber, channel) {
         const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
         if (index === -1) {
@@ -99,6 +106,10 @@ export class Instrument {
         }
     }
 
+    /**
+     * @param {number} noteNumber 
+     * @param {number} channel 
+     */
     noteStop(noteNumber, channel) {
         const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
         if (index >= 0) {
@@ -106,6 +117,10 @@ export class Instrument {
         }
     }
 
+    /**
+     * @param {number} noteNumber 
+     * @param {number} channel 
+     */
     isNotePlaying(noteNumber, channel) {
         const index = this.activeNotes.findIndex((v) => v.eql(noteNumber, channel));
         return index >= 0;
@@ -128,7 +143,7 @@ export class Instrument {
     }
 
     static deserialize(json) {
-        const newInstrument = new Instrument(json.index, json.type, json.name, json.state);
+        const newInstrument = new Track(json.index, json.type, json.name, json.state);
         newInstrument.noteIdCounter = json.noteIdCounter;
 
         for (const note of json.notes) {
@@ -143,11 +158,11 @@ export class Instrument {
     }
 }
 
-export class InstrumentsContainer {
+export class TracksContainer {
     /** @type {UndoManager} */
     undoManager;    
 
-    /** @type {Instrument[]} */
+    /** @type {Track[]} */
     instruments = [];
 
     /** @type {null | number} */
@@ -229,14 +244,14 @@ export class InstrumentsContainer {
         const addToUndo = data.context.addToUndo;
         const serialized = data.context.serialized;
 
-        /** @type {Instrument} */
+        /** @type {Track} */
         let newInstrument;
         if (serialized === null) {
             const instrumentDetails = InstrumentDetailsList[instrumentType];
-            newInstrument = new Instrument(instrumentIndex, instrumentType, instrumentDetails.name, instrumentState);
+            newInstrument = new Track(instrumentIndex, instrumentType, instrumentDetails.name, instrumentState);
         }
         else { // Load existing instrument with existing state
-            newInstrument = Instrument.deserialize(serialized);
+            newInstrument = Track.deserialize(serialized);
         }
 
         this.instruments.splice(instrumentIndex, 0, newInstrument);
@@ -268,10 +283,11 @@ export class InstrumentsContainer {
             instrumentIndex: instrumentIndex,
         });
 
+        // @ts-ignore
         if (this.selectedIndex >= instrumentIndex) {
             if (this.instruments.length === 0)
                 this.selectedIndex = null;
-            else
+            else // @ts-ignore
                 this.selectedIndex = Math.max(0, this.selectedIndex - 1);
         }
 
@@ -295,7 +311,7 @@ export class InstrumentsContainer {
 
     /**
      * @param {number} index 
-     * @return {Instrument} instrument
+     * @return {Track} instrument
      */
     get(index) {
         return this.instruments[index];

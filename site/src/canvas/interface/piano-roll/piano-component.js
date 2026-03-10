@@ -72,11 +72,11 @@ export class PianoComponent extends Component {
             }
         }
 
-        const instrument = this.context.instruments.getSelected();
+        const track = this.context.tracks.getSelected();
 
-        if (instrument !== null) {
+        if (track !== null) {
             ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.3)";
-            for (const activeNote of instrument.activeNotes) {
+            for (const activeNote of track.activeNotes) {
                 const y = (config.pitchMax - activeNote.noteNumber) * config.noteHeight;
                 ctx.fillRect(0, y, bounds.width, config.noteHeight);
             }

@@ -8,7 +8,7 @@ import { AppEventRouter } from "./app-event-router.js"
 import { AppContext } from "./app-context.js"
 import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
-import { InstrumentsContainer } from "../audio/instrument.js"
+import { TracksContainer } from "../audio/track.js"
 
 export class App {
     /** @type {PlaybackEngine | undefined} */
@@ -56,8 +56,8 @@ export class App {
         }
     
         this.undoManager = new UndoManager(this.eventRouter);
-        const instruments = new InstrumentsContainer(this.undoManager);
-        this.playbackEngine = new PlaybackEngine(this.config, instruments);
+        const tracks = new TracksContainer(this.undoManager);
+        this.playbackEngine = new PlaybackEngine(this.config, tracks);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.clipboardManager = new ClipboardManager();
         this.keyboardListener = new KeyboardListener(this.eventRouter);

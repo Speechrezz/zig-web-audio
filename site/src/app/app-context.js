@@ -3,7 +3,7 @@ import { PlaybackEngine } from "../audio/playback-engine.js";
 import { AppEventRouter } from "./app-event-router.js";
 import { ClipboardManager } from "./clipboard-manager.js";
 import { UndoManager } from "./undo-manager.js";
-import { InstrumentsContainer } from "../audio/instrument.js";
+import { TracksContainer } from "../audio/track.js";
 
 export class AppContext {
     /** @type {Config} */
@@ -12,8 +12,8 @@ export class AppContext {
     /** @type {PlaybackEngine} */
     playbackEngine;
 
-    /** @type {InstrumentsContainer} */
-    instruments;
+    /** @type {TracksContainer} */
+    tracks;
 
     /** @type {UndoManager} */
     undoManager;
@@ -38,6 +38,6 @@ export class AppContext {
         this.eventRouter = eventRouter;
         this.clipboardManager = clipboardManager;
 
-        this.instruments = this.playbackEngine.instruments;
+        this.tracks = this.playbackEngine.tracks;
     }
 } 

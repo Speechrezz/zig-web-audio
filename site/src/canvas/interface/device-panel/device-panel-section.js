@@ -17,7 +17,7 @@ export class DevicePanelSection extends Component {
         super();
         this.context = context;
 
-        this.context.instruments.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
+        this.context.tracks.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
     }
 
     /**
@@ -25,7 +25,7 @@ export class DevicePanelSection extends Component {
      */
     draw(ctx) {
         const bounds = this.getLocalBounds();
-        const selectedInstrument = this.context.instruments.getSelected();
+        const selectedTrack = this.context.tracks.getSelected();
 
         ctx.fillStyle = "oklch(96.7% 0.003 264.542)";
         ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -34,7 +34,7 @@ export class DevicePanelSection extends Component {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.font = "24px system-ui";
-        ctx.fillText(selectedInstrument ? "TODO: Device Panel" : "No instrument selected...", bounds.getCenterX(), bounds.getCenterY());
+        ctx.fillText(selectedTrack ? "TODO: Device Panel" : "No track selected...", bounds.getCenterX(), bounds.getCenterY());
 
         ctx.strokeStyle = "oklch(87.2% 0.01 258.338)";
         ctx.beginPath();
@@ -53,10 +53,10 @@ export class DevicePanelSection extends Component {
             this.removeChildComponent(device);
         this.deviceList.length = 0;
 
-        const selectedInstrument = this.context.instruments.getSelected();
-        if (selectedInstrument) {
+        const selectedTrack = this.context.tracks.getSelected();
+        if (selectedTrack) {
             const device = new DeviceWrapper(this.context);
-            device.setName(selectedInstrument.name);
+            device.setName(selectedTrack.name);
             this.addChildComponent(device);
 
             this.deviceList.push(device);
