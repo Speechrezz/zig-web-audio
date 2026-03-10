@@ -17,9 +17,12 @@ const BLOCK_SIZE = 128;
  */
 export async function initializeAudio() {
     audioContext = new AudioContext();
-    await audioContext.audioWorklet.addModule('src/audio/wasm-worklet.js');
 
-    const wasmResponse = await fetch("src/audio/audio_backend.wasm");
+    const workletUrl = new URL("./wasm-worklet.js", import.meta.url);
+    await audioContext.audioWorklet.addModule(workletUrl);
+
+    const wasmUrl = new URL("./audio_backend.wasm", import.meta.url);
+    const wasmResponse = await fetch(wasmUrl);
     const wasmBytes = await wasmResponse.arrayBuffer();
 
     audioWorkletNode = new AudioWorkletNode(audioContext, 'wasm-processor', {
