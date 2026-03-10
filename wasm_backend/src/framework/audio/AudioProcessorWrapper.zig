@@ -40,9 +40,10 @@ pub fn stop(self: *@This(), allow_tail_off: bool) void {
     self.audio_processor.stop(allow_tail_off);
 }
 
-pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify) !void {
-    try write_stream.beginObject();
-    try write_stream.objectField("params");
-    try self.audio_processor.parameters.toJson(write_stream);
-    try write_stream.endObject();
+pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
+    try self.audio_processor.save(write_stream);
+}
+
+pub fn load(self: *@This(), parsed: *const std.json.Value) void {
+    self.audio_processor.load(parsed);
 }

@@ -31,7 +31,8 @@ pub fn idToIndex(self: *const @This(), parameter_id: []const u8) ?usize {
     return self.map.get(parameter_id);
 }
 
-pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify) !void {
+pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
+    try write_stream.objectField("parameters");
     try write_stream.beginObject();
     for (self.list.items, 0..) |param, i| {
         try write_stream.objectField(param.id);
@@ -78,8 +79,10 @@ test "ParameterContainer" {
         .options = .{ .whitespace = .indent_2 },
     };
 
-    try container.toJson(&write_stream);
-    //std.debug.print("{s}\n", .{out.written()});
+    try write_stream.beginObject();
+    try container.save(&write_stream);
+    try write_stream.endObject();
+    // std.debug.print("{s}\n", .{out.written()});
 
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"name\": \"Test 1\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"name\": \"Test 2\"") != null);

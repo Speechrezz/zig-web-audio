@@ -31,9 +31,11 @@ fn toJsonStringImpl(
         .options = .{ .whitespace = .indent_2 },
     };
 
+    try write_stream.beginObject();
     try toJsonFn(context, &write_stream);
-    const owned_slice = try out.toOwnedSlice();
+    try write_stream.endObject();
 
+    const owned_slice = try out.toOwnedSlice();
     return .{
         .ptr = owned_slice.ptr,
         .len = owned_slice.len,
@@ -73,7 +75,7 @@ test "returnJsonString" {
     const web_string = try toJsonStringImpl(
         allocator,
         &container,
-        ParameterContainer.toJson,
+        ParameterContainer.save,
     );
     defer freeWebString(allocator, web_string);
 

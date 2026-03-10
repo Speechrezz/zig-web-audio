@@ -80,8 +80,9 @@ export fn getInstrumentState(instrument_index: usize) u64 {
     const web_string = web.string.toJsonString(
         wasm_allocator,
         instrument,
-        audio.AudioProcessorWrapper.toJson,
+        audio.AudioProcessorWrapper.save,
     );
+
     return @bitCast(web_string);
 }
 

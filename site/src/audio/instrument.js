@@ -85,7 +85,7 @@ export class Instrument {
         this.state = state;
 
         // Initialize parameters
-        for (const paramState of Object.values(this.state.params)) {
+        for (const paramState of Object.values(this.state.parameters)) {
             const param = new AudioParameter(paramState, this);
             this.params.push(param);
             this.paramMap.set(paramState.id, param);
@@ -223,7 +223,7 @@ export class InstrumentsContainer {
 
         console.log("instrument data:", ev.data.data);
         const data = ev.data.data;
-        const instrumentState = data.state;
+        const instrumentState = data.state.trackProcessor;
         const instrumentType = data.context.instrumentType;
         const instrumentIndex = data.context.instrumentIndex;
         const addToUndo = data.context.addToUndo;

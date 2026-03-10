@@ -17,6 +17,11 @@ pub const VTable = struct {
     prepare: *const fn (*anyopaque, std.mem.Allocator, spec: audio.ProcessSpec) Error!void,
     process: *const fn (*anyopaque, std.mem.Allocator, audio_view: audio.AudioView, midi_events: []midi.MidiEvent) Error!void,
     stop: *const fn (*anyopaque, allow_tail_off: bool) void,
+    save: *const fn (*anyopaque, write_stream: *std.json.Stringify) std.io.Writer.Error!void = saveFallback,
+    load: *const fn (*anyopaque, *const std.json.Value) void = loadFallback,
+
+    fn saveFallback(_: *anyopaque, _: *std.json.Stringify) std.io.Writer.Error!void {}
+    fn loadFallback(_: *anyopaque, _: *const std.json.Value) void {}
 };
 
 pub fn init(
@@ -49,4 +54,18 @@ pub fn process(self: *@This(), allocator: std.mem.Allocator, audio_view: audio.A
 
 pub fn stop(self: *@This(), allow_tail_off: bool) void {
     self.vtable.stop(self.ptr, allow_tail_off);
+}
+
+pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
+    try write_stream.objectField(self.id);
+    try write_stream.beginObject();
+
+    try self.parameters.save(write_stream);
+
+    try self.vtable.save(self, write_stream);
+    try write_stream.endObject();
+}
+
+pub fn load(self: *@This(), parsed: *const std.json.Value) void {
+    self.vtable.load(parsed);
 }
