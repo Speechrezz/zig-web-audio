@@ -1,5 +1,5 @@
 import { AppContext } from "../../../app/app-context.js";
-import { InstrumentEvent } from "../../../audio/audio-constants.js";
+import { TrackEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
 import { DeviceWrapper } from "./device-wrapper.js";
 
@@ -17,7 +17,7 @@ export class DevicePanelSection extends Component {
         super();
         this.context = context;
 
-        this.context.tracks.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
+        this.context.tracks.addListener(TrackEvent.TrackSelected, () => this.instrumentSelected());
     }
 
     /**

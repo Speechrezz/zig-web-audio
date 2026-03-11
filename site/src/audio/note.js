@@ -86,7 +86,7 @@ export class Note {
      * @param {any} json 
      */
     static deserialize(json) {
-        return new Note(json.id, json.beatStart, json.beatLength, json.noteNumber, json.velocity, json.channel);
+        return new Note(json.id, json.timeStart, json.timeLength, json.noteNumber, json.velocity, json.channel);
     }
 
     /**

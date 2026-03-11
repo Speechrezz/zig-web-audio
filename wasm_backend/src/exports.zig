@@ -66,16 +66,16 @@ export fn addInstrument(instrument_index: usize, instrument_type: usize) bool {
 }
 
 export fn removeInstrument(instrument_index: usize) void {
-    logging.logDebug("[WASM] Removing instrument at index {}...", .{instrument_index});
+    logging.logDebug("[WASM] Removing tracks at index {}...", .{instrument_index});
     processor_container_web.removeProcessor(instrument_index);
 }
 
 export fn clearInstruments() void {
-    logging.logDebug("[WASM] Clearing all instruments...", .{});
+    logging.logDebug("[WASM] Clearing all tracks...", .{});
     // TODO
 }
 
-export fn getInstrumentState(instrument_index: usize) u64 {
+export fn getTrackState(instrument_index: usize) u64 {
     const instrument = processor_container_web.getProcessor(instrument_index);
     const web_string = web.string.toJsonString(
         wasm_allocator,
@@ -88,8 +88,8 @@ export fn getInstrumentState(instrument_index: usize) u64 {
 
 // Parameter
 
-export fn setParameterValue(instrument_index: usize, parameter_index: usize, value: f32) bool {
-    const instrument = processor_container_web.getProcessor(instrument_index);
+export fn setParameterValue(track_index: usize, parameter_index: usize, value: f32) bool {
+    const instrument = processor_container_web.getProcessor(track_index);
     const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 
     param.setValue(value);
@@ -97,8 +97,8 @@ export fn setParameterValue(instrument_index: usize, parameter_index: usize, val
     return true;
 }
 
-export fn setParameterValueNormalized(instrument_index: usize, parameter_index: usize, value: f32) bool {
-    const instrument = processor_container_web.getProcessor(instrument_index);
+export fn setParameterValueNormalized(track_index: usize, parameter_index: usize, value: f32) bool {
+    const instrument = processor_container_web.getProcessor(track_index);
     const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 
     param.setValueNormalized(value);
@@ -106,15 +106,15 @@ export fn setParameterValueNormalized(instrument_index: usize, parameter_index: 
     return true;
 }
 
-export fn getParameterValue(instrument_index: usize, parameter_index: usize) f32 {
-    const instrument = processor_container_web.getProcessor(instrument_index);
+export fn getParameterValue(track_index: usize, parameter_index: usize) f32 {
+    const instrument = processor_container_web.getProcessor(track_index);
     const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 
     return param.getValue();
 }
 
-export fn getParameterValueNormalized(instrument_index: usize, parameter_index: usize) f32 {
-    const instrument = processor_container_web.getProcessor(instrument_index);
+export fn getParameterValueNormalized(track_index: usize, parameter_index: usize) f32 {
+    const instrument = processor_container_web.getProcessor(track_index);
     const param = &instrument.audio_processor.parameters.list.items[parameter_index];
 
     return param.getValueNormalized();

@@ -5,7 +5,7 @@ import { CursorStyle, setCursorStyle } from "../../framework/cursor-style.js"
 import { AppContext } from "../../../app/app-context.js"
 import { cloneNotes, NotesManager } from "../../../audio/notes-manager.js";
 import { NoteComponent } from "./note-component.js";
-import { InstrumentEvent } from "../../../audio/audio-constants.js";
+import { TrackEvent } from "../../../audio/audio-constants.js";
 import { MouseAction, MouseActionPolicy, MouseEvent } from "../../framework/mouse-event.js";
 import { AppCommand, AppEvent } from "../../../app/app-event.js";
 import { Note } from "../../../audio/note.js";
@@ -77,7 +77,7 @@ export class PianoRoll extends Component {
         this.notesManager = new NotesManager(this.context.tracks, this.context.undoManager);
         this.notesManager.pianoRollCallback = () => { this.resetNotes(); this.repaint(); };
 
-        this.context.tracks.addListener(InstrumentEvent.InstrumentSelected, () => this.instrumentSelected());
+        this.context.tracks.addListener(TrackEvent.TrackSelected, () => this.trackSelected());
         this.context.eventRouter.addListener(this);
 
         this.lastPpqLength = this.context.config.ppqResolution;
@@ -337,7 +337,7 @@ export class PianoRoll extends Component {
         }
     }
 
-    instrumentSelected() {
+    trackSelected() {
         this.clearSelection();
         this.resetNotes();
         this.repaint();

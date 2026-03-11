@@ -1,5 +1,5 @@
 import { getAudioWorkletNode } from "./audio.js";
-import { InstrumentDetailsList, InstrumentType, InstrumentEvent } from "./audio-constants.js";
+import { InstrumentDetailsList, InstrumentType, TrackEvent } from "./audio-constants.js";
 import { WorkletMessageType } from "./worklet-message.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { Note, NoteEvent } from "./note.js";
@@ -148,18 +148,18 @@ export class Track {
      * @param {any} json 
      */
     static deserialize(json) {
-        const newInstrument = new Track(json.index, json.type, json.name, json.state);
-        newInstrument.noteIdCounter = json.noteIdCounter;
+        const track = new Track(json.index, json.type, json.name, json.state);
+        track.noteIdCounter = json.noteIdCounter;
 
         for (const note of json.notes) {
-            newInstrument.notes.push(Note.deserialize(note));
+            track.notes.push(Note.deserialize(note));
         }
 
-        for (const param of newInstrument.params) {
+        for (const param of track.params) {
             param.updateBackendState();
         }
 
-        return newInstrument;
+        return track;
     }
 }
 
@@ -186,7 +186,7 @@ export class TracksContainer {
         this.undoManager.addListener(UNDO_ID, this);
 
         // Initialize listeners list
-        for (const key of Object.keys(InstrumentEvent)) {
+        for (const key of Object.keys(TrackEvent)) {
             this.instrumentEventListeners.push([]);
         }
 
@@ -260,7 +260,7 @@ export class TracksContainer {
         }
 
         this.instruments.splice(instrumentIndex, 0, newInstrument);
-        this.updateInstrumentIndices();
+        this.updateTrackIndices();
         this.selectedIndex = newInstrument.index;
 
         if (addToUndo) {
@@ -271,28 +271,27 @@ export class TracksContainer {
             ));
         }
 
-        this.notifyListeners(InstrumentEvent.InstrumentsChanged);
-        this.notifyListeners(InstrumentEvent.InstrumentSelected);
+        this.notifyListeners(TrackEvent.TracksChanged);
+        this.notifyListeners(TrackEvent.TrackSelected);
     }
 
     /**
-     * @param {number} instrumentIndex
+     * @param {number} trackIndex
      * @param {boolean} addToUndo
      */
-    removeInstrument(instrumentIndex, addToUndo = true) {
-        const removedInstrument = this.instruments.splice(instrumentIndex, 1)[0];
-        this.updateInstrumentIndices();
+    removeTrack(trackIndex, addToUndo = true) {
+        const removedInstrument = this.instruments.splice(trackIndex, 1)[0];
+        this.updateTrackIndices();
 
         getAudioWorkletNode().port.postMessage({
-            type: WorkletMessageType.removeInstrument,
-            instrumentIndex: instrumentIndex,
+            type: WorkletMessageType.removeTrack,
+            instrumentIndex: trackIndex,
         });
 
-        // @ts-ignore
-        if (this.selectedIndex >= instrumentIndex) {
+        if (this.selectedIndex !== null && this.selectedIndex >= trackIndex) {
             if (this.instruments.length === 0)
                 this.selectedIndex = null;
-            else // @ts-ignore
+            else
                 this.selectedIndex = Math.max(0, this.selectedIndex - 1);
         }
 
@@ -304,11 +303,11 @@ export class TracksContainer {
             ));
         }
 
-        this.notifyListeners(InstrumentEvent.InstrumentSelected);
-        this.notifyListeners(InstrumentEvent.InstrumentsChanged);
+        this.notifyListeners(TrackEvent.TrackSelected);
+        this.notifyListeners(TrackEvent.TracksChanged);
     }
 
-    updateInstrumentIndices() {
+    updateTrackIndices() {
         for (let i = 0; i < this.instruments.length; i++) {
             this.instruments[i].index = i;
         }
@@ -325,11 +324,11 @@ export class TracksContainer {
     /**
      * @param {number} index 
      */
-    selectInstrument(index) {
+    selectTrack(index) {
         if (this.selectedIndex === index) return;
 
         this.selectedIndex = index;
-        this.notifyListeners(InstrumentEvent.InstrumentSelected);
+        this.notifyListeners(TrackEvent.TrackSelected);
     }
 
     getSelected() {
@@ -347,17 +346,17 @@ export class TracksContainer {
      */
     setParameterValueCallback(ev) {
         const data = ev.data.data;
-        const instrumentIndex = data.context.instrumentIndex;
+        const trackIndex = data.context.trackIndex;
         const parameterIndex = data.context.parameterIndex;
 
         const { value, normalized: valueNormalized, stateCount } = data.state;
 
-        const param = this.instruments[instrumentIndex].params[parameterIndex];
+        const param = this.instruments[trackIndex].params[parameterIndex];
         param.updateFromAudioThread(value, valueNormalized, stateCount);
     }
 
     /**
-     * @param {InstrumentEvent} eventType 
+     * @param {TrackEvent} eventType 
      * @param {() => void} callback 
      */
     addListener(eventType, callback) {
@@ -365,7 +364,7 @@ export class TracksContainer {
     }
 
     /**
-     * @param {InstrumentEvent} eventType 
+     * @param {TrackEvent} eventType 
      * @param {() => void} callback 
      */
     removeListener(eventType, callback) {
@@ -375,7 +374,7 @@ export class TracksContainer {
     }
 
     /**
-     * @param {InstrumentEvent} eventType 
+     * @param {TrackEvent} eventType 
      */
     notifyListeners(eventType) {
         const listeners = this.instrumentEventListeners[eventType];
@@ -391,7 +390,7 @@ export class TracksContainer {
     undo(transaction) {
         switch (transaction.type) {
             case UndoType.addInstrument:
-                this.removeInstrument(transaction.diff.index, false);
+                this.removeTrack(transaction.diff.index, false);
                 break;
             case UndoType.removeInstrument: {
                 this.addInstrument(transaction.diff.index, transaction.diff.type, false, transaction.diff);
@@ -411,7 +410,7 @@ export class TracksContainer {
                 break;
             }
             case UndoType.removeInstrument:
-                this.removeInstrument(transaction.diff.index, false);
+                this.removeTrack(transaction.diff.index, false);
                 break;
         }        
     }

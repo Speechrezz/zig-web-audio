@@ -31,7 +31,7 @@ export const AudioEvent = Object.freeze({
  * @readonly
  * @enum {number}
  */
-export const InstrumentEvent = Object.freeze({
-    InstrumentsChanged: 0,
-    InstrumentSelected: 1,
+export const TrackEvent = Object.freeze({
+    TracksChanged: 0,
+    TrackSelected: 1,
 });

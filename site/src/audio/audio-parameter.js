@@ -57,7 +57,7 @@ export class AudioParameter {
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.setParameterValue,
             context: {
-                instrumentIndex: this.track.index,
+                trackIndex: this.track.index,
                 parameterIndex: this.state.index,
                 value: newValue,
                 isNormalized,

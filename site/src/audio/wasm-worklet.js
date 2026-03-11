@@ -47,7 +47,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                         break;
                     }
 
-                    const stateSlice = unpackSlice(this.exports.getInstrumentState(msg.context.instrumentIndex));
+                    const stateSlice = unpackSlice(this.exports.getTrackState(msg.context.instrumentIndex));
                     const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
                     this.exports.freeString(stateSlice.ptr, stateSlice.len);
 
@@ -59,27 +59,27 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     this.port.postMessage({ type: WorkletMessageType.addInstrument, success: true, data });
                     break;
                 }
-                case WorkletMessageType.removeInstrument:
+                case WorkletMessageType.removeTrack:
                     this.exports.removeInstrument(msg.instrumentIndex);
                     break;
-                case WorkletMessageType.clearInstruments:
+                case WorkletMessageType.clearTracks:
                     this.exports.clearInstruments();
                     break;
 
                 case WorkletMessageType.setParameterValue:
-                    const instrumentIndex = msg.context.instrumentIndex;
+                    const trackIndex = msg.context.trackIndex;
                     const parameterIndex = msg.context.parameterIndex;
                     const stateCount = msg.context.stateCount;
 
                     if (msg.context.isNormalized === true) {
-                        this.exports.setParameterValueNormalized(instrumentIndex, parameterIndex, msg.context.value);
+                        this.exports.setParameterValueNormalized(trackIndex, parameterIndex, msg.context.value);
                     }
                     else {
-                        this.exports.setParameterValue(instrumentIndex, parameterIndex, msg.context.value);
+                        this.exports.setParameterValue(trackIndex, parameterIndex, msg.context.value);
                     }
 
-                    const value = this.exports.getParameterValue(instrumentIndex, parameterIndex);
-                    const valueNormalized = this.exports.getParameterValueNormalized(instrumentIndex, parameterIndex);
+                    const value = this.exports.getParameterValue(trackIndex, parameterIndex);
+                    const valueNormalized = this.exports.getParameterValueNormalized(trackIndex, parameterIndex);
 
                     const data = {
                         state: {

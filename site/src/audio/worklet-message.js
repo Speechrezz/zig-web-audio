@@ -9,8 +9,8 @@ export const WorkletMessageType = Object.freeze({
     
     // --Instrument--
     addInstrument: "addInstrument",
-    removeInstrument: "removeInstrument",
-    clearInstruments: "clearInstruments",
+    removeTrack: "removeInstrument",
+    clearTracks: "clearInstruments",
 
     // --Parameter--
     setParameterValue: "setParameter",

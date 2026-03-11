@@ -1,5 +1,5 @@
 import { AppContext } from "../../../app/app-context.js";
-import { InstrumentDetailsList, InstrumentEvent } from "../../../audio/audio-constants.js";
+import { InstrumentDetailsList, TrackEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
 import { ComboBox } from "../../framework/components/combo-box.js";
 import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
@@ -33,8 +33,8 @@ export class TracksSection extends Component {
         this.addChildComponent(this.addInstrumentComboBox);
         this.initializeDropdown();
 
-        this.context.tracks.addListener(InstrumentEvent.InstrumentsChanged, () => this.instrumentsChanged());
-        this.context.tracks.addListener(InstrumentEvent.InstrumentSelected, () => this.updateSelectedInstrument());
+        this.context.tracks.addListener(TrackEvent.TracksChanged, () => this.instrumentsChanged());
+        this.context.tracks.addListener(TrackEvent.TrackSelected, () => this.updateSelectedInstrument());
 
         this.instrumentsChanged();
     }
@@ -101,7 +101,7 @@ export class TracksSection extends Component {
      * @param {number} index 
      */
     instrumentClicked(index) {
-        this.context.tracks.selectInstrument(index);
+        this.context.tracks.selectTrack(index);
     }
 
     instrumentsChanged() {
@@ -145,7 +145,7 @@ export class TracksSection extends Component {
      * @param {number} index 
      */
     deleteInstrument(index) {
-        this.context.tracks.removeInstrument(index);
+        this.context.tracks.removeTrack(index);
     }
 
     clearInstruments() {
