@@ -1,4 +1,3 @@
-// @ts-check
 import { App } from "./app/app.js";
 
 /** @type {App | null} */

@@ -6,10 +6,12 @@ mkdir -p out
 rm -rf out/*
 
 echo "Bundle JavaScript"
-bun build ./site/index.html --outdir ./out --minify
-bun build ./site/src/audio/wasm-worklet.js --outdir ./out --minify
+bun build ./site/src/main.js --outdir ./out/src --minify
+bun build ./site/src/audio/wasm-worklet.js --outdir ./out/src --minify
 
+cp ./site/index.html ./out/
 cp ./site/server.js ./out/
+cp ./site/server.go ./out/
 
 echo "Compile WASM backend"
 (
@@ -18,4 +20,4 @@ echo "Compile WASM backend"
   zig build -Doptimize=ReleaseSmall
 )
 
-cp ./wasm_backend/zig-out/bin/*.wasm ./out/
+cp ./wasm_backend/zig-out/bin/*.wasm ./out/src
