@@ -42,7 +42,12 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     self.generator_device = null;
     self.effect_device_list = .empty;
 
-    self.gain_param = try self.processor.parameters.add(allocator, .create("gain", "Gain", 0.0, 1.0, 0.2));
+    self.gain_param = try self.processor.parameters.add(allocator, .init(
+        "gain",
+        "Gain",
+        .initSkewedCenter(0.0, 1.0, 0.2),
+        0.2,
+    ));
 }
 
 pub fn create(allocator: std.mem.Allocator) !*@This() {
@@ -128,5 +133,5 @@ test "TrackProcessor" {
     try track.process(allocator, buffer.createView(), &[0]midi.MidiEvent{});
     track.stop(true);
 
-    try std.testing.expectApproxEqRel(0.2, track_processor.gain_param.getValueNormalized(), 1e-5);
+    try std.testing.expectApproxEqRel(0.2, track_processor.gain_param.getValue(), 1e-5);
 }

@@ -47,7 +47,7 @@ test "ParameterContainer" {
     var container: @This() = .empty;
     defer container.deinit(allocator);
 
-    _ = try container.add(allocator, AudioParameter.create(
+    _ = try container.add(allocator, AudioParameter.initLinear(
         "test1",
         "Test 1",
         0.0,
@@ -55,7 +55,7 @@ test "ParameterContainer" {
         1.0,
     ));
 
-    _ = try container.add(allocator, AudioParameter.create(
+    _ = try container.add(allocator, AudioParameter.initLinear(
         "test2",
         "Test 2",
         10.0,
