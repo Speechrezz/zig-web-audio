@@ -34,11 +34,13 @@ pub fn NormalizableRange(comptime T: type) type {
         }
 
         pub fn toNormalized(self: *const @This(), v: T) T {
-            return self.mapping.toNormalized(self.start, self.end, v);
+            const normalized = self.mapping.toNormalized(self.start, self.end, v);
+            return std.math.clamp(normalized, 0.0, 1.0);
         }
 
         pub fn fromNormalized(self: *const @This(), v: T) T {
-            return self.mapping.fromNormalized(self.start, self.end, v);
+            const clamped = std.math.clamp(v, 0.0, 1.0);
+            return self.mapping.fromNormalized(self.start, self.end, clamped);
         }
 
         // ---Mapping functions---
@@ -102,6 +104,12 @@ test "NormalizableRange f32" {
 
     try std.testing.expectApproxEqRel(1.0, range.toNormalized(20.0), 1e-5);
     try std.testing.expectApproxEqRel(20.0, range.fromNormalized(1.0), 1e-5);
+
+    try std.testing.expectApproxEqAbs(0.0, range.toNormalized(5.0), 1e-5);
+    try std.testing.expectApproxEqRel(10.0, range.fromNormalized(-1.0), 1e-5);
+
+    try std.testing.expectApproxEqRel(1.0, range.toNormalized(30.0), 1e-5);
+    try std.testing.expectApproxEqRel(20.0, range.fromNormalized(2.0), 1e-5);
 
     // Skewed
     range = NormalizableRange(f32).initSkewedCenter(10.0, 20.0, 12.0);
