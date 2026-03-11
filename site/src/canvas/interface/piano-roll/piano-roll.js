@@ -6,10 +6,14 @@ import { AppContext } from "../../../app/app-context.js"
 import { cloneNotes, NotesManager } from "../../../audio/notes-manager.js";
 import { NoteComponent } from "./note-component.js";
 import { InstrumentEvent } from "../../../audio/audio-constants.js";
-import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
-import { AppCommand } from "../../../app/app-event.js";
+import { MouseAction, MouseActionPolicy, MouseEvent } from "../../framework/mouse-event.js";
+import { AppCommand, AppEvent } from "../../../app/app-event.js";
 import { Note } from "../../../audio/note.js";
 
+/**
+ * @readonly
+ * @enum {number}
+ */
 const InteractionType = Object.freeze({
     none: 0,            // NOT dragging
     newNote: 1,         // New note
@@ -37,7 +41,10 @@ export class PianoRoll extends Component {
 
     // ---Note Editing---
 
-    /** How the user is currently interacting with notes */
+    /**
+     * How the user is currently interacting with notes
+     * @type {InteractionType}
+     */
     interactionType = InteractionType.none;
     /** Initial position of mouse when beginning to interact */
     interactionAnchor = new Point();
@@ -186,8 +193,9 @@ export class PianoRoll extends Component {
         }
     }
 
+    /** @returns {this is this & { context: { tracks: { selectedIndex: number } } }} */
     isEditable() {
-        return this.context.instruments.selectedIndex !== null;
+        return this.context.tracks.selectedIndex !== null;
     }
 
     /**
@@ -348,35 +356,59 @@ export class PianoRoll extends Component {
         }
     }
 
+    /**
+     * @param {number} screenX 
+     */
     fromScreenX(screenX) {
         return screenX - this.viewOffset.x;
     }
 
+    /**
+     * @param {number} screenY 
+     */
     fromScreenY(screenY) {
         return screenY - this.viewOffset.y;
     }
 
+    /**
+     * @param {number} beat 
+     */
     beatToX(beat) {
         return beat * this.context.config.beatWidth;
     }
 
+    /**
+     * @param {number} x 
+     */
     xToBeat(x) {
         return x / this.context.config.beatWidth;
     }
 
+    /**
+     * @param {number} x 
+     */
     xScreenToBeat(x) {
         x -= this.viewOffset.x;
         return x / this.context.config.beatWidth;
     }
 
+    /**
+     * @param {number} noteNumber 
+     */
     noteNumberToY(noteNumber) {
         return this.context.config.noteHeight * (this.context.config.pitchMax - noteNumber);
     }
 
+    /**
+     * @param {number} y 
+     */
     yToNoteNumber(y) {
         return this.context.config.pitchMax - Math.floor(y / this.context.config.noteHeight);
     }
 
+    /**
+     * @param {number} y 
+     */
     yScreenToNoteNumber(y) {
         y -= this.viewOffset.y;
         return this.context.config.pitchMax - Math.floor(y / this.context.config.noteHeight);
@@ -421,7 +453,7 @@ export class PianoRoll extends Component {
 
     /**
      * When clicking/hovering a note, this will determine which interaction type the user wants to perform
-     * @param {MouseEvent} ev Mouse event
+     * @param {number} screenX Mouse event
      * @param {NoteComponent} noteComponent NoteComponent which is being interacted with
      * @returns InteractionType
      */
@@ -461,6 +493,10 @@ export class PianoRoll extends Component {
         return noteComponents;
     }
 
+    /**
+     * @param {number} x 
+     * @param {number} y 
+     */
     addNoteAt(x, y) {
         const config = this.context.config;
 
@@ -476,9 +512,9 @@ export class PianoRoll extends Component {
      * @param {NoteComponent[]} noteComponents 
      */
     removeNotes(noteComponents) {
-        /** @type {Note[]} */
-        const notes = [];
+        if (!this.isEditable()) return;
 
+        const notes = /** @type {Note[]} */ ([]);
         for (const noteComponent of noteComponents) {
             this.deleteNoteComponent(noteComponent);
             notes.push(noteComponent.note);
@@ -502,7 +538,7 @@ export class PianoRoll extends Component {
     removeNoteAt(x, y) {
         const noteComponent = this.findNoteAtScreen(x, y);
         if (noteComponent !== null) {
-            this.removeNotes([noteComponent], false);
+            this.removeNotes([noteComponent]);
             return noteComponent.note;
         }
 
@@ -575,6 +611,8 @@ export class PianoRoll extends Component {
      * @param {MouseEvent} ev 
      */
     adjustNoteStepMoveNote(ev) {
+        if (this.selectedNoteMain === null) return console.error("adjustNoteStepMoveNote");
+
         const config = this.context.config;
 
         const offsetX = ev.x - this.interactionAnchor.x;
@@ -599,6 +637,8 @@ export class PianoRoll extends Component {
      * @param {MouseEvent} ev 
      */
     adjustNoteStepNoteEnd(ev) {
+        if (this.selectedNoteMain === null) return console.error("adjustNoteStepNoteEnd");
+
         const config = this.context.config;
 
         const shortestLengthPpq = this.findShortestNoteInSelection();
@@ -617,6 +657,8 @@ export class PianoRoll extends Component {
      * @param {MouseEvent} ev 
      */
     adjustNoteStepNoteStart(ev) {
+        if (this.selectedNoteMain === null) return console.error("adjustNoteStepNoteStart");
+        
         const config = this.context.config;
 
         const shortestLength = this.findShortestNoteInSelection();
@@ -649,6 +691,8 @@ export class PianoRoll extends Component {
      */
     adjustNoteEnd(ev) {
         if (this.interactionType === InteractionType.none) return;
+        if (this.selectedNoteMain === null || !this.isEditable()) 
+            return console.error("adjustNoteEnd");
 
         if (this.selectedNoteMain.hasMoved()) {
             /** @type {Note[]} */
@@ -668,6 +712,8 @@ export class PianoRoll extends Component {
      * @param {MouseEvent} ev 
      */
     removeNoteBegin(ev) {
+        if (!this.isEditable()) return;
+
         setCursorStyle(this.interactionTypeToCursor(InteractionType.removeNote));
         this.clearSelection();
 
@@ -717,7 +763,7 @@ export class PianoRoll extends Component {
      * @param {MouseEvent} ev 
      */
     selectionUpdate(ev) {
-        const bounds = this.selectionBounds;
+        const bounds = /** @type {Rectangle} */ (this.selectionBounds);
 
         if (ev.x >= this.interactionAnchor.x) {
             bounds.x = this.interactionAnchor.x;
@@ -833,6 +879,9 @@ export class PianoRoll extends Component {
         this.repaint();
     }
 
+    /**
+     * @param {NoteComponent} noteComponent 
+     */
     isNoteSelected(noteComponent) {
         return this.selectedNotes.indexOf(noteComponent) >= 0;
     }

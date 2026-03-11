@@ -74,6 +74,9 @@ export class DeviceWrapper extends Component {
         this.deviceBounds = bounds;
     }
 
+    /**
+     * @param {string} newName 
+     */
     setName(newName) {
         if (this.name === newName) return;
 

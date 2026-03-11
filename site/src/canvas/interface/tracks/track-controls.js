@@ -1,5 +1,3 @@
-// @ts-check
-
 import { Track } from "../../../audio/track.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";

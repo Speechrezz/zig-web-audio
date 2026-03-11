@@ -11,7 +11,7 @@ export class ClipboardManager {
 
     /**
      * @param {string} type 
-     * @param {string} contents 
+     * @param {any} contents 
      */
     setClipboard(type, contents) {
         this.type = type;

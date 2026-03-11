@@ -1,3 +1,5 @@
+import { Point } from "./point.js";
+
 export class Rectangle {
     x = 0;
     y = 0;
@@ -67,7 +69,7 @@ export class Rectangle {
     }
 
     /**
-     * @param {Number} x 
+     * @param {Number} height
      */
     removeFromTop(height) {
         const removed = new Rectangle(
@@ -84,7 +86,7 @@ export class Rectangle {
     }
 
     /**
-     * @param {Number} x 
+     * @param {Number} height
      */
     removeFromBottom(height) {
         const removed = new Rectangle(

@@ -1,5 +1,3 @@
-// @ts-check
-
 import { getAudioWorkletNode } from "./audio.js";
 import { Track } from "./track.js";
 import { WorkletMessageType } from "./worklet-message.js";
@@ -51,6 +49,10 @@ export class AudioParameter {
         return this.state.value_normalized;
     }
 
+    /**
+     * @param {number} newValue 
+     * @param {boolean} isNormalized 
+     */
     set(newValue, isNormalized) {
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.setParameterValue,

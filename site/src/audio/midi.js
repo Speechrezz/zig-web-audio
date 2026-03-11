@@ -1,5 +1,3 @@
-// @ts-check
-
 import { WorkletMessageType } from "./worklet-message.js";
 import { getAudioContext, getAudioWorkletNode } from "./audio.js";
 

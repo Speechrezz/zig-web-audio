@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "system",
+    "noImplicitAny": true,
+    "noEmit": true,
+    "strict": true,
+  },
+  "include": ["src/**/*"],
+  // "exclude": ["**/*.spec.ts"]
+}

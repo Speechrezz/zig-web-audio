@@ -1,8 +1,8 @@
 /**
  * @global
- * @type {AudioContext | null}
+ * @type {AudioContext}
  */
-let audioContext = null;
+let audioContext = new AudioContext;
 
 /**
  * @global
@@ -16,8 +16,6 @@ const BLOCK_SIZE = 128;
  * Initializes audio context, audio worklet, and loads WASM.
  */
 export async function initializeAudio() {
-    audioContext = new AudioContext();
-
     const workletUrl = new URL("./wasm-worklet.js", import.meta.url);
     await audioContext.audioWorklet.addModule(workletUrl);
 
@@ -76,7 +74,7 @@ export function getAudioContext() {
  * @returns {AudioWorkletNode} AudioWorkletNode
  */
 export function getAudioWorkletNode() {
-    return audioWorkletNode;
+    return /** @type {AudioWorkletNode} */ (audioWorkletNode);
 }
 
 /**
@@ -87,10 +85,14 @@ export function getBlockSize() {
 }
 
 /**
+ * @typedef {{performanceTime: number, contextTime: number}} OutputTimestamp
+ */
+
+/**
  * @returns Audio context time (is offset by a block)
  */
 export function getContextTime() {
-    const { performanceTime, contextTime } = audioContext.getOutputTimestamp();
+    const { performanceTime, contextTime } = /** @type {OutputTimestamp} */ (audioContext.getOutputTimestamp());
     return contextTime + getBlockSize() / audioContext.sampleRate;
 }
 
@@ -99,8 +101,7 @@ export function getContextTime() {
  * @returns The audio time being heard at `timestampMs` (in seconds)
  */
 export function toAudibleTime(timestampMs) {
-    const { contextTime, performanceTime } = audioContext.getOutputTimestamp();
-
+    const { performanceTime, contextTime } = /** @type {OutputTimestamp} */ (audioContext.getOutputTimestamp());
     return contextTime + (timestampMs - performanceTime) * 1e-3;
 }
 

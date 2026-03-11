@@ -2,7 +2,7 @@ import { Component } from "../component.js";
 import { MouseEvent } from "../mouse-event.js";
 
 export class PopupMenu extends Component {
-    /** @type {bool} */
+    /** @type {boolean} */
     isOpenFlag = false;
 
     /** @type {string[]} */
@@ -17,7 +17,7 @@ export class PopupMenu extends Component {
     /** @type {null | number} */
     highlightedIndex = null;
 
-    /** @type {null | (index: null | number) => void} */
+    /** @type {null | ((index: null | number) => void)} */
     onSelectedChanged = null;
 
     /** @type {import("../mouse-event.js").GlobalMouseListener} */
@@ -50,7 +50,7 @@ export class PopupMenu extends Component {
         ctx.font = "16px system-ui";
         for (let i = 0; i < this.menuItems.length; i++) {
             if (this.highlightedIndex === i) {
-                const tempFillStyle = ctx.fillStyle;
+                const tempFillStyle = /** @type {string} */ (ctx.fillStyle);
                 ctx.fillStyle = "oklch(87.2% 0.01 258.338)";
                 ctx.fillRect(0, i * this.itemHeight, bounds.width, this.itemHeight);
                 ctx.fillStyle = tempFillStyle;
@@ -107,13 +107,13 @@ export class PopupMenu extends Component {
     }
 
     hideMenu() {
-        const tempParent = this.parentComponent;
+        const parentComponent = /** @type {Component} */ (this.parentComponent);
 
-        this.parentComponent.removeGlobalMouseListener(this.globalMouseListener);
-        this.parentComponent.removeChildComponent(this);
+        parentComponent.removeGlobalMouseListener(this.globalMouseListener);
+        parentComponent.removeChildComponent(this);
         this.isOpenFlag = false;
 
-        tempParent.repaint();
+        parentComponent.repaint();
     }
 
     /**

@@ -22,8 +22,8 @@ export class NotesManager {
     /** @type {number} */
     gestureTrackIndex = 0;
 
-    /** @type {undefined | (() => void)} */
-    pianoRollCallback = undefined;
+    /** @type {() => void} */
+    pianoRollCallback = () => {};
 
     /**
      * @param {TracksContainer} tracks 
@@ -89,6 +89,9 @@ export class NotesManager {
         }
     }
 
+    /**
+     * @param {number} trackIndex 
+     */
     removeNotesGestureBegin(trackIndex) {
         this.gestureTrackIndex = trackIndex;
         this.removedNotesBuffer.length = 0;

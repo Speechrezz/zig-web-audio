@@ -29,7 +29,7 @@ export const AudioEvent = Object.freeze({
 
 /**
  * @readonly
- * @enum
+ * @enum {number}
  */
 export const InstrumentEvent = Object.freeze({
     InstrumentsChanged: 0,

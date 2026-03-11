@@ -101,6 +101,9 @@ export class PianoRollSection extends Component {
         }
     }
 
+    /**
+     * @param {MouseEvent} ev 
+     */
     mouseUp(ev) {
         if (ev.mouseAction === MouseAction.translate) {
             setCursorStyle(CursorStyle.normal);
@@ -144,6 +147,10 @@ export class PianoRollSection extends Component {
         this.updateViewOffset(newOffsetX, this.viewOffset.y);
     }
 
+    /**
+     * @param {number} x 
+     * @param {number} y 
+     */
     updateViewOffset(x, y) {
         const maxY = this.context.config.calculateHeight() - this.pianoRoll.bounds.height;
 

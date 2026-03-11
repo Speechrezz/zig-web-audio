@@ -132,7 +132,7 @@ export class Config {
     }
 
     /**
-     * @param {(PlayHead) => void} callback 
+     * @param {() => void} callback 
      */
     removeZoomListener(callback) {
         const index = this.zoomListeners.findIndex((c) => c === callback);

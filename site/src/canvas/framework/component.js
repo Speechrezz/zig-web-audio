@@ -1,5 +1,3 @@
-// @ts-check
-
 import { MouseEvent, MouseAction, MouseActionPolicy, MouseScrollEvent } from "./mouse-event.js"
 import { Rectangle } from "./rectangle.js";
 import { Point } from "./point.js";

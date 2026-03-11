@@ -1,5 +1,3 @@
-// @ts-check
-
 import { AppContext } from "../../../app/app-context.js";
 import { InstrumentDetailsList, InstrumentEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
@@ -99,6 +97,9 @@ export class TracksSection extends Component {
         this.context.tracks.addInstrument(-1, index);
     }
 
+    /**
+     * @param {number} index 
+     */
     instrumentClicked(index) {
         this.context.tracks.selectInstrument(index);
     }

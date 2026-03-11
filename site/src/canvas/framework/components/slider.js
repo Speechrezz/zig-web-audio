@@ -33,8 +33,8 @@ export class Slider extends Component {
     valueMax = 1;
     valueDefault = 0;
 
-    /** @type {null | (stateCount: number) => void} */
-    parameterListener = null;
+    /** @type {(stateCount: number) => void} */
+    parameterListener = () => {};
 
     /** @type {Point} */
     mouseAnchor = new Point;
@@ -53,6 +53,9 @@ export class Slider extends Component {
             this.audioParameter.removeListener(this.parameterListener);
     }
 
+    /**
+     * @param {SliderStyle} sliderStyle 
+     */
     setSliderStyle(sliderStyle) {
         if (this.sliderStyle !== sliderStyle) {
             this.sliderStyle = sliderStyle;
@@ -172,6 +175,9 @@ export class Slider extends Component {
         this.setValueInternal(this.valueNormalized + delta * this.scrollWheelScale);
     }
 
+    /**
+     * @param {number} valueNormalized 
+     */
     setValueInternal(valueNormalized) {
         valueNormalized = Math.min(Math.max(valueNormalized, 0), 1);
         if (this.valueNormalized === valueNormalized) return;
@@ -179,8 +185,10 @@ export class Slider extends Component {
         this.valueNormalized = valueNormalized;
         this.repaint();
 
-        this.audioParameter.set(valueNormalized, true);
-        this.stateCount = this.audioParameter.stateCount;
+        if (this.audioParameter) {
+            this.audioParameter.set(valueNormalized, true);
+            this.stateCount = this.audioParameter.stateCount;
+        }
     }
 
     /**
@@ -205,6 +213,7 @@ export class Slider extends Component {
      * @param {number} stateCount 
      */
     updateValueFromParameter(stateCount) {
+        // @ts-ignore
         const state = this.audioParameter.state;
         this.value = state.value;
 

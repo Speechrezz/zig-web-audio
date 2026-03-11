@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @readonly
  * @enum {number}
@@ -19,7 +17,7 @@ export const MouseAction = Object.freeze({
  */
 
 /** 
- * @typedef {((GlobalMouseEventType, mouseAction: MouseAction) => void)} GlobalMouseListener
+ * @typedef {((ev: GlobalMouseEventType, mouseAction: MouseAction) => void)} GlobalMouseListener
  */
 
 /**
@@ -91,7 +89,7 @@ export class MouseScrollEvent {
 const isMac = navigator.userAgent.toLowerCase().includes("mac");
 
 /**
- * @param {PointerEvent} ev 
+ * @param {PointerEvent | WheelEvent} ev 
  */
 export function isPrimaryModifierKeyDownPointerEvent(ev) {
     return isMac ? ev.metaKey : ev.ctrlKey;

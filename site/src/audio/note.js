@@ -1,5 +1,3 @@
-// @ts-check
-
 export class Note {
     /**
      * Unique note ID (used for undo management)
@@ -84,6 +82,9 @@ export class Note {
         return {...note};
     }
 
+    /**
+     * @param {any} json 
+     */
     static deserialize(json) {
         return new Note(json.id, json.beatStart, json.beatLength, json.noteNumber, json.velocity, json.channel);
     }

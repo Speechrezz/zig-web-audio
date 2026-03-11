@@ -6,7 +6,7 @@ export class Button extends Component {
     /** @type {null | string} */
     name;
 
-    /** @type {undefined | () => void} */
+    /** @type {undefined | (() => void)} */
     onClick = undefined;
 
     /**
@@ -18,6 +18,9 @@ export class Button extends Component {
         this.name = name;
     }
 
+    /**
+     * @param {string} newName 
+     */
     setName(newName) {
         if (this.name === newName) return;
 

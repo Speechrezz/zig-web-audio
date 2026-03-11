@@ -6,7 +6,7 @@ export class AppEventListener {
      * @param {AppEvent} e 
      * @returns {number | null} Must return a `number` priority (higher = more priority) or `null` if can't handle. 
      */
-    canHandleEvent(e) {}
+    canHandleEvent(e) { return null; }
 
     /**
      * Handle the `AppEvent`.

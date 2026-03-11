@@ -35,17 +35,18 @@ export class App {
     /** @type {Config} */
     config = new Config();
 
-    /** @type {HTMLCanvasElement} */
-    canvasElement;
+    /** @type {HTMLCanvasElement | undefined} */
+    canvasElement = undefined;
 
     async initialize() {
-        const startButton = document.getElementById("start-audio-button");
-        const startContainer = document.getElementById("start-audio-container");
-        this.canvasElement = document.getElementById("pianoroll");
-    
-        const audioContextStateChanged = (isRunning) => {
-            if (isRunning)
+        const startButton = /** @type {HTMLInputElement} */ (document.getElementById("start-audio-button"));
+        const startContainer = /** @type {HTMLDivElement} */ (document.getElementById("start-audio-container"));
+        this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
+
+        const audioContextStateChanged = (/** @type {boolean} */ isRunning) => {
+            if (isRunning) {
                 startContainer.style.display = "none";
+            }
         };
     
         await initializeAudio();
@@ -77,15 +78,18 @@ export class App {
     }
 
     resizeCanvas() {
-        const rect = this.canvasElement.getBoundingClientRect();
+        const canvasElement = /** @type {HTMLCanvasElement} */ (this.canvasElement);
+
+        const rect = canvasElement.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         
-        this.canvasElement.width  = Math.round(rect.width * dpr);
-        this.canvasElement.height = Math.round(rect.height * dpr);
+        canvasElement.width  = Math.round(rect.width * dpr);
+        canvasElement.height = Math.round(rect.height * dpr);
 
-        const ctx = this.canvasElement.getContext("2d");
+        const ctx = /** @type {CanvasRenderingContext2D} */ (canvasElement.getContext("2d"));
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+        // @ts-ignore
         this.appInterface.canvasResized();
     }
 }

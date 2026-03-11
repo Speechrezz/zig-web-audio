@@ -202,14 +202,14 @@ export class TopLevelComponent extends Component {
             if (componentWithEvent !== null) {
                 if (componentWithEvent.component !== this.hoveredComponent) {
                     if (this.hoveredComponent) {
-                        this.hoveredComponent.mouseExit(componentWithEvent);
+                        this.hoveredComponent.mouseExit(componentWithEvent.mouseEvent);
                         this.hoveredComponent.mouseOverFlag = false;
                     }
                     
                     this.hoveredComponent = componentWithEvent.component;
 
                     if (this.hoveredComponent) {
-                        this.hoveredComponent.mouseEnter(componentWithEvent);
+                        this.hoveredComponent.mouseEnter(componentWithEvent.mouseEvent);
                         this.hoveredComponent.mouseOverFlag = true;
                     }
                 }
@@ -284,7 +284,7 @@ export class TopLevelComponent extends Component {
             this.isRepaintPending = true;
 
             requestAnimationFrame((timestamp) => {
-                const ctx = this.canvas.getContext("2d");
+                const ctx = /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext("2d"));
                 this.drawInternal(ctx);
                 this.isRepaintPending = false;
             });

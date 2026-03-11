@@ -31,6 +31,7 @@ export class KeyboardListener {
      * @param {AppEvent} appEvent 
      */
     dispatchEvent(domEvent, appEvent) {
+        // @ts-ignore
         if (!this.isCanvasInFocus(document.activeElement)) return;
 
         if (this.eventRouter.dispatchEvent(appEvent)) {
@@ -45,9 +46,7 @@ export class KeyboardListener {
         const appCommand = this.keyboardEventToAppCommand(e);
         if (appCommand === null) return;
 
-        if (this.dispatchEvent(e, new AppEvent(appCommand))) {
-            e.preventDefault();
-        }
+        this.dispatchEvent(e, new AppEvent(appCommand));
     }
 
     /**
@@ -84,9 +83,7 @@ export class KeyboardListener {
         const appCommand = this.clipboardEventToAppCommand(e);
         if (appCommand === null) return;
 
-        if (this.dispatchEvent(e, new AppEvent(appCommand))) {
-            e.preventDefault();
-        }
+        this.dispatchEvent(e, new AppEvent(appCommand));
     }
 
     /**

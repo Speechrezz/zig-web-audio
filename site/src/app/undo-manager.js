@@ -43,7 +43,7 @@ export class UndoManager {
     transactions = [];
     writeIndex = 0;
 
-    /** @type {Map<string, UndoListener} */
+    /** @type {Map<string, UndoListener>} */
     listeners = new Map();
 
     /**
@@ -83,7 +83,7 @@ export class UndoManager {
         if (index < 0) return;
 
         const transaction = this.transactions[index];
-        const listener = this.listeners.get(transaction.listenerId);
+        const listener = /** @type {UndoListener} */ (this.listeners.get(transaction.listenerId));
         listener.undo(transaction);
 
         this.writeIndex--;
@@ -93,7 +93,7 @@ export class UndoManager {
         if (this.writeIndex === this.transactions.length) return;
 
         const transaction = this.transactions[this.writeIndex];
-        const listener = this.listeners.get(transaction.listenerId);
+        const listener = /** @type {UndoListener} */ (this.listeners.get(transaction.listenerId));
         listener.redo(transaction);
 
         this.writeIndex++;

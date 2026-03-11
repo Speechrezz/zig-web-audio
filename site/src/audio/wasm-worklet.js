@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { WorkletMessageType } from "./worklet-message.js";
 
 function decodeUtf8(mem) {

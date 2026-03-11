@@ -1,7 +1,7 @@
 import { AudioParameter } from "../../../audio/audio-parameter.js";
 import { Component } from "../component.js";
 import { CursorStyle, setCursorStyle } from "../cursor-style.js";
-import { MouseAction, MouseActionPolicy } from "../mouse-event.js";
+import { MouseAction, MouseActionPolicy, MouseEvent, MouseScrollEvent } from "../mouse-event.js";
 import { Point } from "../point.js";
 
 export class NumberBox extends Component {
@@ -20,10 +20,10 @@ export class NumberBox extends Component {
     valueMax = 1;
     valueDefault = 0;
 
-    /** @type {null | (stateCount: number) => void} */
-    parameterListener = null;
+    /** @type {(stateCount: number) => void} */
+    parameterListener = () => {};
 
-    valueToText = (value) => `${Math.round(value)}`;
+    valueToText = (/** @type {number} */ value) => `${Math.round(value)}`;
 
     /** @type {null | () => void} */
     onChange = null;
@@ -124,12 +124,18 @@ export class NumberBox extends Component {
         this.setValueNormalizedInternal(this.valueNormalized + delta * this.scrollWheelScale);
     }
 
+    /**
+     * @param {number} valueNormalized 
+     */
     setValueNormalizedInternal(valueNormalized) {
         this.valueNormalized = valueNormalized;
         const value = valueNormalized * this.valueMax;
         this.setValueInternal(value);
     }
 
+    /**
+     * @param {number} value 
+     */
     setValueInternal(value) {
         value = Math.min(Math.max(value, this.valueMin), this.valueMax);
         if (this.value === value) return;

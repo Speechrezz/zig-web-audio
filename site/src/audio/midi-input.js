@@ -5,6 +5,7 @@ export class MidiInput {
     /**
      * @type {MIDIAccess}
      */
+    // @ts-ignore
     midiAccess;
 
     /**
@@ -35,6 +36,9 @@ export class MidiInput {
         this.startLoggingMidiInput();
     }
 
+    /**
+     * @param {any} msg 
+     */
     onMidiFailure(msg) {
         console.error(`[MidiInput] Failed to get MIDI access: ${msg}`);
     }
@@ -49,6 +53,7 @@ export class MidiInput {
      * @param {MIDIMessageEvent} e 
      */
     onMidiMessage(e) {
+        // @ts-ignore
         const [status, data1, data2] = e.data;
         this.playbackEngine.sendMidiMessageFromDevice(new MidiEvent(status, data1, data2), e.timeStamp);
 

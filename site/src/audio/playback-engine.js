@@ -1,5 +1,3 @@
-// @ts-check
-
 import { Config } from "../app/config.js";
 import { Track, TracksContainer } from "./track.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"

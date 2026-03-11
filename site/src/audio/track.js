@@ -1,5 +1,3 @@
-// @ts-check
-
 import { getAudioWorkletNode } from "./audio.js";
 import { InstrumentDetailsList, InstrumentType, InstrumentEvent } from "./audio-constants.js";
 import { WorkletMessageType } from "./worklet-message.js";
@@ -17,6 +15,10 @@ class NoteNumberAndChannel {
     noteNumber = 0;
     channel = 0;
 
+    /**
+     * @param {number} noteNumber 
+     * @param {number} channel 
+     */
     constructor(noteNumber, channel = 0) {
         this.noteNumber = noteNumber;
         this.channel = channel;
@@ -142,6 +144,9 @@ export class Track {
         };
     }
 
+    /**
+     * @param {any} json 
+     */
     static deserialize(json) {
         const newInstrument = new Track(json.index, json.type, json.name, json.state);
         newInstrument.noteIdCounter = json.noteIdCounter;

@@ -110,6 +110,8 @@ export class PianoComponent extends Component {
      * @param {MouseEvent} ev 
      */
     mouseDrag(ev) {
+        if (this.playingNote === null) return;
+
         const noteNumber = this.yToNoteNumber(ev.y);
         if (noteNumber !== this.playingNote.noteNumber) {
             const midiOff = MidiEvent.newNote(MidiEventType.NoteOff, this.playingNote.noteNumber, 100, 0);
@@ -128,18 +130,26 @@ export class PianoComponent extends Component {
      * @param {MouseEvent} ev 
      */
     mouseUp(ev) {
+        if (this.playingNote === null) return;
+
         const midiEvent = MidiEvent.newNote(MidiEventType.NoteOff, this.playingNote.noteNumber, 100, 0);
         this.context.playbackEngine.sendMidiMessageFromDevice(midiEvent);
 
-        this.playingNoteNumber = null;
+        this.playingNote = null;
 
         this.repaint();
     }
 
+    /**
+     * @param {number} y 
+     */
     yToNoteNumber(y) {
         return this.context.config.pitchMax - Math.floor(y / this.context.config.noteHeight);
     }
 
+    /**
+     * @param {number} x
+     */
     xToNoteVelocity(x) {
         return 127 * x / this.bounds.width;
     }
