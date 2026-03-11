@@ -32,7 +32,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
             switch (msg.type) {
                 default:
-                    console.log("[WasmProcessor] onmessage:", msg); // TODO
+                    console.warn("[WasmProcessor] Unhandled 'onmessage':", msg);
                     break;
                 case WorkletMessageType.midi:
                     this.exports.sendMidiEvent(msg.instrumentIndex, msg.data, msg.time);
