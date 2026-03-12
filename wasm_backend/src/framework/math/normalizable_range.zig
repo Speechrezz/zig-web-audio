@@ -1,4 +1,6 @@
 const std = @import("std");
+const state = @import("../state/state.zig");
+const LoadError = state.json.LoadError;
 
 pub fn NormalizableRange(comptime T: type) type {
     if (@typeInfo(T) != .float) {
@@ -41,6 +43,59 @@ pub fn NormalizableRange(comptime T: type) type {
         pub fn fromNormalized(self: *const @This(), v: T) T {
             const clamped = std.math.clamp(v, 0.0, 1.0);
             return self.mapping.fromNormalized(self.start, self.end, clamped);
+        }
+
+        pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
+            const active_tag = std.meta.activeTag(self.mapping);
+
+            try write_stream.objectField("type");
+            try write_stream.write(@tagName(active_tag));
+
+            try write_stream.objectField("start");
+            try write_stream.write(self.start);
+            try write_stream.objectField("end");
+            try write_stream.write(self.end);
+
+            if (active_tag != .linear) {
+                try write_stream.objectField("ctx");
+                try write_stream.beginObject();
+
+                switch (self.mapping) {
+                    .linear => unreachable,
+                    .skewed => |exp| {
+                        try write_stream.objectField("exp");
+                        try write_stream.write(exp);
+                    },
+                }
+
+                try write_stream.endObject();
+            }
+        }
+
+        pub fn load(self: *@This(), json: *const std.json.Value) !void {
+            if (json.* != .object) return LoadError.MissingField;
+
+            const type_string = try state.json.getFieldString(json.object, "type");
+            const start_float = try state.json.getFieldFloat(T, json.object, "start");
+            const end_float = try state.json.getFieldFloat(T, json.object, "end");
+
+            const active_tag = std.meta.stringToEnum(std.meta.Tag(Mapping), type_string) orelse {
+                return LoadError.IncorrectFieldType;
+            };
+
+            switch (active_tag) {
+                .linear => {
+                    self.mapping = .linear;
+                },
+                .skewed => {
+                    const ctx_object = try state.json.getFieldObject(json.object, "ctx");
+                    const exp_float = try state.json.getFieldFloat(T, ctx_object, "exp");
+                    self.mapping = .{ .skewed = exp_float };
+                },
+            }
+
+            self.start = start_float;
+            self.end = end_float;
         }
 
         // ---Mapping functions---
@@ -127,4 +182,72 @@ test "NormalizableRange f32" {
 
     try std.testing.expectApproxEqRel(1.0, range.toNormalized(20.0), 1e-5);
     try std.testing.expectApproxEqRel(20.0, range.fromNormalized(1.0), 1e-5);
+}
+
+test "NormalizableRange linear JSON" {
+    const allocator = std.testing.allocator;
+
+    // Serialize range to JSON
+
+    const range = NormalizableRange(f32).initLinear(10.0, 20.0);
+
+    var out: std.io.Writer.Allocating = .init(allocator);
+    defer out.deinit();
+    var write_stream: std.json.Stringify = .{
+        .writer = &out.writer,
+        .options = .{ .whitespace = .indent_2 },
+    };
+
+    try write_stream.beginObject();
+    try range.save(&write_stream);
+    try write_stream.endObject();
+
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"type\": \"linear\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"start\": 10") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"end\": 20") != null);
+
+    // Parse from JSON back to a range
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, out.written(), .{});
+    defer parsed.deinit();
+
+    var range_load: NormalizableRange(f32) = undefined;
+    try range_load.load(&parsed.value);
+    try std.testing.expect(range.mapping == .linear);
+    try std.testing.expectApproxEqRel(range.start, range_load.start, 1e-5);
+    try std.testing.expectApproxEqRel(range.end, range_load.end, 1e-5);
+}
+
+test "NormalizableRange skewed JSON" {
+    const allocator = std.testing.allocator;
+
+    // Serialize range to JSON
+
+    const range = NormalizableRange(f32).initSkewedCenter(10.0, 20.0, 12.0);
+
+    var out: std.io.Writer.Allocating = .init(allocator);
+    defer out.deinit();
+    var write_stream: std.json.Stringify = .{
+        .writer = &out.writer,
+        .options = .{ .whitespace = .indent_2 },
+    };
+
+    try write_stream.beginObject();
+    try range.save(&write_stream);
+    try write_stream.endObject();
+
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"type\": \"skewed\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"ctx\"") != null);
+
+    // Parse from JSON back to a range
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, out.written(), .{});
+    defer parsed.deinit();
+
+    var range_load: NormalizableRange(f32) = undefined;
+    try range_load.load(&parsed.value);
+    try std.testing.expect(range.mapping == .skewed);
+    try std.testing.expectApproxEqRel(range.start, range_load.start, 1e-5);
+    try std.testing.expectApproxEqRel(range.end, range_load.end, 1e-5);
+    try std.testing.expectApproxEqRel(range.mapping.skewed, range_load.mapping.skewed, 1e-5);
 }
