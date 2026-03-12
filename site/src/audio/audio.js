@@ -19,7 +19,7 @@ export async function initializeAudio() {
     const workletUrl = new URL("./wasm-worklet.js", import.meta.url);
     await audioContext.audioWorklet.addModule(workletUrl);
 
-    const wasmUrl = new URL("./audio_backend.wasm", import.meta.url);
+    const wasmUrl = new URL("./audio.wasm", import.meta.url);
     const wasmResponse = await fetch(wasmUrl);
     const wasmBytes = await wasmResponse.arrayBuffer();
 

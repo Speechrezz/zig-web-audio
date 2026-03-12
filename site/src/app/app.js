@@ -9,8 +9,12 @@ import { AppContext } from "./app-context.js"
 import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { TracksContainer } from "../audio/track.js"
+import { WasmContainer } from "../core/wasm.js"
 
 export class App {
+    /** @type {WasmContainer} */
+    wasm = new WasmContainer;
+
     /** @type {PlaybackEngine | undefined} */
     playbackEngine = undefined;
 
@@ -42,6 +46,8 @@ export class App {
         const startButton = /** @type {HTMLInputElement} */ (document.getElementById("start-audio-button"));
         const startContainer = /** @type {HTMLDivElement} */ (document.getElementById("start-audio-container"));
         this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
+
+        await this.initializeWasm();
 
         const audioContextStateChanged = (/** @type {boolean} */ isRunning) => {
             if (isRunning) {
@@ -91,5 +97,19 @@ export class App {
 
         // @ts-ignore
         this.appInterface.canvasResized();
+    }
+
+    async initializeWasm() {
+        const wasmUrl = new URL("./main.wasm", import.meta.url);
+        const wasmResponse = await fetch(wasmUrl);
+
+        const importObject = {
+            env: {
+                getCurrentFrame: () => 0,
+            }
+        };
+
+        await this.wasm.initialize(wasmResponse, importObject);
+        console.log("WASM main initialized - exports:", this.wasm.exports);
     }
 }

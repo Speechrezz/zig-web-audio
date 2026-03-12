@@ -1,21 +1,7 @@
 // @ts-nocheck
 
+import { decodeUtf8, unpackSlice } from "../core/wasm.js";
 import { WorkletMessageType } from "./worklet-message.js";
-
-function decodeUtf8(mem) {
-    let s = "";
-    for (let i = 0; i < mem.length; i++) {
-        s += String.fromCharCode(mem[i]);
-    }
-    return s;
-}
-
-function unpackSlice(x) {
-    // WebAssembly i64 typically comes to JS as a BigInt.
-    const len = Number((x >> 32n) & 0xffffffffn);
-    const ptr = Number(x & 0xffffffffn);
-    return { ptr, len };
-}
 
 const BLOCK_SIZE = 128;
 
@@ -119,7 +105,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
         const module = new WebAssembly.Module(bytes);
         this.instance = new WebAssembly.Instance(module, importObject);
         this.exports = this.instance.exports;
-        console.log("WASM initialized - exports:", this.exports);
+        console.log("WASM audio initialized - exports:", this.exports);
     }
 
     /**

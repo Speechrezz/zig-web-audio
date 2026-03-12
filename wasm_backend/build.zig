@@ -18,25 +18,45 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/processor/instrument_registry.zig"),
     });
 
-    const wasm = b.addExecutable(.{
-        .name = "audio_backend",
+    processor_mod.addImport("framework", framework_mod);
+
+    // -- Audio --
+
+    const wasm_audio = b.addExecutable(.{
+        .name = "audio",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/exports.zig"),
+            .root_source_file = b.path("src/exports_audio.zig"),
             .target = target,
             .optimize = optimize,
         }),
     });
 
-    processor_mod.addImport("framework", framework_mod);
-
-    wasm.root_module.addImport("framework", framework_mod);
-    wasm.root_module.addImport("AudioProcessor", processor_mod);
+    wasm_audio.root_module.addImport("framework", framework_mod);
+    wasm_audio.root_module.addImport("AudioProcessor", processor_mod);
 
     // Typical wasm-friendly options (pick what you need)
-    wasm.entry = .disabled; // no Zig "main" required
-    wasm.rdynamic = true; // export symbols
+    wasm_audio.entry = .disabled; // no Zig "main" required
+    wasm_audio.rdynamic = true; // export symbols
 
-    b.installArtifact(wasm);
+    b.installArtifact(wasm_audio);
+
+    // -- Main --
+
+    const wasm_main = b.addExecutable(.{
+        .name = "main",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/exports_main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+
+    wasm_main.root_module.addImport("framework", framework_mod);
+
+    wasm_main.entry = .disabled;
+    wasm_main.rdynamic = true;
+
+    b.installArtifact(wasm_main);
 
     // --- Native tests target (not WASM) ---
 
