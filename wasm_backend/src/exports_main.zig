@@ -5,15 +5,19 @@ const math = @import("framework").math;
 const web = @import("framework").web;
 const wasm_allocator = @import("framework").wasm_allocator;
 
-// Range
+// NormalizableRange
 
 const NormalizableRange = math.NormalizableRange(f32);
 
-export fn createNormalizableRange(ptr: [*]u8, len: usize) ?*NormalizableRange {
-    const range = wasm_allocator.create(NormalizableRange) catch |err| {
+fn createNormalizableRange() ?*NormalizableRange {
+    return wasm_allocator.create(NormalizableRange) catch |err| {
         logging.logDebug("[WASM] createNormalizableRange error: {}", .{err});
         return null;
     };
+}
+
+export fn createNormalizableRangeFromJson(ptr: [*]u8, len: usize) ?*NormalizableRange {
+    const range = createNormalizableRange() orelse return null;
 
     const slice = ptr[0..len];
     const parsed = std.json.parseFromSlice(std.json.Value, wasm_allocator, slice, .{}) catch |err| {
@@ -27,6 +31,18 @@ export fn createNormalizableRange(ptr: [*]u8, len: usize) ?*NormalizableRange {
         return null;
     };
 
+    return range;
+}
+
+export fn createNormalizableRangeLinear(start: f32, end: f32) ?*NormalizableRange {
+    const range = createNormalizableRange() orelse return null;
+    range.* = NormalizableRange.initLinear(start, end);
+    return range;
+}
+
+export fn createNormalizableRangeSkewedCenter(start: f32, end: f32, center: f32) ?*NormalizableRange {
+    const range = createNormalizableRange() orelse return null;
+    range.* = NormalizableRange.initSkewedCenter(start, end, center);
     return range;
 }
 

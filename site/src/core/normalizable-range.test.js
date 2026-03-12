@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { WasmContainer } from "./wasm";
 import { NormalizableRange } from "./normalizable-range";
 
-test("NormalizableRange", async () => {
+async function createWasm() {
     const wasm = new WasmContainer;
     const wasmUrl = new URL("../app/main.wasm", import.meta.url);
     const wasmResponse = await fetch(wasmUrl);
@@ -14,8 +14,12 @@ test("NormalizableRange", async () => {
     };
 
     await wasm.initialize(wasmResponse, importObject);
+    return wasm;
+}
 
-    let range = new NormalizableRange(wasm, {type: "linear", start: 10, end: 20});
+test("NormalizableRange from spec", async () => {
+    const wasm = await createWasm();
+    let range = NormalizableRange.createFromSpec(wasm, {type: "linear", start: 10, end: 20});
 
     expect(range.toNormalized( 5)).toBeCloseTo(0.0);
     expect(range.toNormalized(10)).toBeCloseTo(0.0);
@@ -31,7 +35,7 @@ test("NormalizableRange", async () => {
 
     range.deinit();
 
-    range = new NormalizableRange(wasm, {type: "skewed", start: 10, end: 20, ctx: {exp: 2}});
+    range = NormalizableRange.createFromSpec(wasm, {type: "skewed", start: 10, end: 20, ctx: {exp: 2}});
 
     expect(range.toNormalized(5)).toBeCloseTo(0);
     expect(range.toNormalized(10)).toBeCloseTo(0);
@@ -46,4 +50,20 @@ test("NormalizableRange", async () => {
     expect(range.fromNormalized(1.5)).toBeCloseTo(20);
 
     range.deinit();
+});
+
+test("NormalizableRange init", async () => {
+    const wasm = await createWasm();
+    let range = NormalizableRange.createLinear(wasm, 10, 20);
+
+    expect(range.toNormalized(12)).toBeCloseTo(0.2);
+    expect(range.toNormalized(15)).toBeCloseTo(0.5);
+
+    expect(range.fromNormalized(0.5)).toBeCloseTo(15);
+    expect(range.fromNormalized(0.8)).toBeCloseTo(18);
+
+    range = NormalizableRange.createSkewedCenter(wasm, 10, 20, 12);
+
+    expect(range.toNormalized(12)).toBeCloseTo(0.5);
+    expect(range.fromNormalized(0.5)).toBeCloseTo(12);
 });

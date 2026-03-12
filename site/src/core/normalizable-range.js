@@ -20,18 +20,50 @@ export class NormalizableRange {
     end;
 
     /**
+     * 
+     * @param {WasmContainer} wasm 
+     * @param {number} wasmPtr 
+     * @param {number} start 
+     * @param {number} end 
+     */
+    constructor(wasm, wasmPtr, start, end) {
+        this.wasm = wasm;
+        this.wasmPtr = wasmPtr;
+        this.start = start;
+        this.end = end;
+    }
+
+    /**
      * @param {WasmContainer} wasm 
      * @param {RangeSpec} spec 
      */
-    constructor(wasm, spec) {
-        this.wasm = wasm;
+    static createFromSpec(wasm, spec) {
+        const slice = wasm.allocAndCopyToWasmString(JSON.stringify(spec));
+        const wasmPtr = wasm.exports.createNormalizableRangeFromJson(slice.ptr, slice.len);
+        wasm.freeWasmString(slice);
 
-        const slice = this.wasm.allocAndCopyToWasmString(JSON.stringify(spec));
-        this.wasmPtr = this.wasm.exports.createNormalizableRange(slice.ptr, slice.len);
-        this.wasm.freeWasmString(slice);
+        return new NormalizableRange(wasm, wasmPtr, spec.start, spec.end);
+    }
 
-        this.start = spec.start;
-        this.end = spec.end;
+    /**
+     * @param {WasmContainer} wasm 
+     * @param {number} start 
+     * @param {number} end 
+     */
+    static createLinear(wasm, start, end) {
+        const wasmPtr = wasm.exports.createNormalizableRangeLinear(start, end);
+        return new NormalizableRange(wasm, wasmPtr, start, end);
+    }
+
+    /**
+     * @param {WasmContainer} wasm 
+     * @param {number} start 
+     * @param {number} end 
+     * @param {number} centerPoint 
+     */
+    static createSkewedCenter(wasm, start, end, centerPoint) {
+        const wasmPtr = wasm.exports.createNormalizableRangeSkewedCenter(start, end, centerPoint);
+        return new NormalizableRange(wasm, wasmPtr, start, end);
     }
 
     deinit() {
