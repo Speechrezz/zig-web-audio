@@ -1,3 +1,4 @@
+const std = @import("std");
 const audio = @import("framework").audio;
 const logging = @import("framework").logging;
 const math = @import("framework").math;
@@ -14,9 +15,17 @@ export fn createNormalizableRange(ptr: [*]u8, len: usize) ?*NormalizableRange {
         return null;
     };
 
-    // TODO: Initialize the range by parsing JSON
-    _ = ptr;
-    _ = len;
+    const slice = ptr[0..len];
+    const parsed = std.json.parseFromSlice(std.json.Value, wasm_allocator, slice, .{}) catch |err| {
+        logging.logDebug("[WASM] createNormalizableRange error: {}", .{err});
+        return null;
+    };
+    defer parsed.deinit();
+
+    range.load(&parsed.value) catch |err| {
+        logging.logDebug("[WASM] createNormalizableRange error: {}", .{err});
+        return null;
+    };
 
     return range;
 }

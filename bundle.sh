@@ -6,6 +6,7 @@ mkdir -p out
 rm -rf out/*
 
 echo "Bundle JavaScript"
+bun test
 bun build ./site/src/main.js --outdir ./out/src --minify
 bun build ./site/src/audio/wasm-worklet.js --outdir ./out/src --minify
 

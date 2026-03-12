@@ -36,13 +36,11 @@ pub fn NormalizableRange(comptime T: type) type {
         }
 
         pub fn toNormalized(self: *const @This(), v: T) T {
-            const normalized = self.mapping.toNormalized(self.start, self.end, v);
-            return std.math.clamp(normalized, 0.0, 1.0);
+            return self.mapping.toNormalized(self.start, self.end, v);
         }
 
         pub fn fromNormalized(self: *const @This(), v: T) T {
-            const clamped = std.math.clamp(v, 0.0, 1.0);
-            return self.mapping.fromNormalized(self.start, self.end, clamped);
+            return self.mapping.fromNormalized(self.start, self.end, clamp(v));
         }
 
         pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
@@ -119,10 +117,14 @@ pub fn NormalizableRange(comptime T: type) type {
             }
         };
 
+        fn clamp(v: T) T {
+            return std.math.clamp(v, 0.0, 1.0);
+        }
+
         // Linear
         fn toNormalizedLinear(start: T, end: T, v: T) T {
             std.debug.assert(end > start);
-            return (v - start) / (end - start);
+            return clamp((v - start) / (end - start));
         }
         fn fromNormalizedLinear(start: T, end: T, v: T) T {
             std.debug.assert(end > start);
@@ -134,7 +136,7 @@ pub fn NormalizableRange(comptime T: type) type {
             std.debug.assert(end > start);
             std.debug.assert(exp > 0.0);
 
-            const proportion = (v - start) / (end - start);
+            const proportion = clamp((v - start) / (end - start));
             return std.math.pow(T, proportion, exp);
         }
         fn fromNormalizedSkewed(start: T, end: T, exp: T, v: T) T {

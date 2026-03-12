@@ -10,6 +10,7 @@ import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { TracksContainer } from "../audio/track.js"
 import { WasmContainer } from "../core/wasm.js"
+import { NormalizableRange } from "../core/normalizable-range.js"
 
 export class App {
     /** @type {WasmContainer} */

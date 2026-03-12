@@ -10,6 +10,15 @@ export function decodeUtf8(mem) {
 }
 
 /**
+ * @param {string} str 
+ * @param {Uint8Array} mem 
+ */
+export function encodeUtf8(str, mem) {
+    const encoder = new TextEncoder();
+    encoder.encodeInto(str, mem);
+}
+
+/**
  * @param {BigInt} x 
  */
 export function unpackSlice(x) {
@@ -57,5 +66,25 @@ export class WasmContainer {
     getWasmString(ptr, len) {
         const mem = new Uint8Array(this.exports.memory.buffer, ptr, len);
         return decodeUtf8(mem);
+    }
+
+    /**
+     * @param {string} str 
+     */
+    allocAndCopyToWasmString(str) {
+        const len = str.length;
+        /** @type {number} */
+        const ptr = this.exports.allocString(str.length);
+        const mem = new Uint8Array(this.exports.memory.buffer, ptr, len);
+
+        encodeUtf8(str, mem);
+        return {ptr, len};
+    }
+
+    /**
+     * @param {{ptr: number, len: number}} slice 
+     */
+    freeWasmString(slice) {
+        this.exports.freeString(slice.ptr, slice.len);
     }
 }
