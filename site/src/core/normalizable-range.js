@@ -11,7 +11,6 @@ import { WasmContainer } from "./wasm.js";
 export class NormalizableRange {
     /** @type {WasmContainer} */
     wasm;
-
     /** @type {number} */
     wasmPtr;
 
