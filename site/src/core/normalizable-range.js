@@ -72,6 +72,7 @@ export class NormalizableRange {
 
     /**
      * @param {number} value 
+     * @returns {number} 
      */
     toNormalized(value) {
         return this.wasm.exports.toNormalizedValue(this.wasmPtr, value);
@@ -79,6 +80,7 @@ export class NormalizableRange {
 
     /**
      * @param {number} value 
+     * @returns {number} 
      */
     fromNormalized(value) {
         return this.wasm.exports.fromNormalizedValue(this.wasmPtr, value);

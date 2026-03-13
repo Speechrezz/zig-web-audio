@@ -26,14 +26,8 @@ export class AudioParameter {
     /** @type {Track} */
     track;
 
-    /** @type {((stateCount: number) => void)[]} */
+    /** @type {(() => void)[]} */
     listeners = [];
-
-    /**
-     * Increments each time the state changes, useful for syncing threads.
-     * @type {number}
-     */
-    stateCount = 0;
 
     /**
      * @param {WasmContainer} wasm 
@@ -57,8 +51,26 @@ export class AudioParameter {
         return this.state.value;
     }
 
-    getNormalized() {
+    getValue() {
+        return this.convertFromNormalized(this.state.value_normalized);
+    }
+
+    getNormalizedValue() {
         return this.state.value_normalized;
+    }
+
+    /**
+     * @param {number} value 
+     */
+    convertToNormalized(value) {
+        return this.range.toNormalized(value);
+    }
+
+    /**
+     * @param {number} value 
+     */
+    convertFromNormalized(value) {
+        return this.range.fromNormalized(value);
     }
 
     /**
@@ -66,6 +78,19 @@ export class AudioParameter {
      * @param {boolean} isNormalized 
      */
     set(newValue, isNormalized) {
+        if (isNormalized) {
+            this.state.value_normalized = newValue;
+            this.state.value = this.convertFromNormalized(newValue);
+        }
+        else {
+            this.state.value = newValue;
+            this.state.value_normalized = this.convertToNormalized(newValue);
+        }
+        console.log("set:", this.state.value, this.state.value_normalized);
+
+        for (const listener of this.listeners)
+            listener();
+
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.setParameterValue,
             context: {
@@ -73,20 +98,19 @@ export class AudioParameter {
                 parameterIndex: this.state.index,
                 value: newValue,
                 isNormalized,
-                stateCount: this.stateCount++,
             }
         });
     }
 
     /**
-     * @param {(stateCount: number) => void} listener 
+     * @param {() => void} listener 
      */
     addListener(listener) {
         this.listeners.push(listener);
     }
 
     /**
-     * @param {(stateCount: number) => void} listener 
+     * @param {() => void} listener 
      */
     removeListener(listener) {
         const index = this.listeners.indexOf(listener);
@@ -97,14 +121,13 @@ export class AudioParameter {
     /**
      * @param {number} value 
      * @param {number} valueNormalized 
-     * @param {number} stateCount 
      */
-    updateFromAudioThread(value, valueNormalized, stateCount) {
+    updateFromAudioThread(value, valueNormalized) {
         this.state.value = value;
         this.state.value_normalized = valueNormalized;
 
         for (const listener of this.listeners)
-            listener(stateCount);
+            listener();
     }
 
     updateBackendState() {

@@ -64,7 +64,7 @@ export class App {
         }
     
         this.undoManager = new UndoManager(this.eventRouter);
-        const tracks = new TracksContainer(this.undoManager);
+        const tracks = new TracksContainer(this.wasm, this.undoManager);
         this.playbackEngine = new PlaybackEngine(this.config, tracks);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.clipboardManager = new ClipboardManager();

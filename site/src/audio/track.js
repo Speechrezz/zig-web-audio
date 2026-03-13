@@ -4,6 +4,7 @@ import { WorkletMessageType } from "./worklet-message.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { Note, NoteEvent } from "./note.js";
 import { AudioParameter } from "./audio-parameter.js"
+import { WasmContainer } from "../core/wasm.js";
 
 const UNDO_ID = "track";
 const UndoType = Object.freeze({
@@ -35,6 +36,9 @@ class NoteNumberAndChannel {
 }
 
 export class Track {
+    /** @type {WasmContainer} */
+    wasm;
+
     /** @type {number} */
     index;
 
@@ -78,12 +82,14 @@ export class Track {
     queuedNoteEvents = [];
 
     /**
+     * @param {WasmContainer} wasm 
      * @param {number} index 
      * @param {InstrumentType} type 
      * @param {string} name 
      * @param {any} state 
      */
-    constructor(index, type, name, state) {
+    constructor(wasm, index, type, name, state) {
+        this.wasm = wasm;
         this.index = index;
         this.type = type;
         this.name = name;
@@ -91,9 +97,15 @@ export class Track {
 
         // Initialize parameters
         for (const paramState of Object.values(this.state.parameters)) {
-            const param = new AudioParameter(paramState, this);
+            const param = new AudioParameter(wasm, paramState, this);
             this.params.push(param);
             this.paramMap.set(paramState.id, param);
+        }
+    }
+
+    deinit() {
+        for (const param of this.params) {
+            param.deinit();
         }
     }
 
@@ -145,10 +157,11 @@ export class Track {
     }
 
     /**
+     * @param {WasmContainer} wasm 
      * @param {any} json 
      */
-    static deserialize(json) {
-        const track = new Track(json.index, json.type, json.name, json.state);
+    static deserialize(wasm, json) {
+        const track = new Track(wasm, json.index, json.type, json.name, json.state);
         track.noteIdCounter = json.noteIdCounter;
 
         for (const note of json.notes) {
@@ -164,11 +177,14 @@ export class Track {
 }
 
 export class TracksContainer {
+    /** @type {WasmContainer} */
+    wasm;
+
     /** @type {UndoManager} */
     undoManager;    
 
     /** @type {Track[]} */
-    instruments = [];
+    tracks = [];
 
     /** @type {null | number} */
     selectedIndex = null;
@@ -179,9 +195,11 @@ export class TracksContainer {
     instrumentEventListeners = [];
 
     /**
+     * @param {WasmContainer} wasm 
      * @param {UndoManager} undoManager 
      */
-    constructor(undoManager) {
+    constructor(wasm, undoManager) {
+        this.wasm = wasm;
         this.undoManager = undoManager;
         this.undoManager.addListener(UNDO_ID, this);
 
@@ -216,7 +234,7 @@ export class TracksContainer {
      */
     addInstrument(instrumentIndex, instrumentType, addToUndo = true, serialized = null) {
         if (instrumentIndex < 0) {
-            instrumentIndex = this.instruments.length;
+            instrumentIndex = this.tracks.length;
         }
 
         getAudioWorkletNode().port.postMessage({
@@ -253,13 +271,13 @@ export class TracksContainer {
         let newInstrument;
         if (serialized === null) {
             const instrumentDetails = InstrumentDetailsList[instrumentType];
-            newInstrument = new Track(trackIndex, instrumentType, instrumentDetails.name, trackSpec);
+            newInstrument = new Track(this.wasm, trackIndex, instrumentType, instrumentDetails.name, trackSpec);
         }
         else { // Load existing instrument with existing state
-            newInstrument = Track.deserialize(serialized);
+            newInstrument = Track.deserialize(this.wasm, serialized);
         }
 
-        this.instruments.splice(trackIndex, 0, newInstrument);
+        this.tracks.splice(trackIndex, 0, newInstrument);
         this.updateTrackIndices();
         this.selectedIndex = newInstrument.index;
 
@@ -280,7 +298,8 @@ export class TracksContainer {
      * @param {boolean} addToUndo
      */
     removeTrack(trackIndex, addToUndo = true) {
-        const removedInstrument = this.instruments.splice(trackIndex, 1)[0];
+        const removedTrack = this.tracks.splice(trackIndex, 1)[0];
+        removedTrack.deinit();
         this.updateTrackIndices();
 
         getAudioWorkletNode().port.postMessage({
@@ -289,7 +308,7 @@ export class TracksContainer {
         });
 
         if (this.selectedIndex !== null && this.selectedIndex >= trackIndex) {
-            if (this.instruments.length === 0)
+            if (this.tracks.length === 0)
                 this.selectedIndex = null;
             else
                 this.selectedIndex = Math.max(0, this.selectedIndex - 1);
@@ -299,7 +318,7 @@ export class TracksContainer {
             this.undoManager.push(new AppTransaction(
                 UNDO_ID,
                 UndoType.removeInstrument,
-                removedInstrument.serialize(),
+                removedTrack.serialize(),
             ));
         }
 
@@ -308,8 +327,8 @@ export class TracksContainer {
     }
 
     updateTrackIndices() {
-        for (let i = 0; i < this.instruments.length; i++) {
-            this.instruments[i].index = i;
+        for (let i = 0; i < this.tracks.length; i++) {
+            this.tracks[i].index = i;
         }
     }
 
@@ -318,7 +337,7 @@ export class TracksContainer {
      * @return {Track} instrument
      */
     get(index) {
-        return this.instruments[index];
+        return this.tracks[index];
     }
 
     /**
@@ -334,11 +353,11 @@ export class TracksContainer {
     getSelected() {
         if (this.selectedIndex === null)
             return null;
-        return this.instruments[this.selectedIndex];
+        return this.tracks[this.selectedIndex];
     }
 
     getList() {
-        return this.instruments;
+        return this.tracks;
     }
 
     /**
@@ -349,10 +368,10 @@ export class TracksContainer {
         const trackIndex = data.context.trackIndex;
         const parameterIndex = data.context.parameterIndex;
 
-        const { value, normalized: valueNormalized, stateCount } = data.state;
+        const { value, normalized: valueNormalized } = data.state;
 
-        const param = this.instruments[trackIndex].params[parameterIndex];
-        param.updateFromAudioThread(value, valueNormalized, stateCount);
+        const param = this.tracks[trackIndex].params[parameterIndex];
+        param.updateFromAudioThread(value, valueNormalized);
     }
 
     /**
