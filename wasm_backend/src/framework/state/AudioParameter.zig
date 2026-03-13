@@ -67,7 +67,7 @@ pub fn convertFromNormalized(self: *const @This(), normalized: f32) f32 {
     return self.range.fromNormalized(normalized);
 }
 
-pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify, index: usize) !void {
+pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify, index: usize) !void {
     try write_stream.beginObject();
 
     try write_stream.objectField("index");
@@ -79,14 +79,31 @@ pub fn toJson(self: *const @This(), write_stream: *std.json.Stringify, index: us
     try write_stream.objectField("name");
     try write_stream.write(self.name);
 
-    try write_stream.objectField("value_min");
-    try write_stream.write(self.range.start);
-
-    try write_stream.objectField("value_max");
-    try write_stream.write(self.range.end);
+    try write_stream.objectField("range");
+    try write_stream.beginObject();
+    try self.range.save(write_stream);
+    try write_stream.endObject();
 
     try write_stream.objectField("value_default");
     try write_stream.write(self.value_default);
+
+    try write_stream.objectField("value_normalized");
+    try write_stream.write(self.value_normalized);
+
+    try write_stream.objectField("value");
+    try write_stream.write(self.getValue());
+
+    try write_stream.endObject();
+}
+
+pub fn save(self: *const @This(), write_stream: *std.json.Stringify, index: usize) !void {
+    try write_stream.beginObject();
+
+    try write_stream.objectField("index");
+    try write_stream.write(index);
+
+    try write_stream.objectField("id");
+    try write_stream.write(self.id);
 
     try write_stream.objectField("value_normalized");
     try write_stream.write(self.value_normalized);

@@ -33,12 +33,12 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                         break;
                     }
 
-                    const stateSlice = unpackSlice(this.exports.getTrackState(msg.context.instrumentIndex));
+                    const stateSlice = unpackSlice(this.exports.getTrackSpec(msg.context.instrumentIndex));
                     const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
                     this.exports.freeString(stateSlice.ptr, stateSlice.len);
 
                     const data = {
-                        state: JSON.parse(stateString),
+                        spec: JSON.parse(stateString),
                         context: msg.context,
                     }
 
@@ -46,10 +46,10 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     break;
                 }
                 case WorkletMessageType.removeTrack:
-                    this.exports.removeInstrument(msg.instrumentIndex);
+                    this.exports.removeTrack(msg.instrumentIndex);
                     break;
                 case WorkletMessageType.clearTracks:
-                    this.exports.clearInstruments();
+                    this.exports.clearTracks();
                     break;
 
                 case WorkletMessageType.setParameterValue:

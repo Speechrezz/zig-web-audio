@@ -61,8 +61,8 @@ pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
 
     try self.parameters.save(write_stream);
-
     try self.vtable.save(self, write_stream);
+
     try write_stream.endObject();
 }
 

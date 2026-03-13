@@ -1,3 +1,5 @@
+import { NormalizableRange } from "../core/normalizable-range.js";
+import { WasmContainer } from "../core/wasm.js";
 import { getAudioWorkletNode } from "./audio.js";
 import { Track } from "./track.js";
 import { WorkletMessageType } from "./worklet-message.js";
@@ -8,8 +10,7 @@ import { WorkletMessageType } from "./worklet-message.js";
  * @property {number} index
  * @property {string} id
  * @property {string} name
- * @property {number} value_min
- * @property {number} value_max
+ * @property {any} range
  * @property {number} value_default
  * @property {number} value_normalized
  * @property {number} value
@@ -18,6 +19,9 @@ import { WorkletMessageType } from "./worklet-message.js";
 export class AudioParameter {
     /** @type {ParameterState} */
     state;
+
+    /** @type {NormalizableRange} */
+    range;
 
     /** @type {Track} */
     track;
@@ -32,13 +36,21 @@ export class AudioParameter {
     stateCount = 0;
 
     /**
+     * @param {WasmContainer} wasm 
      * @param {ParameterState} state 
      * @param {Track} track 
      */
-    constructor(state, track) {
+    constructor(wasm, state, track) {
         this.state = state;
         this.track = track;
-        console.log("[AudioParameter.constructor()] state:", this.state);
+
+        this.range = NormalizableRange.createFromSpec(wasm, state.range);
+
+        console.log("[AudioParameter.constructor()] state:", this.state, this.range);
+    }
+
+    deinit() {
+        this.range.deinit();
     }
 
     get() {

@@ -31,12 +31,22 @@ pub fn idToIndex(self: *const @This(), parameter_id: []const u8) ?usize {
     return self.map.get(parameter_id);
 }
 
+pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify) !void {
+    try write_stream.objectField("parameters");
+    try write_stream.beginObject();
+    for (self.list.items, 0..) |param, i| {
+        try write_stream.objectField(param.id);
+        try param.toJsonSpec(write_stream, i);
+    }
+    try write_stream.endObject();
+}
+
 pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
     try write_stream.objectField("parameters");
     try write_stream.beginObject();
     for (self.list.items, 0..) |param, i| {
         try write_stream.objectField(param.id);
-        try param.toJson(write_stream, i);
+        try param.save(write_stream, i);
     }
     try write_stream.endObject();
 }
@@ -84,6 +94,6 @@ test "ParameterContainer" {
     try write_stream.endObject();
     // std.debug.print("{s}\n", .{out.written()});
 
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"name\": \"Test 1\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"name\": \"Test 2\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"id\": \"test1\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"id\": \"test2\"") != null);
 }

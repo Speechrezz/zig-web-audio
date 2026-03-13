@@ -241,11 +241,11 @@ export class TracksContainer {
             return;
         }
 
-        console.log("instrument data:", ev.data.data);
+        console.log("Track data:", ev.data.data);
         const data = ev.data.data;
-        const instrumentState = data.state.trackProcessor;
+        const trackSpec = data.spec;
         const instrumentType = data.context.instrumentType;
-        const instrumentIndex = data.context.instrumentIndex;
+        const trackIndex = data.context.instrumentIndex;
         const addToUndo = data.context.addToUndo;
         const serialized = data.context.serialized;
 
@@ -253,13 +253,13 @@ export class TracksContainer {
         let newInstrument;
         if (serialized === null) {
             const instrumentDetails = InstrumentDetailsList[instrumentType];
-            newInstrument = new Track(instrumentIndex, instrumentType, instrumentDetails.name, instrumentState);
+            newInstrument = new Track(trackIndex, instrumentType, instrumentDetails.name, trackSpec);
         }
         else { // Load existing instrument with existing state
             newInstrument = Track.deserialize(serialized);
         }
 
-        this.instruments.splice(instrumentIndex, 0, newInstrument);
+        this.instruments.splice(trackIndex, 0, newInstrument);
         this.updateTrackIndices();
         this.selectedIndex = newInstrument.index;
 

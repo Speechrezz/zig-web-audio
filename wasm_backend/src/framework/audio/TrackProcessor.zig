@@ -109,6 +109,10 @@ fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
     }
 }
 
+pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify) !void {
+    try self.processor.parameters.toJsonSpec(write_stream);
+}
+
 test "TrackProcessor" {
     const allocator = std.testing.allocator;
 

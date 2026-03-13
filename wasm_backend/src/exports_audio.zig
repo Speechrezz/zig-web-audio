@@ -1,5 +1,6 @@
 const audio = @import("framework").audio;
 const logging = @import("framework").logging;
+const math = @import("framework").math;
 const std = @import("std");
 const state = @import("framework").state;
 const web = @import("framework").web;
@@ -39,9 +40,9 @@ export fn getOutputChannel(channel_index: usize) [*]f32 {
 
 // MIDI
 
-export fn sendMidiEvent(instrument_index: usize, packed_event: u32, sample_position: i64) void {
+export fn sendMidiEvent(track_index: usize, packed_event: u32, sample_position: i64) void {
     processor_container_web.sendMidiMessage(
-        instrument_index,
+        track_index,
         packed_event,
         sample_position,
     );
@@ -51,10 +52,10 @@ export fn stopAllNotes(allow_tail_off: bool) void {
     processor_container_web.onStopMessage(allow_tail_off);
 }
 
-// Instrument
+// Track
 
-export fn addInstrument(instrument_index: usize, instrument_type: usize) bool {
-    logging.logDebug("[WASM] Adding instrument {} at index {}...", .{ instrument_type, instrument_index });
+export fn addInstrument(track_index: usize, instrument_type: usize) bool {
+    logging.logDebug("[WASM] Adding instrument {} at index {}...", .{ instrument_type, track_index });
 
     const track = instrumentTypeToTrackWeb(
         wasm_allocator,
@@ -62,24 +63,37 @@ export fn addInstrument(instrument_index: usize, instrument_type: usize) bool {
     );
 
     if (track == null) return false;
-    return processor_container_web.addProcessor(instrument_index, track.?);
+    return processor_container_web.addProcessor(track_index, track.?);
 }
 
-export fn removeInstrument(instrument_index: usize) void {
-    logging.logDebug("[WASM] Removing tracks at index {}...", .{instrument_index});
-    processor_container_web.removeProcessor(instrument_index);
+export fn removeTrack(track_index: usize) void {
+    logging.logDebug("[WASM] Removing tracks at index {}...", .{track_index});
+    processor_container_web.removeProcessor(track_index);
 }
 
-export fn clearInstruments() void {
+export fn clearTracks() void {
     logging.logDebug("[WASM] Clearing all tracks...", .{});
     // TODO
 }
 
-export fn getTrackState(instrument_index: usize) u64 {
-    const instrument = processor_container_web.getProcessor(instrument_index);
+export fn getTrackSpec(track_index: usize) u64 {
+    const audio_processor = processor_container_web.getProcessor(track_index).audio_processor;
+    const track: *audio.TrackProcessor = @ptrCast(@alignCast(audio_processor));
+
     const web_string = web.string.toJsonString(
         wasm_allocator,
-        instrument,
+        track,
+        audio.TrackProcessor.toJsonSpec,
+    );
+
+    return @bitCast(web_string);
+}
+
+export fn getTrackState(track_index: usize) u64 {
+    const track = processor_container_web.getProcessor(track_index);
+    const web_string = web.string.toJsonString(
+        wasm_allocator,
+        track,
         audio.AudioProcessorWrapper.save,
     );
 
@@ -89,8 +103,8 @@ export fn getTrackState(instrument_index: usize) u64 {
 // Parameter
 
 export fn setParameterValue(track_index: usize, parameter_index: usize, value: f32) bool {
-    const instrument = processor_container_web.getProcessor(track_index);
-    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
+    const track = processor_container_web.getProcessor(track_index);
+    const param = &track.audio_processor.parameters.list.items[parameter_index];
 
     param.setValue(value);
 
@@ -98,8 +112,8 @@ export fn setParameterValue(track_index: usize, parameter_index: usize, value: f
 }
 
 export fn setParameterValueNormalized(track_index: usize, parameter_index: usize, value: f32) bool {
-    const instrument = processor_container_web.getProcessor(track_index);
-    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
+    const track = processor_container_web.getProcessor(track_index);
+    const param = &track.audio_processor.parameters.list.items[parameter_index];
 
     param.setValueNormalized(value);
 
@@ -107,17 +121,30 @@ export fn setParameterValueNormalized(track_index: usize, parameter_index: usize
 }
 
 export fn getParameterValue(track_index: usize, parameter_index: usize) f32 {
-    const instrument = processor_container_web.getProcessor(track_index);
-    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
+    const track = processor_container_web.getProcessor(track_index);
+    const param = &track.audio_processor.parameters.list.items[parameter_index];
 
     return param.getValue();
 }
 
 export fn getParameterValueNormalized(track_index: usize, parameter_index: usize) f32 {
-    const instrument = processor_container_web.getProcessor(track_index);
-    const param = &instrument.audio_processor.parameters.list.items[parameter_index];
+    const track = processor_container_web.getProcessor(track_index);
+    const param = &track.audio_processor.parameters.list.items[parameter_index];
 
     return param.getValueNormalized();
+}
+
+export fn getParameterMapping(track_index: usize, parameter_index: usize) u64 {
+    const track = processor_container_web.getProcessor(track_index);
+    const parameter = track.audio_processor.parameters.getWithIndex(parameter_index);
+
+    const web_string = web.string.toJsonString(
+        wasm_allocator,
+        &parameter.range,
+        math.NormalizableRange(f32).save,
+    );
+
+    return @bitCast(web_string);
 }
 
 // General
