@@ -105,6 +105,9 @@ export class NormalizableRange {
     createProxy() {
         const proxy = new ParameterProxy;
 
+        proxy.ctx.range = this;
+        proxy.deinit = () => this.deinit();
+
         proxy.valueMin = this.start;
         proxy.valueMax = this.end;
 
