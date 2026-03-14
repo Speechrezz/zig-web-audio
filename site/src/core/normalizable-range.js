@@ -1,3 +1,5 @@
+import { ParameterProxy } from "../canvas/framework/parameter-proxy.js";
+import { MoreMath } from "./math.js";
 import { WasmContainer } from "./wasm.js";
 
 /**
@@ -84,5 +86,31 @@ export class NormalizableRange {
      */
     fromNormalized(value) {
         return this.wasm.exports.fromNormalizedValue(this.wasmPtr, value);
+    }
+
+    /**
+     * @param {number} value 
+     */
+    clampValue(value) {
+        return MoreMath.clamp(value, this.start, this.end);
+    }
+
+    /**
+     * @param {number} value 
+     */
+    clampNormalized(value) {
+        return MoreMath.clamp(value, 0, 1);
+    }
+
+    createProxy() {
+        const proxy = new ParameterProxy;
+
+        proxy.valueMin = this.start;
+        proxy.valueMax = this.end;
+
+        proxy.toNormalizedValue = (value) => this.toNormalized(value);
+        proxy.fromNormalizedValue = (value) => this.fromNormalized(value);
+
+        return proxy;
     }
 }

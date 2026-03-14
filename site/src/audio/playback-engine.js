@@ -4,6 +4,7 @@ import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiE
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
 import { AudioEvent } from "./audio-constants.js";
 import { Note, NoteEvent } from "./note.js";
+import { MoreMath } from "../core/math.js";
 
 export class PlayHead {
     /** @type {Config} */
@@ -132,17 +133,16 @@ export class PlaybackEngine {
     }
 
     /**
-     * @param {number} newBpm 
+     * @param {number} bpm 
      */
-    setTempo(newBpm) {
-        if (!Number.isFinite(newBpm)) return;
-        const newTempo = Math.min(Math.max(newBpm, 60), 600);
-        if (newTempo === this.playHead.bpm) return;
+    setTempo(bpm) {
+        bpm = MoreMath.clamp(bpm, 60, 600);
+        if (bpm === this.playHead.bpm) return;
 
         this.playHead.anchorInSec = this.playHead.timePassedSec;
         this.playHead.anchorInBeats = this.playHead.positionInBeats;
 
-        this.playHead.bpm = newTempo;
+        this.playHead.bpm = bpm;
     }
 
     /**

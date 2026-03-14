@@ -32,14 +32,9 @@ export class HeaderSection extends Component {
         this.context.playbackEngine.addListener(AudioEvent.PlayStop, () => {
             const isPlaying = this.context.playbackEngine.playHead.isPlaying
             this.playButton.setName(isPlaying ? "Pause" : "Play");
-        })
+        });
 
-        this.tempoBox.valueToText = (value) => `${Math.round(value)} BPM`;
-        this.tempoBox.valueMin = 20;
-        this.tempoBox.valueMax = 600;
-        this.tempoBox.value = 120;
-
-        this.tempoBox.onChange = () => this.context.playbackEngine.setTempo(this.tempoBox.value);
+        this.initTempoBox();
     }
 
     /**
@@ -92,5 +87,31 @@ export class HeaderSection extends Component {
         this.stopButton.setBounds(bounds.removeFromLeft(buttonWidth));
         bounds.removeFromLeft(margin);
         this.tempoBox.setBounds(bounds.removeFromLeft(buttonWidth));
+    }
+
+    initTempoBox() {
+        const proxy = this.tempoBox.proxy;
+
+        proxy.textFromValue = (value) => `${Math.round(value)} BPM`;
+        proxy.valueMin = 60;
+        proxy.valueMax = 600;
+        proxy.value = 120;
+        proxy.valueNormalized = proxy.toNormalizedValue(120);
+        proxy.valueDefault = 120;
+
+        proxy.setValue = (value) => {
+            value = Math.round(value);
+            proxy.setValueInternal(value);
+        }
+
+        proxy.setNormalizedValue = (value) => {
+            proxy.value = Math.round(proxy.fromNormalizedValue(value));
+            proxy.valueNormalized = proxy.toNormalizedValue(proxy.value);
+            proxy.onValueChange();
+        }
+
+        this.tempoBox.dragCoefficient *= 0.2;
+        this.tempoBox.scrollWheelScale *= 0.05;
+        this.tempoBox.onChange = () => this.context.playbackEngine.setTempo(this.tempoBox.proxy.value);
     }
 }

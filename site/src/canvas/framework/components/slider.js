@@ -32,6 +32,8 @@ export class Slider extends Component {
 
     constructor() {
         super();
+
+        this.proxy.onValueChange = () => this.repaint();
     }
 
     deinit() {
@@ -171,10 +173,18 @@ export class Slider extends Component {
     }
 
     /**
+     * @param {ParameterProxy} proxy 
+     */
+    setProxy(proxy) {
+        this.proxy.deinit();
+        this.proxy = proxy;
+        this.proxy.onValueChange = () => this.repaint();
+    }
+
+    /**
      * @param {AudioParameter} audioParameter 
      */
     attach(audioParameter) {
-        this.proxy.deinit();
-        this.proxy = audioParameter.createProxy(() => this.repaint());
+        this.setProxy(audioParameter.createProxy());
     }
 }

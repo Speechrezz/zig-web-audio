@@ -80,11 +80,11 @@ export class AudioParameter {
      */
     set(newValue, isNormalized) {
         if (isNormalized) {
-            this.state.value_normalized = newValue;
+            this.state.value_normalized = this.range.clampNormalized(newValue);
             this.state.value = this.convertFromNormalized(newValue);
         }
         else {
-            this.state.value = newValue;
+            this.state.value = this.range.clampValue(newValue);
             this.state.value_normalized = this.convertToNormalized(newValue);
         }
 
@@ -134,10 +134,7 @@ export class AudioParameter {
         this.set(this.state.value_normalized, true);
     }
 
-    /**
-     * @param {undefined | (() => void)} listener 
-     */
-    createProxy(listener) {
+    createProxy() {
         const proxy = new ParameterProxy;
         
         proxy.ctx.audioParameter = (this);
@@ -148,16 +145,14 @@ export class AudioParameter {
         proxy.valueMax = this.range.end;
         proxy.valueDefault = this.state.value_default;
 
-        if (listener !== undefined) {
-            proxy.ctx.parameterListener = () => {
-                proxy.value = this.state.value;
-                proxy.valueNormalized = this.state.value_normalized;
-                listener();
-            }
-
-            this.addListener(proxy.ctx.parameterListener);
-            proxy.deinit = () => this.removeListener(proxy.ctx.parameterListener);
+        proxy.ctx.parameterListener = () => {
+            proxy.value = this.state.value;
+            proxy.valueNormalized = this.state.value_normalized;
+            proxy.onValueChange();
         }
+
+        this.addListener(proxy.ctx.parameterListener);
+        proxy.deinit = () => this.removeListener(proxy.ctx.parameterListener);
 
         proxy.toNormalizedValue = (value) => this.convertToNormalized(value);
         proxy.fromNormalizedValue = (value) => this.convertFromNormalized(value);
