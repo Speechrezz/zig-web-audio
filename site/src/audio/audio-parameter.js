@@ -1,3 +1,4 @@
+import { ParameterProxy } from "../canvas/framework/parameter-proxy.js";
 import { NormalizableRange } from "../core/normalizable-range.js";
 import { WasmContainer } from "../core/wasm.js";
 import { getAudioWorkletNode } from "./audio.js";
@@ -86,7 +87,6 @@ export class AudioParameter {
             this.state.value = newValue;
             this.state.value_normalized = this.convertToNormalized(newValue);
         }
-        console.log("set:", this.state.value, this.state.value_normalized);
 
         for (const listener of this.listeners)
             listener();
@@ -132,5 +132,39 @@ export class AudioParameter {
 
     updateBackendState() {
         this.set(this.state.value_normalized, true);
+    }
+
+    /**
+     * @param {undefined | (() => void)} listener 
+     */
+    createProxy(listener) {
+        const proxy = new ParameterProxy;
+        
+        proxy.ctx.audioParameter = (this);
+
+        proxy.value = this.state.value;
+        proxy.valueNormalized = this.state.value_normalized;
+        proxy.valueMin = this.range.start;
+        proxy.valueMax = this.range.end;
+        proxy.valueDefault = this.state.value_default;
+
+        if (listener !== undefined) {
+            proxy.ctx.parameterListener = () => {
+                proxy.value = this.state.value;
+                proxy.valueNormalized = this.state.value_normalized;
+                listener();
+            }
+
+            this.addListener(proxy.ctx.parameterListener);
+            proxy.deinit = () => this.removeListener(proxy.ctx.parameterListener);
+        }
+
+        proxy.toNormalizedValue = (value) => this.convertToNormalized(value);
+        proxy.fromNormalizedValue = (value) => this.convertFromNormalized(value);
+
+        proxy.setValue = (value) => this.set(value, false);
+        proxy.setNormalizedValue = (value) => this.set(value, true);
+
+        return proxy;
     }
 }

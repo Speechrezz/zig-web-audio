@@ -4,6 +4,7 @@ import { CursorStyle, setCursorStyle } from "../cursor-style.js"
 import { AudioParameter } from "../../../audio/audio-parameter.js";
 import { Point } from "../point.js";
 import { Rectangle } from "../rectangle.js";
+import { ParameterProxy } from "../parameter-proxy.js";
 
 /**
  * @readonly
@@ -15,26 +16,11 @@ export const SliderStyle = Object.freeze({
 });
 
 export class Slider extends Component {
+    /** @type {ParameterProxy} */
+    proxy = new ParameterProxy;
+
     /** @type {SliderStyle} */
     sliderStyle = SliderStyle.horizontal;
-
-    /** @type {null | AudioParameter} */
-    audioParameter = null;
-
-    /**
-     * Keeps track of current state version. Useful for syncing with audio thread.
-     * @type {number}
-     */
-    stateCount = 0;
-
-    value = 0;
-    valueNormalized = 0;
-    valueMin = 0;
-    valueMax = 1;
-    valueDefault = 0;
-
-    /** @type {(stateCount: number) => void} */
-    parameterListener = () => {};
 
     /** @type {Point} */
     mouseAnchor = new Point;
@@ -49,8 +35,7 @@ export class Slider extends Component {
     }
 
     deinit() {
-        if (this.audioParameter !== null) 
-            this.audioParameter.removeListener(this.parameterListener);
+        this.proxy.deinit();
     }
 
     /**
@@ -83,7 +68,7 @@ export class Slider extends Component {
 
         const filledBounds = this.adjustableBounds.clone();
         if (this.sliderStyle === SliderStyle.horizontal) {
-            filledBounds.width = this.valueNormalized * filledBounds.width;
+            filledBounds.width = this.proxy.valueNormalized * filledBounds.width;
 
             ctx.fillRect(filledBounds.x, filledBounds.y, filledBounds.width, filledBounds.height);
 
@@ -93,7 +78,7 @@ export class Slider extends Component {
             ctx.stroke();
         }
         else {
-            filledBounds.setTop(this.valueNormalized * filledBounds.height);
+            filledBounds.setTop(this.proxy.valueNormalized * filledBounds.height);
             ctx.fillRect(filledBounds.x, filledBounds.y, filledBounds.width, filledBounds.height);
 
             ctx.beginPath();
@@ -138,7 +123,7 @@ export class Slider extends Component {
     mouseDown(ev) {
         this.mouseAnchor.x = ev.x;
         this.mouseAnchor.y = ev.y;
-        this.valueNormalizedAnchor = this.valueNormalized;
+        this.valueNormalizedAnchor = this.proxy.valueNormalized;
     }
 
     /** @param {MouseEvent} ev */
@@ -153,7 +138,7 @@ export class Slider extends Component {
             proportion = diffY / this.adjustableBounds.height;
         }
 
-        this.setValueInternal(this.valueNormalizedAnchor + proportion);
+        this.setNormalizedValueInternal(this.valueNormalizedAnchor + proportion);
     }
 
     /** @param {MouseEvent} ev */
@@ -172,55 +157,24 @@ export class Slider extends Component {
     mouseScroll(ev) {
         const delta = Math.abs(ev.deltaX) >= Math.abs(ev.deltaY) ? ev.deltaX : -ev.deltaY;
 
-        this.setValueInternal(this.valueNormalized + delta * this.scrollWheelScale);
+        this.setNormalizedValueInternal(this.proxy.valueNormalized + delta * this.scrollWheelScale);
     }
 
     /**
      * @param {number} valueNormalized 
      */
-    setValueInternal(valueNormalized) {
+    setNormalizedValueInternal(valueNormalized) {
         valueNormalized = Math.min(Math.max(valueNormalized, 0), 1);
-        if (this.valueNormalized === valueNormalized) return;
+        if (this.proxy.valueNormalized === valueNormalized) return;
 
-        this.valueNormalized = valueNormalized;
-        this.repaint();
-
-        if (this.audioParameter) {
-            this.audioParameter.set(valueNormalized, true);
-            this.stateCount = this.audioParameter.stateCount;
-        }
+        this.proxy.setNormalizedValue(valueNormalized);
     }
 
     /**
      * @param {AudioParameter} audioParameter 
      */
     attach(audioParameter) {
-        this.audioParameter = audioParameter;
-        const state = this.audioParameter.state;
-
-        this.value = state.value;
-        this.valueNormalized = state.value_normalized;
-        this.valueMin = state.value_min;
-        this.valueMax = state.value_max;
-        this.valueDefault = state.value_default;
-        this.stateCount = this.audioParameter.stateCount;
-
-        this.parameterListener = (stateCount) => this.updateValueFromParameter(stateCount);
-        this.audioParameter.addListener(this.parameterListener);
-    }
-
-    /**
-     * @param {number} stateCount 
-     */
-    updateValueFromParameter(stateCount) {
-        // @ts-ignore
-        const state = this.audioParameter.state;
-        this.value = state.value;
-
-        if (this.stateCount < stateCount) {
-            this.stateCount = stateCount;
-            this.valueNormalized = state.value_normalized;
-            this.repaint();
-        }
+        this.proxy.deinit();
+        this.proxy = audioParameter.createProxy(() => this.repaint());
     }
 }
