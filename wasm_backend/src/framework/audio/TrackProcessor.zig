@@ -36,6 +36,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
             .prepare = prepare,
             .process = process,
             .stop = stop,
+            .toJsonSpec = toJsonSpec,
         },
     );
 
@@ -109,8 +110,27 @@ fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
     }
 }
 
-pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify) !void {
+pub fn toJsonSpec(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
+    const self: *@This() = @ptrCast(@alignCast(ctx));
+
     try self.processor.parameters.toJsonSpec(write_stream);
+
+    try write_stream.objectField("generator");
+    try write_stream.beginObject();
+    if (self.generator_device) |*device| {
+        try device.processor.toJsonSpec(write_stream);
+    }
+    try write_stream.endObject();
+
+    try write_stream.objectField("effects");
+    try write_stream.beginArray();
+    for (self.effect_device_list.items) |*device| {
+        try write_stream.beginObject();
+        try device.processor.toJsonSpec(write_stream);
+        try write_stream.endObject();
+    }
+
+    try write_stream.endArray();
 }
 
 test "TrackProcessor" {

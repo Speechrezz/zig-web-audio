@@ -261,7 +261,7 @@ export class TracksContainer {
 
         console.log("Track data:", ev.data.data);
         const data = ev.data.data;
-        const trackSpec = data.spec;
+        const trackSpec = data.spec.trackProcessor;
         const instrumentType = data.context.instrumentType;
         const trackIndex = data.context.instrumentIndex;
         const addToUndo = data.context.addToUndo;

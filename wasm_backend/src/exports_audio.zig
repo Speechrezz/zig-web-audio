@@ -77,19 +77,18 @@ export fn clearTracks() void {
 }
 
 export fn getTrackSpec(track_index: usize) u64 {
-    const audio_processor = processor_container_web.getProcessor(track_index).audio_processor;
-    const track: *audio.TrackProcessor = @ptrCast(@alignCast(audio_processor));
+    const track = processor_container_web.getProcessor(track_index).audio_processor;
 
     const web_string = web.string.toJsonString(
         wasm_allocator,
         track,
-        audio.TrackProcessor.toJsonSpec,
+        audio.AudioProcessor.toJsonSpec,
     );
 
     return @bitCast(web_string);
 }
 
-export fn getTrackState(track_index: usize) u64 {
+export fn saveTrackState(track_index: usize) u64 {
     const track = processor_container_web.getProcessor(track_index);
     const web_string = web.string.toJsonString(
         wasm_allocator,
