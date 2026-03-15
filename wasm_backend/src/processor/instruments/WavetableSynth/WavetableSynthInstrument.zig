@@ -2,6 +2,7 @@ const std = @import("std");
 const audio = @import("framework").audio;
 const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
+const state = @import("framework").state;
 const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
 const SynthVoice = @import("WavetableSynthVoice.zig");
 
@@ -10,6 +11,8 @@ pub const name = "Wavetable Synth";
 
 processor: audio.AudioProcessor,
 synth_processor: SynthProcessor(SynthVoice),
+
+gain_param: *state.AudioParameter,
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
@@ -24,7 +27,13 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         },
     );
 
-    _ = allocator;
+    self.gain_param = try self.processor.parameters.add(allocator, .init(
+        "gain",
+        "Gain",
+        .initSkewedCenter(0.0, 1.0, 0.2),
+        0.2,
+    ));
+
     self.synth_processor.init();
 }
 
@@ -51,6 +60,7 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     _ = allocator;
 
     self.synth_processor.process(audio_view, midi_events);
+    audio_view.multiplyBy(self.gain_param.getValue());
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
