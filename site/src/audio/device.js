@@ -1,5 +1,5 @@
-import { WasmContainer } from "../core/wasm";
-import { AudioProcessor } from "./audio-processor";
+import { WasmContainer } from "../core/wasm.js";
+import { AudioProcessor } from "./audio-processor.js";
 
 export class Device extends AudioProcessor {
     /**

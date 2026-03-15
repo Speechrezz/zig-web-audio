@@ -113,27 +113,23 @@ fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
 pub fn toJsonSpec(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
     const self: *@This() = @ptrCast(@alignCast(ctx));
 
-    try self.processor.parameters.toJsonSpec(write_stream);
-
     try write_stream.objectField("generator");
-    try write_stream.beginObject();
     if (self.generator_device) |*device| {
         try device.processor.toJsonSpec(write_stream);
+    } else {
+        try write_stream.write(null);
     }
-    try write_stream.endObject();
 
     try write_stream.objectField("effects");
     try write_stream.beginArray();
     for (self.effect_device_list.items) |*device| {
-        try write_stream.beginObject();
         try device.processor.toJsonSpec(write_stream);
-        try write_stream.endObject();
     }
 
     try write_stream.endArray();
 }
 
-test "TrackProcessor" {
+test "TrackProcessor processing" {
     const allocator = std.testing.allocator;
 
     const num_channels = 2;
@@ -158,4 +154,32 @@ test "TrackProcessor" {
     track.stop(true);
 
     try std.testing.expectApproxEqRel(0.2, track_processor.gain_param.getValue(), 1e-5);
+}
+
+test "TrackProcessor toJsonSpec" {
+    const allocator = std.testing.allocator;
+
+    var track_processor = try @This().create(allocator);
+    var track = &track_processor.processor;
+    defer track.destroy(allocator);
+
+    const generator_dummy = try @This().create(allocator);
+    track_processor.generator_device = Device.init(&generator_dummy.processor);
+
+    // Stringify
+    var out: std.io.Writer.Allocating = .init(allocator);
+    defer out.deinit();
+    var write_stream: std.json.Stringify = .{
+        .writer = &out.writer,
+        .options = .{ .whitespace = .indent_2 },
+    };
+
+    try track.toJsonSpec(&write_stream);
+    // std.debug.print("{s}\n", .{out.written()});
+
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"id\": \"trackProcessor\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"parameters\":") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": {") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": null") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"effects\": []") != null);
 }

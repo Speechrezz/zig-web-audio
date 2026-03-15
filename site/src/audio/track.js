@@ -6,6 +6,7 @@ import { Note, NoteEvent } from "./note.js";
 import { ParameterContainer } from "./audio-parameter.js"
 import { WasmContainer } from "../core/wasm.js";
 import { AudioProcessor } from "./audio-processor.js";
+import { Device } from "./device.js";
 
 const UNDO_ID = "track";
 const UndoType = Object.freeze({
@@ -46,6 +47,12 @@ export class Track extends AudioProcessor {
     /** @type {string} */
     name;
 
+    /** @type {null | Device} */
+    generatorDevice = null;
+
+    /** @type {Device[]} */
+    effectDeviceList = [];
+
     /**
      * All the drawn/saved notes
      * @type {Note[]}
@@ -84,6 +91,11 @@ export class Track extends AudioProcessor {
         this.name = name;
 
         this.params = ParameterContainer.initFromSpec(wasm, this.spec.ptr, this.spec.parameters);
+
+        if (spec.generator !== null) {
+            console.log("generator:", spec.generator);
+            this.generatorDevice = new Device(wasm, spec.generator);
+        }
     }
 
     deinit() {
@@ -235,7 +247,7 @@ export class TracksContainer {
 
         console.log("Track data:", ev.data.data);
         const data = ev.data.data;
-        const trackSpec = data.spec.trackProcessor;
+        const trackSpec = data.spec;
         const instrumentType = data.context.instrumentType;
         const trackIndex = data.context.instrumentIndex;
         const addToUndo = data.context.addToUndo;

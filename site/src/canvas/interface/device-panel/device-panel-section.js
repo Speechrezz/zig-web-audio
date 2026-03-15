@@ -1,5 +1,6 @@
 import { AppContext } from "../../../app/app-context.js";
 import { TrackEvent } from "../../../audio/audio-constants.js";
+import { Track } from "../../../audio/track.js";
 import { Component } from "../../framework/component.js";
 import { DeviceWrapper } from "./device-wrapper.js";
 
@@ -55,15 +56,28 @@ export class DevicePanelSection extends Component {
 
         const selectedTrack = this.context.tracks.getSelected();
         if (selectedTrack) {
-            const device = new DeviceWrapper(this.context);
-            device.setName(selectedTrack.name);
-            this.addChildComponent(device);
+            this.populateDeviceList(selectedTrack);
+            this.updateDeviceBounds();
+        }
 
+        this.repaint();
+    }
+
+    /**
+     * @param {Track} selectedTrack 
+     */
+    populateDeviceList(selectedTrack) {
+        if (selectedTrack.generatorDevice) {
+            const device = new DeviceWrapper(this.context, selectedTrack.generatorDevice);
+            this.addChildComponent(device);
             this.deviceList.push(device);
         }
 
-        this.updateDeviceBounds();
-        this.repaint();
+        for (const effect of selectedTrack.effectDeviceList) {
+            const device = new DeviceWrapper(this.context, effect);
+            this.addChildComponent(device);
+            this.deviceList.push(device);
+        }
     }
 
     updateDeviceBounds() {

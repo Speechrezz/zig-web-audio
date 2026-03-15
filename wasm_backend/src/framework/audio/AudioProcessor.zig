@@ -62,23 +62,31 @@ pub fn stop(self: *@This(), allow_tail_off: bool) void {
 }
 
 pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
-    try write_stream.objectField(self.id);
     try write_stream.beginObject();
 
     try write_stream.objectField("ptr");
     try write_stream.write(@intFromPtr(self));
 
-    try self.parameters.save(write_stream);
+    try write_stream.objectField("id");
+    try write_stream.write(self.id);
+
+    try write_stream.objectField("name");
+    try write_stream.write(self.name);
+
+    try write_stream.objectField("parameters");
+    try self.parameters.toJsonSpec(write_stream);
+
     try self.vtable.toJsonSpec(self, write_stream);
 
     try write_stream.endObject();
 }
 
 pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
-    try write_stream.objectField(self.id);
     try write_stream.beginObject();
 
+    try write_stream.objectField("parameters");
     try self.parameters.save(write_stream);
+
     try self.vtable.save(self, write_stream);
 
     try write_stream.endObject();

@@ -31,9 +31,7 @@ fn toJsonStringImpl(
         .options = .{ .whitespace = .indent_2 },
     };
 
-    try write_stream.beginObject();
     try toJsonFn(context, &write_stream);
-    try write_stream.endObject();
 
     const owned_slice = try out.toOwnedSlice();
     return .{

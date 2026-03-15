@@ -1,4 +1,5 @@
 import { AppContext } from "../../../app/app-context.js";
+import { Device } from "../../../audio/device.js";
 import { Component } from "../../framework/component.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
@@ -6,18 +7,21 @@ export class DeviceWrapper extends Component {
     /** @type {AppContext} */
     context;
 
-    /** @type {string} */
-    name = "";
+    /** @type {Device} */
+    device;
 
     headerBounds = new Rectangle;
     deviceBounds = new Rectangle;
 
     /**
      * @param {AppContext} context 
+     * @param {Device} device 
      */
-    constructor(context) {
+    constructor(context, device) {
         super();
+
         this.context = context;
+        this.device = device;
     }
 
     /**
@@ -44,7 +48,7 @@ export class DeviceWrapper extends Component {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.font = "16px system-ui";
-        ctx.fillText(this.name, 0, 0);
+        ctx.fillText(this.device.spec.name, 0, 0);
 
         ctx.restore();
 
@@ -72,15 +76,5 @@ export class DeviceWrapper extends Component {
 
         this.headerBounds = bounds.removeFromLeft(32);
         this.deviceBounds = bounds;
-    }
-
-    /**
-     * @param {string} newName 
-     */
-    setName(newName) {
-        if (this.name === newName) return;
-
-        this.name = newName;
-        this.repaint();
     }
 }
