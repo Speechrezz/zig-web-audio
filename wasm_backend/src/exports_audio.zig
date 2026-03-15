@@ -108,33 +108,6 @@ export fn setParameterValueNormalized(audio_processor: *audio.AudioProcessor, pa
     return true;
 }
 
-export fn getParameterValue(track_index: usize, parameter_index: usize) f32 {
-    const track = processor_container_web.getProcessor(track_index);
-    const param = &track.audio_processor.parameters.list.items[parameter_index];
-
-    return param.getValue();
-}
-
-export fn getParameterValueNormalized(track_index: usize, parameter_index: usize) f32 {
-    const track = processor_container_web.getProcessor(track_index);
-    const param = &track.audio_processor.parameters.list.items[parameter_index];
-
-    return param.getValueNormalized();
-}
-
-export fn getParameterMapping(track_index: usize, parameter_index: usize) u64 {
-    const track = processor_container_web.getProcessor(track_index);
-    const parameter = track.audio_processor.parameters.getWithIndex(parameter_index);
-
-    const web_string = web.string.toJsonString(
-        wasm_allocator,
-        &parameter.range,
-        math.NormalizableRange(f32).save,
-    );
-
-    return @bitCast(web_string);
-}
-
 // General
 
 export fn freeString(ptr: [*]u8, len: usize) void {
