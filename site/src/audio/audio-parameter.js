@@ -6,58 +6,71 @@ import { Track } from "./track.js";
 import { WorkletMessageType } from "./worklet-message.js";
 
 /**
- * AudioParameter state
- * @typedef {object} ParameterState
+ * AudioParameter spec
+ * @typedef {object} ParameterSpec
+ * @property {number} processor_ptr
  * @property {number} index
  * @property {string} id
  * @property {string} name
  * @property {any} range
  * @property {number} value_default
- * @property {number} value_normalized
- * @property {number} value
  */
 
 export class AudioParameter {
-    /** @type {ParameterState} */
-    state;
+    /** @type {ParameterSpec} */
+    spec;
 
     /** @type {NormalizableRange} */
     range;
 
-    /** @type {Track} */
-    track;
+    /** @type {number} */
+    value;
+
+    /** @type {number} */
+    valueNormalized;
 
     /** @type {(() => void)[]} */
     listeners = [];
 
     /**
      * @param {WasmContainer} wasm 
-     * @param {ParameterState} state 
-     * @param {Track} track 
+     * @param {ParameterSpec} spec 
+     * @param {undefined | number} valueNormalized 
      */
-    constructor(wasm, state, track) {
-        this.state = state;
-        this.track = track;
+    constructor(wasm, spec, valueNormalized = undefined) {
+        this.spec = spec;
+        this.range = NormalizableRange.createFromSpec(wasm, spec.range);
 
-        this.range = NormalizableRange.createFromSpec(wasm, state.range);
+        if (valueNormalized === undefined) {
+            this.value = this.spec.value_default;
+            this.valueNormalized = this.convertToNormalized(this.spec.value_default);
+        }
+        else {
+            this.value = this.convertFromNormalized(valueNormalized);
+            this.valueNormalized = valueNormalized;
+        }
 
-        console.log("[AudioParameter.constructor()] state:", this.state, this.range);
+        console.log("[AudioParameter.constructor()] state:", this);
     }
 
     deinit() {
         this.range.deinit();
     }
 
-    get() {
-        return this.state.value;
+    getId() {
+        return this.spec.id;
+    }
+
+    getName() {
+        return this.spec.name;
     }
 
     getValue() {
-        return this.convertFromNormalized(this.state.value_normalized);
+        return this.value;
     }
 
     getNormalizedValue() {
-        return this.state.value_normalized;
+        return this.valueNormalized;
     }
 
     /**
@@ -80,24 +93,23 @@ export class AudioParameter {
      */
     set(newValue, isNormalized) {
         if (isNormalized) {
-            this.state.value_normalized = this.range.clampNormalized(newValue);
-            this.state.value = this.convertFromNormalized(newValue);
+            this.value = this.convertFromNormalized(newValue);
+            this.valueNormalized = this.range.clampNormalized(newValue);
         }
         else {
-            this.state.value = this.range.clampValue(newValue);
-            this.state.value_normalized = this.convertToNormalized(newValue);
+            this.value = this.range.clampValue(newValue);
+            this.valueNormalized = this.convertToNormalized(newValue);
         }
 
         for (const listener of this.listeners)
             listener();
 
         getAudioWorkletNode().port.postMessage({
-            type: WorkletMessageType.setParameterValue,
+            type: WorkletMessageType.setParameterValueNormalized,
             context: {
-                trackIndex: this.track.index,
-                parameterIndex: this.state.index,
-                value: newValue,
-                isNormalized,
+                processorPtr: this.spec.processor_ptr,
+                parameterIndex: this.spec.index,
+                value: this.valueNormalized,
             }
         });
     }
@@ -118,20 +130,8 @@ export class AudioParameter {
             this.listeners.splice(index, 1);
     }
 
-    /**
-     * @param {number} value 
-     * @param {number} valueNormalized 
-     */
-    updateFromAudioThread(value, valueNormalized) {
-        this.state.value = value;
-        this.state.value_normalized = valueNormalized;
-
-        for (const listener of this.listeners)
-            listener();
-    }
-
-    updateBackendState() {
-        this.set(this.state.value_normalized, true);
+    updateAudioState() {
+        this.set(this.valueNormalized, true);
     }
 
     createProxy() {
@@ -139,15 +139,15 @@ export class AudioParameter {
         
         proxy.ctx.audioParameter = (this);
 
-        proxy.value = this.state.value;
-        proxy.valueNormalized = this.state.value_normalized;
+        proxy.value = this.value;
+        proxy.valueNormalized = this.valueNormalized;
         proxy.valueMin = this.range.start;
         proxy.valueMax = this.range.end;
-        proxy.valueDefault = this.state.value_default;
+        proxy.valueDefault = this.spec.value_default;
 
         proxy.ctx.parameterListener = () => {
-            proxy.value = this.state.value;
-            proxy.valueNormalized = this.state.value_normalized;
+            proxy.value = this.value;
+            proxy.valueNormalized = this.valueNormalized;
             proxy.onValueChange();
         }
 
@@ -161,5 +161,51 @@ export class AudioParameter {
         proxy.setNormalizedValue = (value) => this.set(value, true);
 
         return proxy;
+    }
+}
+
+export class ParameterContainer {
+    /** @type {AudioParameter[]} */
+    list = [];
+
+    /** @type {Map<string, AudioParameter>} */
+    map = new Map();
+
+    /**
+     * @param {WasmContainer} wasm 
+     * @param {number} processorPtr 
+     * @param {any} paramsSpec 
+     */
+    static initFromSpec(wasm, processorPtr, paramsSpec) {
+        const params = new ParameterContainer;
+
+        for (const paramSpec of Object.values(paramsSpec)) {
+            paramSpec.processor_ptr = processorPtr;
+            const param = new AudioParameter(wasm, paramSpec);
+            params.list.push(param);
+            params.map.set(paramSpec.id, param);
+        }
+
+        return params;
+    }
+
+    deinit() {
+        for (const param of this.list) {
+            param.deinit();
+        }
+    }
+
+    /**
+     * @param {number} index 
+     */
+    getIndex(index) {
+        return this.list[index];
+    }
+
+    /**
+     * @param {string} id 
+     */
+    getId(id) {
+        return this.map.get(id);
     }
 }

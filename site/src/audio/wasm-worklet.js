@@ -52,15 +52,11 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     this.exports.clearTracks();
                     break;
 
-                case WorkletMessageType.setParameterValue: {
-                    const trackIndex = msg.context.trackIndex;
+                case WorkletMessageType.setParameterValueNormalized: {
+                    const processorPtr = msg.context.processorPtr;
                     const parameterIndex = msg.context.parameterIndex;
 
-                    if (msg.context.isNormalized === true)
-                        this.exports.setParameterValueNormalized(trackIndex, parameterIndex, msg.context.value);
-                    else
-                        this.exports.setParameterValue(trackIndex, parameterIndex, msg.context.value);
-
+                    this.exports.setParameterValueNormalized(processorPtr, parameterIndex, msg.context.value);
                     break;
                 }
             }

@@ -43,7 +43,7 @@ export class TrackControls extends Component {
 
         this.addChildComponent(this.gainSlider);
         // @ts-ignore
-        this.gainSlider.attach(this.track.paramMap.get("gain"));
+        this.gainSlider.attach(this.track.params.getId("gain"));
     }
 
     deinit() {

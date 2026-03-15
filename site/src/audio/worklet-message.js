@@ -13,5 +13,5 @@ export const WorkletMessageType = Object.freeze({
     clearTracks: "clearInstruments",
 
     // --Parameter--
-    setParameterValue: "setParameter",
+    setParameterValueNormalized: "setParameter",
 });

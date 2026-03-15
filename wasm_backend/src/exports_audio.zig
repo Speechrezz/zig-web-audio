@@ -101,19 +101,8 @@ export fn saveTrackState(track_index: usize) u64 {
 
 // Parameter
 
-export fn setParameterValue(track_index: usize, parameter_index: usize, value: f32) bool {
-    const track = processor_container_web.getProcessor(track_index);
-    const param = &track.audio_processor.parameters.list.items[parameter_index];
-
-    param.setValue(value);
-
-    return true;
-}
-
-export fn setParameterValueNormalized(track_index: usize, parameter_index: usize, value: f32) bool {
-    const track = processor_container_web.getProcessor(track_index);
-    const param = &track.audio_processor.parameters.list.items[parameter_index];
-
+export fn setParameterValueNormalized(audio_processor: *audio.AudioProcessor, parameter_index: usize, value: f32) bool {
+    const param = &audio_processor.parameters.list.items[parameter_index];
     param.setValueNormalized(value);
 
     return true;

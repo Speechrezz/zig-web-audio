@@ -3,8 +3,9 @@ import { InstrumentDetailsList, InstrumentType, TrackEvent } from "./audio-const
 import { WorkletMessageType } from "./worklet-message.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { Note, NoteEvent } from "./note.js";
-import { AudioParameter } from "./audio-parameter.js"
+import { ParameterContainer } from "./audio-parameter.js"
 import { WasmContainer } from "../core/wasm.js";
+import { AudioProcessor } from "./audio-processor.js";
 
 const UNDO_ID = "track";
 const UndoType = Object.freeze({
@@ -35,10 +36,7 @@ class NoteNumberAndChannel {
     }
 }
 
-export class Track {
-    /** @type {WasmContainer} */
-    wasm;
-
+export class Track extends AudioProcessor {
     /** @type {number} */
     index;
 
@@ -47,15 +45,6 @@ export class Track {
 
     /** @type {string} */
     name;
-
-    /** @type {{parameters: any}} */
-    state;
-
-    /** @type {AudioParameter[]} */
-    params = [];
-
-    /** @type {Map<string, AudioParameter>} */
-    paramMap = new Map();
 
     /**
      * All the drawn/saved notes
@@ -86,27 +75,19 @@ export class Track {
      * @param {number} index 
      * @param {InstrumentType} type 
      * @param {string} name 
-     * @param {any} state 
+     * @param {AudioProcessorSpec} spec 
      */
-    constructor(wasm, index, type, name, state) {
-        this.wasm = wasm;
+    constructor(wasm, index, type, name, spec) {
+        super(wasm, spec);
         this.index = index;
         this.type = type;
         this.name = name;
-        this.state = state;
 
-        // Initialize parameters
-        for (const paramState of Object.values(this.state.parameters)) {
-            const param = new AudioParameter(wasm, paramState, this);
-            this.params.push(param);
-            this.paramMap.set(paramState.id, param);
-        }
+        this.params = ParameterContainer.initFromSpec(wasm, this.spec.ptr, this.spec.parameters);
     }
 
     deinit() {
-        for (const param of this.params) {
-            param.deinit();
-        }
+        this.params.deinit();
     }
 
     /**
@@ -150,7 +131,7 @@ export class Track {
             index: this.index,
             type: this.type,
             name: this.name,
-            state: this.state,
+            spec: this.spec,
             notes: this.notes,
             noteIdCounter: this.noteIdCounter,
         };
@@ -161,15 +142,11 @@ export class Track {
      * @param {any} json 
      */
     static deserialize(wasm, json) {
-        const track = new Track(wasm, json.index, json.type, json.name, json.state);
+        const track = new Track(wasm, json.index, json.type, json.name, json.spec);
         track.noteIdCounter = json.noteIdCounter;
 
         for (const note of json.notes) {
             track.notes.push(Note.deserialize(note));
-        }
-
-        for (const param of track.params) {
-            param.updateBackendState();
         }
 
         return track;
@@ -220,9 +197,6 @@ export class TracksContainer {
             case WorkletMessageType.addInstrument:
                 this.addInstrumentCallback(ev);
                 break;
-            case WorkletMessageType.setParameterValue:
-                this.setParameterValueCallback(ev);
-                break;
         }
     }
 
@@ -268,24 +242,26 @@ export class TracksContainer {
         const serialized = data.context.serialized;
 
         /** @type {Track} */
-        let newInstrument;
+        let track;
         if (serialized === null) {
             const instrumentDetails = InstrumentDetailsList[instrumentType];
-            newInstrument = new Track(this.wasm, trackIndex, instrumentType, instrumentDetails.name, trackSpec);
+            track = new Track(this.wasm, trackIndex, instrumentType, instrumentDetails.name, trackSpec);
         }
         else { // Load existing instrument with existing state
-            newInstrument = Track.deserialize(this.wasm, serialized);
+            track = Track.deserialize(this.wasm, serialized);
         }
 
-        this.tracks.splice(trackIndex, 0, newInstrument);
+        this.tracks.splice(trackIndex, 0, track);
         this.updateTrackIndices();
-        this.selectedIndex = newInstrument.index;
+        this.selectedIndex = track.index;
+
+        console.log("Added track:", track);
 
         if (addToUndo) {
             this.undoManager.push(new AppTransaction(
                 UNDO_ID,
                 UndoType.addInstrument,
-                newInstrument.serialize(),
+                track.serialize(),
             ));
         }
 
@@ -358,20 +334,6 @@ export class TracksContainer {
 
     getList() {
         return this.tracks;
-    }
-
-    /**
-     * @param {MessageEvent} ev 
-     */
-    setParameterValueCallback(ev) {
-        const data = ev.data.data;
-        const trackIndex = data.context.trackIndex;
-        const parameterIndex = data.context.parameterIndex;
-
-        const { value, normalized: valueNormalized } = data.state;
-
-        const param = this.tracks[trackIndex].params[parameterIndex];
-        param.updateFromAudioThread(value, valueNormalized);
     }
 
     /**
