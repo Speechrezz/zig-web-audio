@@ -31,7 +31,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         "gain",
         "Gain",
         .initSkewedCenter(0.0, 1.0, 0.2),
-        0.2,
+        1.0,
     ));
 
     self.synth_processor.init();
