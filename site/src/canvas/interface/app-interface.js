@@ -41,6 +41,8 @@ export class AppInterface extends TopLevelComponent {
         this.addChildComponent(this.tracks);
         this.addChildComponent(this.devicePanel);
 
+        this.initializeTooltip();
+
         this.canvasResized();
         this.repaint();
     }

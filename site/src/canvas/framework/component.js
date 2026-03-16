@@ -215,6 +215,19 @@ export class Component {
     }
 
     /**
+     * @import { TooltipController } from "./tooltip-controller.js"
+     */
+
+    /**
+     * @returns {TooltipController}
+     */
+    getTooltipController() {
+        const topLevelComponent = this.getTopLevelComponent();
+        // @ts-ignore
+        return topLevelComponent.tooltipController;
+    }
+
+    /**
      * Triggers global repaint.
      */
     repaint() {
@@ -244,6 +257,16 @@ export class Component {
         localBounds.x = 0;
         localBounds.y = 0;
         return localBounds;
+    }
+
+    /**
+     * @param {boolean} visibleFlag 
+     */
+    setVisible(visibleFlag) {
+        if (visibleFlag === this.visibleFlag) return;
+
+        this.visibleFlag = visibleFlag;
+        this.repaint();
     }
 
 

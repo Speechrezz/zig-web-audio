@@ -34,6 +34,8 @@ export class ParameterProxy {
     valueMax = 1;
     valueDefault = 0;
 
+    name = "";
+
     /**
      * @param {number} value 
      */

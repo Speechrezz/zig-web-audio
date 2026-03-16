@@ -1,10 +1,14 @@
 import { Component } from "./component.js"
 import { Rectangle } from "./rectangle.js";
 import { isPrimaryModifierKeyDownPointerEvent, MouseAction, MouseEvent, MouseScrollEvent } from "./mouse-event.js";
+import { TooltipController } from "./tooltip-controller.js";
 
 export class TopLevelComponent extends Component {
     /** @type {HTMLCanvasElement} */
     canvas;
+
+    /** @type {TooltipController} */
+    tooltipController;
 
     /** @type {import("./mouse-event.js").GlobalMouseListener[]} */
     globalMouseListeners = [];
@@ -30,6 +34,8 @@ export class TopLevelComponent extends Component {
         super();
         this.canvas = canvasElement;
 
+        this.tooltipController = new TooltipController(this);
+
         this.canvas.onpointerdown = (ev) => this.mouseDownInternal(ev);
         this.canvas.onpointerup   = (ev) => this.mouseUpInternal(ev);
         this.canvas.onpointermove = (ev) => this.mouseMoveInternal(ev);
@@ -37,6 +43,14 @@ export class TopLevelComponent extends Component {
         this.canvas.oncontextmenu = (ev) => ev.preventDefault();
 
         this.canvas.onwheel = (ev) => this.mouseWheelInternal(ev);
+    }
+
+    /**
+     * Call this after all other components to ensure tooltips are always on top.
+     */
+    initializeTooltip() {
+        this.tooltipController.getCtx = () => /** @type {CanvasRenderingContext2D} */ (this.canvas.getContext("2d"));
+        this.tooltipController.initialize();
     }
 
     canvasResized() {

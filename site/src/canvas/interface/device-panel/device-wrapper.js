@@ -95,11 +95,13 @@ export class DeviceWrapper extends Component {
         this.deviceBounds = bounds;
 
         const knobWidth = 64;
-        const knobHeight = knobWidth + 16;
-        const knobBounds = this.deviceBounds.clone().removeFromTop(knobHeight);
+        const knobHeight = knobWidth + 8;
+        const knobBounds = this.deviceBounds.clone();
+        knobBounds.removeFromTop(8);
+        const rowBounds = knobBounds.removeFromTop(knobHeight);
 
         for (const knob of this.knobs) {
-            knob.setBounds(knobBounds.removeFromLeft(knobWidth).withSizeKeepingCenter(knobWidth - 8, knobHeight - 8));
+            knob.setBounds(rowBounds.removeFromLeft(knobWidth).withSizeKeepingCenter(knobWidth - 8, knobHeight - 8));
         }
     }
 }

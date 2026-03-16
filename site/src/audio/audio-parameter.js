@@ -145,6 +145,8 @@ export class AudioParameter {
         proxy.valueMax = this.range.end;
         proxy.valueDefault = this.spec.value_default;
 
+        proxy.name = this.spec.name;
+
         proxy.ctx.parameterListener = () => {
             proxy.value = this.value;
             proxy.valueNormalized = this.valueNormalized;

@@ -29,7 +29,7 @@ export class Knob extends Component {
     constructor() {
         super();
 
-        this.proxy.onValueChange = () => this.repaint();
+        this.proxy.onValueChange = () => this.valueChanged();
     }
 
     deinit() {
@@ -73,7 +73,7 @@ export class Knob extends Component {
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
         ctx.font = "14px system-ui";
-        ctx.fillText(this.proxy.textFromValue(this.proxy.value), this.labelBounds.getCenterX(), this.labelBounds.getBottom());
+        ctx.fillText(this.proxy.name, this.labelBounds.getCenterX(), this.labelBounds.getBottom());
     }
 
     resized() {
@@ -81,9 +81,11 @@ export class Knob extends Component {
         this.labelBounds = bounds.removeFromBottom(16);
         this.knobBounds = bounds.reduced(1, 1);
 
-        this.radius = Math.min(this.knobBounds.width, this.knobBounds.height) * 0.5;
+        const diameter = Math.min(this.knobBounds.width, this.knobBounds.height);
+        this.knobBounds = this.knobBounds.withSizeKeepingCenter(diameter, diameter);
         this.centerX = this.knobBounds.getCenterX();
         this.centerY = this.knobBounds.getCenterY();
+        this.radius = diameter * 0.5;
     }
 
     /**
@@ -120,13 +122,15 @@ export class Knob extends Component {
     /** @param {MouseEvent} ev */
     mouseEnter(ev) {
         setCursorStyle(CursorStyle.resizeNS);
-        this.repaint();
+        const tooltipController = this.getTooltipController();
+        tooltipController.showValueTooltip(this);
+        tooltipController.setValueTooltipText(this.getTextForValueTooltip());
     }
 
     /** @param {MouseEvent} ev */
     mouseExit(ev) {
         setCursorStyle(CursorStyle.normal);
-        this.repaint();
+        this.getTooltipController().hideValueTooltip();
     }
 
     /** @param {MouseScrollEvent} ev */
@@ -146,13 +150,25 @@ export class Knob extends Component {
         this.proxy.setNormalizedValue(valueNormalized);
     }
 
+    getTextForValueTooltip() {
+        return `${this.proxy.name}: ${this.proxy.textFromValue(this.proxy.value)}`;
+    }
+
+    valueChanged() {
+        if (this.isMouseOverOrDragging()) {
+            this.getTooltipController().setValueTooltipText(this.getTextForValueTooltip());
+        }
+
+        this.repaint();
+    }
+
     /**
      * @param {ParameterProxy} proxy 
      */
     setProxy(proxy) {
         this.proxy.deinit();
         this.proxy = proxy;
-        this.proxy.onValueChange = () => this.repaint();
+        this.proxy.onValueChange = () => this.valueChanged();
     }
 
     /**
