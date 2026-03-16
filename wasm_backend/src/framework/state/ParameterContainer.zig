@@ -11,11 +11,23 @@ pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
     self.map.deinit(allocator);
 }
 
-pub fn add(self: *@This(), allocator: std.mem.Allocator, parameter: AudioParameter) !*AudioParameter {
+pub fn add(self: *@This(), allocator: std.mem.Allocator, parameter: AudioParameter) !usize {
+    const index = self.list.items.len;
     try self.list.append(allocator, parameter);
-    const index = self.list.items.len - 1;
     try self.map.put(allocator, parameter.id, index);
+    return index;
+}
+
+pub fn addAssumeCapacity(self: *@This(), parameter: AudioParameter) *AudioParameter {
+    const index = self.list.items.len;
+    self.list.appendAssumeCapacity(parameter);
+    self.map.putAssumeCapacity(parameter.id, index);
     return &self.list.items[index];
+}
+
+pub fn reserve(self: *@This(), allocator: std.mem.Allocator, num_parameters: usize) !void {
+    try self.list.ensureTotalCapacity(allocator, num_parameters);
+    try self.map.ensureTotalCapacity(allocator, @intCast(num_parameters));
 }
 
 pub fn getWithId(self: *const @This(), parameter_id: []const u8) ?*AudioParameter {

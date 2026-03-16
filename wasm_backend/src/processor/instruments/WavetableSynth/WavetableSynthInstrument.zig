@@ -13,6 +13,12 @@ processor: audio.AudioProcessor,
 synth_processor: SynthProcessor(SynthVoice),
 
 gain_param: *state.AudioParameter,
+adsr_params: struct {
+    attack: *state.AudioParameter,
+    decay: *state.AudioParameter,
+    sustain: *state.AudioParameter,
+    release: *state.AudioParameter,
+},
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
@@ -27,11 +33,37 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         },
     );
 
-    self.gain_param = try self.processor.parameters.add(allocator, .init(
-        "gain",
-        "Gain",
-        .initSkewedCenter(0.0, 1.0, 0.2),
-        1.0,
+    // self.gain_param = try self.processor.parameters.add(allocator, .init(
+    //     "gain",
+    //     "Gain",
+    //     .initSkewedCenter(0.0, 1.0, 0.2),
+    //     1.0,
+    // ));
+    try self.processor.parameters.reserve(allocator, 4);
+
+    self.adsr_params.attack = self.processor.parameters.addAssumeCapacity(.init(
+        "1attack",
+        "Attack",
+        .initSkewedCenter(0.0, 1.0, 0.1),
+        0.1,
+    ));
+    self.adsr_params.decay = self.processor.parameters.addAssumeCapacity(.init(
+        "2decay",
+        "Decay",
+        .initSkewedCenter(0.0, 1.0, 0.1),
+        0.1,
+    ));
+    self.adsr_params.sustain = self.processor.parameters.addAssumeCapacity(.init(
+        "3sustain",
+        "Sustain",
+        .initLinear(0.0, 1.0),
+        0.5,
+    ));
+    self.adsr_params.release = self.processor.parameters.addAssumeCapacity(.init(
+        "4release",
+        "Release",
+        .initSkewedCenter(0.0, 1.0, 0.1),
+        0.1,
     ));
 
     self.synth_processor.init();
@@ -59,8 +91,17 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     const self: *@This() = @ptrCast(@alignCast(ctx));
     _ = allocator;
 
+    for (&self.synth_processor.synth_voices) |*voice| {
+        voice.adsr.updateParameters(.{
+            .attack_time = self.adsr_params.attack.getValue(),
+            .decay_time = self.adsr_params.decay.getValue(),
+            .sustain_gain = self.adsr_params.sustain.getValue(),
+            .release_time = self.adsr_params.release.getValue(),
+        });
+    }
+
     self.synth_processor.process(audio_view, midi_events);
-    audio_view.multiplyBy(self.gain_param.getValue());
+    // audio_view.multiplyBy(self.gain_param.getValue());
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {

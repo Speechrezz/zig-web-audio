@@ -43,7 +43,9 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     self.generator_device = null;
     self.effect_device_list = .empty;
 
-    self.gain_param = try self.processor.parameters.add(allocator, .init(
+    try self.processor.parameters.reserve(allocator, 1);
+
+    self.gain_param = self.processor.parameters.addAssumeCapacity(.init(
         "gain",
         "Gain",
         .initSkewedCenter(0.0, 1.0, 0.2),
