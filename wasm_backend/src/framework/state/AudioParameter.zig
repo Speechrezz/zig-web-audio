@@ -28,19 +28,24 @@ pub fn init(
     return parameter;
 }
 
-pub fn initLinear(
+pub fn create(
+    allocator: std.mem.Allocator,
     id: []const u8,
     name: []const u8,
-    value_min: f32,
-    value_max: f32,
+    range: NormalizableRange,
     value_default: f32,
-) @This() {
-    return @This().init(
-        id,
-        name,
-        NormalizableRange.initLinear(value_min, value_max),
-        value_default,
-    );
+) !*@This() {
+    const parameter = try allocator.create(@This());
+    parameter.* = .{
+        .id = id,
+        .name = name,
+        .range = range,
+        .value_default = value_default,
+        .value_normalized = undefined,
+    };
+
+    parameter.value_normalized = parameter.convertToNormalized(value_default);
+    return parameter;
 }
 
 pub fn getValue(self: *const @This()) f32 {
@@ -109,7 +114,7 @@ pub fn save(self: *const @This(), write_stream: *std.json.Stringify, index: usiz
 }
 
 test "AudioParameter" {
-    var param: @This() = .initLinear("test", "Test", 10.0, 20.0, 12.0);
+    var param: @This() = .init("test", "Test", .initLinear(10.0, 20.0), 12.0);
     try std.testing.expectApproxEqRel(12.0, param.getValue(), 1e-5);
     try std.testing.expectApproxEqRel(0.2, param.getValueNormalized(), 1e-5);
 

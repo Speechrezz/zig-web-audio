@@ -1,33 +1,25 @@
 const std = @import("std");
 const AudioParameter = @import("AudioParameter.zig");
 
-list: std.ArrayList(AudioParameter) = .empty,
+list: std.ArrayList(*AudioParameter) = .empty,
 map: std.StringHashMapUnmanaged(usize) = .empty,
 
 pub const empty: @This() = .{};
 
 pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+    for (self.list.items) |param| {
+        allocator.destroy(param);
+    }
+
     self.list.deinit(allocator);
     self.map.deinit(allocator);
 }
 
-pub fn add(self: *@This(), allocator: std.mem.Allocator, parameter: AudioParameter) !usize {
+pub fn add(self: *@This(), allocator: std.mem.Allocator, parameter: *AudioParameter) !*AudioParameter {
     const index = self.list.items.len;
     try self.list.append(allocator, parameter);
     try self.map.put(allocator, parameter.id, index);
-    return index;
-}
-
-pub fn addAssumeCapacity(self: *@This(), parameter: AudioParameter) *AudioParameter {
-    const index = self.list.items.len;
-    self.list.appendAssumeCapacity(parameter);
-    self.map.putAssumeCapacity(parameter.id, index);
-    return &self.list.items[index];
-}
-
-pub fn reserve(self: *@This(), allocator: std.mem.Allocator, num_parameters: usize) !void {
-    try self.list.ensureTotalCapacity(allocator, num_parameters);
-    try self.map.ensureTotalCapacity(allocator, @intCast(num_parameters));
+    return self.list.items[index];
 }
 
 pub fn getWithId(self: *const @This(), parameter_id: []const u8) ?*AudioParameter {
@@ -36,7 +28,7 @@ pub fn getWithId(self: *const @This(), parameter_id: []const u8) ?*AudioParamete
 }
 
 pub fn getWithIndex(self: *const @This(), index: usize) *AudioParameter {
-    return &self.list.items[index];
+    return self.list.items[index];
 }
 
 pub fn idToIndex(self: *const @This(), parameter_id: []const u8) ?usize {
@@ -67,19 +59,19 @@ test "ParameterContainer" {
     var container: @This() = .empty;
     defer container.deinit(allocator);
 
-    _ = try container.add(allocator, AudioParameter.initLinear(
+    _ = try container.add(allocator, try .create(
+        allocator,
         "test1",
         "Test 1",
-        0.0,
-        2.0,
+        .initLinear(0.0, 2.0),
         1.0,
     ));
 
-    _ = try container.add(allocator, AudioParameter.initLinear(
+    _ = try container.add(allocator, try .create(
+        allocator,
         "test2",
         "Test 2",
-        10.0,
-        20.0,
+        .initLinear(10.0, 20.0),
         12.0,
     ));
 

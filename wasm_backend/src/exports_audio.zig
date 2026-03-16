@@ -102,7 +102,7 @@ export fn saveTrackState(track_index: usize) u64 {
 // Parameter
 
 export fn setParameterValueNormalized(audio_processor: *audio.AudioProcessor, parameter_index: usize, value: f32) bool {
-    const param = &audio_processor.parameters.list.items[parameter_index];
+    const param = audio_processor.parameters.list.items[parameter_index];
     param.setValueNormalized(value);
 
     return true;

@@ -46,7 +46,6 @@ pub fn freeWebString(allocator: std.mem.Allocator, web_string: WebString) void {
 }
 
 test "returnJsonString" {
-    const AudioParameter = @import("../state/AudioParameter.zig");
     const ParameterContainer = @import("../state/ParameterContainer.zig");
 
     const allocator = std.testing.allocator;
@@ -54,19 +53,19 @@ test "returnJsonString" {
     var container: ParameterContainer = .empty;
     defer container.deinit(allocator);
 
-    _ = try container.add(allocator, AudioParameter.initLinear(
+    _ = try container.add(allocator, try .create(
+        allocator,
         "test1",
         "Test 1",
-        0.0,
-        2.0,
+        .initLinear(0.0, 2.0),
         1.0,
     ));
 
-    _ = try container.add(allocator, AudioParameter.initLinear(
+    _ = try container.add(allocator, try .create(
+        allocator,
         "test2",
         "Test 2",
-        10.0,
-        20.0,
+        .initLinear(10.0, 20.0),
         12.0,
     ));
 
