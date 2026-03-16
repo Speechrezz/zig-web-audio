@@ -5,6 +5,7 @@ import { AudioParameter } from "../../../audio/audio-parameter.js";
 import { Point } from "../point.js";
 import { Rectangle } from "../rectangle.js";
 import { ParameterProxy } from "../parameter-proxy.js";
+import { MoreMath } from "../../../core/math.js";
 
 export class Knob extends Component {
     /** @type {ParameterProxy} */
@@ -42,22 +43,32 @@ export class Knob extends Component {
         const bottomAngle = Math.PI / 2;
         const offsetAngle = Math.PI / 5;
         const startAngle = bottomAngle + offsetAngle;
-        const valueAngle = startAngle + this.proxy.valueNormalized * 2 * (Math.PI - offsetAngle);
         const endAngle = startAngle + 2 * (Math.PI - offsetAngle);
+        const valueAngle = MoreMath.lerp(this.proxy.valueNormalized, startAngle, endAngle);
 
+        // Background arc
         ctx.beginPath();
         ctx.arc(this.centerX, this.centerY, this.radius, startAngle, endAngle);
-
         ctx.lineWidth = 2;
         ctx.strokeStyle = "oklch(87.2% 0.01 258.338)";
         ctx.stroke();
 
+        // Foreground arc
         ctx.beginPath();
         ctx.arc(this.centerX, this.centerY, this.radius, startAngle, valueAngle);
-
         ctx.strokeStyle = "oklch(62.3% 0.214 259.815)";
         ctx.stroke();
 
+        // Pointer
+        const pointerLength = 0.75;
+        const pointerX = MoreMath.linearMap(Math.cos(valueAngle), -1, 1, this.knobBounds.x, this.knobBounds.getRight());
+        const pointerY = MoreMath.linearMap(Math.sin(valueAngle), -1, 1, this.knobBounds.y, this.knobBounds.getBottom());
+        ctx.beginPath()
+        ctx.moveTo(pointerX, pointerY);
+        ctx.lineTo(MoreMath.lerp(pointerLength, pointerX, this.centerX), MoreMath.lerp(pointerLength, pointerY, this.centerY));
+        ctx.stroke();
+
+        // Label
         ctx.fillStyle = "oklch(13% 0.028 261.692)";
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";

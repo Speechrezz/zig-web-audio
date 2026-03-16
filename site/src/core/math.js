@@ -25,4 +25,16 @@ export class MoreMath {
     static invLerp(value, a, b) {
         return (value - a) / (b - a);
     }
+
+    /**
+     * Maps a value in a range to another range linearly
+     * @param {number} value 
+     * @param {number} inMin 
+     * @param {number} inMax 
+     * @param {number} outMin 
+     * @param {number} outMax 
+     */
+    static linearMap(value, inMin, inMax, outMin, outMax) {
+        return outMin + (outMax - outMin) * (value - inMin) / (inMax - inMin)
+    }
 }
