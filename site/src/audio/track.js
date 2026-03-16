@@ -151,10 +151,11 @@ export class Track extends AudioProcessor {
 
     /**
      * @param {WasmContainer} wasm 
+     * @param {AudioProcessorSpec} trackSpec 
      * @param {any} json 
      */
-    static deserialize(wasm, json) {
-        const track = new Track(wasm, json.index, json.type, json.name, json.spec);
+    static deserialize(wasm, trackSpec, json) {
+        const track = new Track(wasm, json.index, json.type, json.name, trackSpec);
         track.noteIdCounter = json.noteIdCounter;
 
         for (const note of json.notes) {
@@ -260,7 +261,7 @@ export class TracksContainer {
             track = new Track(this.wasm, trackIndex, instrumentType, instrumentDetails.name, trackSpec);
         }
         else { // Load existing instrument with existing state
-            track = Track.deserialize(this.wasm, serialized);
+            track = Track.deserialize(this.wasm, trackSpec, serialized);
         }
 
         this.tracks.splice(trackIndex, 0, track);
