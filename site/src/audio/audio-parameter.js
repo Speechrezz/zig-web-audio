@@ -178,7 +178,6 @@ export class ParameterContainer {
      */
     static initFromSpec(wasm, processorPtr, paramsSpec) {
         const params = new ParameterContainer;
-        console.log("initFromSpec:", paramsSpec);
 
         for (const paramSpec of paramsSpec) {
             paramSpec.processor_ptr = processorPtr;
