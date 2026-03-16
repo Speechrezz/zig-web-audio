@@ -42,30 +42,30 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
 
     self.adsr_params.attack = try self.processor.parameters.add(allocator, try .create(
         allocator,
-        "1attack",
+        "attack",
         "Attack",
-        .initSkewedCenter(0.0, 1.0, 0.1),
+        .initSkewedCenter(0.0, 1.0, 0.2),
         0.1,
     ));
     self.adsr_params.decay = try self.processor.parameters.add(allocator, try .create(
         allocator,
-        "2decay",
+        "decay",
         "Decay",
-        .initSkewedCenter(0.0, 1.0, 0.1),
+        .initSkewedCenter(0.0, 1.0, 0.2),
         0.1,
     ));
     self.adsr_params.sustain = try self.processor.parameters.add(allocator, try .create(
         allocator,
-        "3sustain",
+        "sustain",
         "Sustain",
-        .initLinear(0.0, 1.0),
-        0.5,
+        .initSkewedCenter(0.0, 1.0, 0.4),
+        0.4,
     ));
     self.adsr_params.release = try self.processor.parameters.add(allocator, try .create(
         allocator,
-        "4release",
+        "release",
         "Release",
-        .initSkewedCenter(0.0, 1.0, 0.1),
+        .initSkewedCenter(0.0, 1.0, 0.2),
         0.1,
     ));
 

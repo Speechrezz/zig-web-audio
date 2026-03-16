@@ -174,12 +174,13 @@ export class ParameterContainer {
     /**
      * @param {WasmContainer} wasm 
      * @param {number} processorPtr 
-     * @param {any} paramsSpec 
+     * @param {ParameterSpec[]} paramsSpec 
      */
     static initFromSpec(wasm, processorPtr, paramsSpec) {
         const params = new ParameterContainer;
+        console.log("initFromSpec:", paramsSpec);
 
-        for (const paramSpec of Object.values(paramsSpec)) {
+        for (const paramSpec of paramsSpec) {
             paramSpec.processor_ptr = processorPtr;
             const param = new AudioParameter(wasm, paramSpec);
             params.list.push(param);

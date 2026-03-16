@@ -36,12 +36,11 @@ pub fn idToIndex(self: *const @This(), parameter_id: []const u8) ?usize {
 }
 
 pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify) !void {
-    try write_stream.beginObject();
+    try write_stream.beginArray();
     for (self.list.items, 0..) |param, i| {
-        try write_stream.objectField(param.id);
         try param.toJsonSpec(write_stream, i);
     }
-    try write_stream.endObject();
+    try write_stream.endArray();
 }
 
 pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {

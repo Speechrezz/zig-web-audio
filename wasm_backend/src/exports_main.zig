@@ -5,7 +5,7 @@ const math = @import("framework").math;
 const web = @import("framework").web;
 const wasm_allocator = @import("framework").wasm_allocator;
 
-const enableDebugPrint = true;
+const enableDebugPrint = false;
 
 // NormalizableRange
 
