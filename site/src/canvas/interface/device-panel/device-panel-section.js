@@ -50,9 +50,7 @@ export class DevicePanelSection extends Component {
     }
 
     instrumentSelected() {
-        for (const device of this.deviceList)
-            this.removeChildComponent(device);
-        this.deviceList.length = 0;
+        this.clearDeviceList();
 
         const selectedTrack = this.context.tracks.getSelected();
         if (selectedTrack) {
@@ -61,6 +59,15 @@ export class DevicePanelSection extends Component {
         }
 
         this.repaint();
+    }
+
+    clearDeviceList() {
+        for (const device of this.deviceList) {
+            device.deinit();
+            this.removeChildComponent(device);
+        }
+
+        this.deviceList.length = 0;
     }
 
     /**

@@ -1,6 +1,7 @@
 import { AppContext } from "../../../app/app-context.js";
 import { Device } from "../../../audio/device.js";
 import { Component } from "../../framework/component.js";
+import { Knob } from "../../framework/components/knob.js";
 import { Rectangle } from "../../framework/rectangle.js";
 
 export class DeviceWrapper extends Component {
@@ -9,6 +10,9 @@ export class DeviceWrapper extends Component {
 
     /** @type {Device} */
     device;
+
+    /** @type {Knob[]} */
+    knobs = [];
 
     headerBounds = new Rectangle;
     deviceBounds = new Rectangle;
@@ -22,6 +26,19 @@ export class DeviceWrapper extends Component {
 
         this.context = context;
         this.device = device;
+
+        for (const param of this.device.params.list) {
+            const knob = new Knob;
+            knob.attach(param);
+            this.addChildComponent(knob);
+            this.knobs.push(knob);
+        }
+    }
+
+    deinit() {
+        for (const knob of this.knobs) {
+            knob.deinit();
+        }
     }
 
     /**
@@ -76,5 +93,13 @@ export class DeviceWrapper extends Component {
 
         this.headerBounds = bounds.removeFromLeft(32);
         this.deviceBounds = bounds;
+
+        const knobWidth = 64;
+        const knobHeight = knobWidth + 16;
+        const knobBounds = this.deviceBounds.clone().removeFromTop(knobHeight);
+
+        for (const knob of this.knobs) {
+            knob.setBounds(knobBounds.removeFromLeft(knobWidth).withSizeKeepingCenter(knobWidth - 8, knobHeight - 8));
+        }
     }
 }
