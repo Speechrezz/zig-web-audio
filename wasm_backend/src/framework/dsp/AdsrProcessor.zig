@@ -139,3 +139,22 @@ fn setState(self: *@This(), state: State) void {
         },
     }
 }
+
+test "AdsrProcessor" {
+    var adsr: @This() = .init;
+    adsr.prepare(.{ .block_size = 128, .num_channels = 2, .sample_rate = 48000.0 });
+    adsr.updateParameters(.{
+        .attack_time = 0.0,
+        .decay_time = 1.0,
+        .sustain_gain = 1.0,
+        .release_time = 0.0,
+    });
+
+    adsr.noteOn();
+    try std.testing.expectApproxEqRel(1.0, adsr.getNextSample(), 1e-5);
+    try std.testing.expectApproxEqRel(1.0, adsr.getNextSample(), 1e-5);
+
+    adsr.noteOff();
+    try std.testing.expectApproxEqAbs(0.0, adsr.getNextSample(), 1e-5);
+    try std.testing.expectApproxEqAbs(0.0, adsr.getNextSample(), 1e-5);
+}
