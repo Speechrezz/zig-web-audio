@@ -75,11 +75,13 @@ export class DeviceWrapper extends Component {
         ctx.lineTo(this.headerBounds.getRight(), this.headerBounds.getBottom());
         ctx.stroke();
 
-        ctx.fillStyle = "oklch(44.6% 0.03 256.802)";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.font = "16px system-ui";
-        ctx.fillText("TODO: Parameters go here", this.deviceBounds.getCenterX(), this.deviceBounds.getCenterY());
+        if (this.knobs.length === 0) {
+            ctx.fillStyle = "oklch(44.6% 0.03 256.802)";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "16px system-ui";
+            ctx.fillText("TODO: Parameters go here", this.deviceBounds.getCenterX(), this.deviceBounds.getCenterY());
+        }
 
         bounds.reduce(0.5, 0.5);
         ctx.strokeStyle = "oklch(87.2% 0.01 258.338)";
@@ -97,10 +99,16 @@ export class DeviceWrapper extends Component {
         const knobWidth = 64;
         const knobHeight = knobWidth + 8;
         const knobBounds = this.deviceBounds.clone();
+
         knobBounds.removeFromTop(8);
-        const rowBounds = knobBounds.removeFromTop(knobHeight);
+        let rowBounds = knobBounds.removeFromTop(knobHeight);
 
         for (const knob of this.knobs) {
+            if (rowBounds.width < knobWidth) {
+                knobBounds.removeFromTop(8);
+                rowBounds = knobBounds.removeFromTop(knobHeight);
+            }
+
             knob.setBounds(rowBounds.removeFromLeft(knobWidth).withSizeKeepingCenter(knobWidth - 8, knobHeight - 8));
         }
     }

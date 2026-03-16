@@ -33,19 +33,12 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         },
     );
 
-    // self.gain_param = try self.processor.parameters.add(allocator, .init(
-    //     "gain",
-    //     "Gain",
-    //     .initSkewedCenter(0.0, 1.0, 0.2),
-    //     1.0,
-    // ));
-
     self.adsr_params.attack = try self.processor.parameters.add(allocator, try .create(
         allocator,
         "attack",
         "Attack",
         .initSkewedCenter(0.0, 1.0, 0.2),
-        0.1,
+        0.01,
     ));
     self.adsr_params.decay = try self.processor.parameters.add(allocator, try .create(
         allocator,
@@ -67,6 +60,14 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         "Release",
         .initSkewedCenter(0.0, 1.0, 0.2),
         0.1,
+    ));
+
+    self.gain_param = try self.processor.parameters.add(allocator, try .create(
+        allocator,
+        "gain",
+        "Gain",
+        .initSkewedCenter(0.0, 1.0, 0.2),
+        1.0,
     ));
 
     self.synth_processor.init();
@@ -104,7 +105,7 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     }
 
     self.synth_processor.process(audio_view, midi_events);
-    // audio_view.multiplyBy(self.gain_param.getValue());
+    audio_view.multiplyBy(self.gain_param.getValue());
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
