@@ -2,7 +2,7 @@
  * @global
  * @type {AudioContext}
  */
-let audioContext = new AudioContext;
+let audioContext;
 
 /**
  * @global
@@ -16,6 +16,8 @@ const BLOCK_SIZE = 128;
  * Initializes audio context, audio worklet, and loads WASM.
  */
 export async function initializeAudio() {
+    audioContext = new AudioContext;
+
     const workletUrl = new URL("./wasm-worklet.js", import.meta.url);
     await audioContext.audioWorklet.addModule(workletUrl);
 
@@ -33,10 +35,12 @@ export async function initializeAudio() {
     });
 
     audioWorkletNode.connect(audioContext.destination);
-    console.log("Audio initialized!");
 
     // Need to do this for some reason to enable EventListener API
     audioWorkletNode.port.onmessage = (ev) => {};
+
+    await audioContext.resume();
+    console.log("Audio initialized!");
 }
 
 /**

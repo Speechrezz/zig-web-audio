@@ -31,8 +31,8 @@ export class App {
     /** @type {UndoManager | undefined} */
     undoManager = undefined;
 
-    /** @type {ClipboardManager | undefined} */
-    clipboardManager = undefined;
+    /** @type {ClipboardManager} */
+    clipboardManager = new ClipboardManager;
 
     /** @type {KeyboardListener | undefined} */
     keyboardListener = undefined;
@@ -49,39 +49,10 @@ export class App {
         this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
 
         await this.initializeWasm();
-
-        const audioContextStateChanged = (/** @type {boolean} */ isRunning) => {
-            if (isRunning) {
-                startContainer.style.display = "none";
-            }
-        };
     
-        await initializeAudio();
-    
-        audioContextStateChanged(isAudioContextRunning());
-        startButton.onclick = () => {
-            audioContextStateChanged(toggleAudioContext());
+        startButton.onclick = async () => {
+            this.startButtonClicked();
         }
-    
-        this.undoManager = new UndoManager(this.eventRouter);
-        const tracks = new TracksContainer(this.wasm, this.undoManager);
-        this.playbackEngine = new PlaybackEngine(this.config, tracks);
-        this.midiInput = new MidiInput(this.playbackEngine);
-        this.clipboardManager = new ClipboardManager();
-        this.keyboardListener = new KeyboardListener(this.eventRouter);
-
-        const appContext = new AppContext(
-            this.config, 
-            this.playbackEngine, 
-            this.undoManager,
-            this.eventRouter,
-            this.clipboardManager,
-        );
-
-        this.appInterface = new AppInterface(appContext, this.canvasElement);
-        
-        this.resizeCanvas();
-        window.addEventListener("resize", () => this.resizeCanvas());
     }
 
     resizeCanvas() {
@@ -112,5 +83,32 @@ export class App {
 
         await this.wasm.initialize(wasmResponse, importObject);
         console.log("WASM main initialized - exports:", this.wasm.exports);
+    }
+
+    async startButtonClicked() {
+        const startContainer = /** @type {HTMLDivElement} */ (document.getElementById("start-audio-container"));
+        this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
+
+        await initializeAudio();
+        startContainer.style.display = "none";
+
+        this.undoManager = new UndoManager(this.eventRouter);
+        const tracks = new TracksContainer(this.wasm, this.undoManager);
+        this.playbackEngine = new PlaybackEngine(this.config, tracks);
+        this.midiInput = new MidiInput(this.playbackEngine);
+        this.keyboardListener = new KeyboardListener(this.eventRouter);
+
+        const appContext = new AppContext(
+            this.config, 
+            this.playbackEngine, 
+            this.undoManager,
+            this.eventRouter,
+            this.clipboardManager,
+        );
+
+        this.appInterface = new AppInterface(appContext, this.canvasElement);
+        
+        this.resizeCanvas();
+        window.addEventListener("resize", () => this.resizeCanvas());
     }
 }
