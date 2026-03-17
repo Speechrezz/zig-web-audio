@@ -32,7 +32,7 @@ export fn createNormalizableRangeFromJson(ptr: [*]u8, len: usize) ?*Normalizable
     };
     defer parsed.deinit();
 
-    range.load(&parsed.value) catch |err| {
+    range.load(wasm_allocator, &parsed.value) catch |err| {
         logging.logDebug("[WASM] createNormalizableRange error: {}", .{err});
         return null;
     };

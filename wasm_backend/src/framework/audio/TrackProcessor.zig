@@ -49,6 +49,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         "Gain",
         .initSkewedCenter(0.0, 1.0, 0.2),
         0.2,
+        .init(2),
     ));
 }
 

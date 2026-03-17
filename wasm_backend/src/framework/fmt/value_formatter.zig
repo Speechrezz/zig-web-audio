@@ -26,11 +26,18 @@ pub fn ValueFormatter(comptime T: type) type {
         formatting: Formatting,
         owns_strings: bool = false,
 
-        pub fn initBasic(decimals: u8, options: BasicFormatterOptions, owns_strings: bool) @This() {
+        // No formatting
+        pub fn init(decimals: u8) @This() {
+            return .{
+                .decimals = decimals,
+                .formatting = .{ .basic = .{} },
+            };
+        }
+
+        pub fn initBasic(decimals: u8, options: BasicFormatterOptions) @This() {
             return .{
                 .decimals = decimals,
                 .formatting = .{ .basic = options },
-                .owns_strings = owns_strings,
             };
         }
 
@@ -222,7 +229,6 @@ test "ValueFormatter basic f32" {
     const formatter = ValueFormatter(f32).initBasic(
         1,
         .{ .scale = 100.0, .suffix = "%" },
-        false,
     );
     defer formatter.deinit(allocator);
 
@@ -272,7 +278,6 @@ test "ValueFormatter basic JSON" {
     const formatter = ValueFormatter(f32).initBasic(
         1,
         .{ .scale = 100.0, .suffix = "%" },
-        false,
     );
     defer formatter.deinit(allocator);
 

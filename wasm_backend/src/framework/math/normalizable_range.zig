@@ -35,7 +35,7 @@ pub fn NormalizableRange(comptime T: type) type {
             return @This().initSkewed(start, end, exp);
         }
 
-        pub fn deinit(self: *const @This()) void {
+        pub fn deinit(self: *const @This(), _: std.mem.Allocator) void {
             _ = self;
             // TODO
         }
@@ -77,7 +77,7 @@ pub fn NormalizableRange(comptime T: type) type {
             }
         }
 
-        pub fn load(self: *@This(), json: *const std.json.Value) !void {
+        pub fn load(self: *@This(), _: std.mem.Allocator, json: *const std.json.Value) !void {
             if (json.* != .object) return LoadError.MissingField;
 
             const type_string = try state.json.getFieldString(json.object, "type");
@@ -221,7 +221,7 @@ test "NormalizableRange linear JSON" {
     defer parsed.deinit();
 
     var range_load: NormalizableRange(f32) = undefined;
-    try range_load.load(&parsed.value);
+    try range_load.load(allocator, &parsed.value);
     try std.testing.expect(range.mapping == .linear);
     try std.testing.expectApproxEqRel(range.start, range_load.start, 1e-5);
     try std.testing.expectApproxEqRel(range.end, range_load.end, 1e-5);
@@ -254,7 +254,7 @@ test "NormalizableRange skewed JSON" {
     defer parsed.deinit();
 
     var range_load: NormalizableRange(f32) = undefined;
-    try range_load.load(&parsed.value);
+    try range_load.load(allocator, &parsed.value);
     try std.testing.expect(range_load.mapping == .skewed);
     try std.testing.expectApproxEqRel(range.start, range_load.start, 1e-5);
     try std.testing.expectApproxEqRel(range.end, range_load.end, 1e-5);

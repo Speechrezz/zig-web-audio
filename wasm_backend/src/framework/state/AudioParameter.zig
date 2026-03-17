@@ -1,12 +1,15 @@
 const std = @import("std");
+const fmt = @import("../fmt/fmt.zig");
 const math = @import("../math/math.zig");
+const ParameterSpec = @import("ParameterSpec.zig");
 
+const ValueFormatter = fmt.ValueFormatter(f32);
 const NormalizableRange = math.NormalizableRange(f32);
 
 id: []const u8,
 name: []const u8,
+spec: ParameterSpec,
 
-range: NormalizableRange,
 value_default: f32,
 value_normalized: f32, // Normalized 0..1
 
@@ -15,11 +18,15 @@ pub fn init(
     name: []const u8,
     range: NormalizableRange,
     value_default: f32,
+    formatter: ValueFormatter,
 ) @This() {
     var parameter: @This() = .{
         .id = id,
         .name = name,
-        .range = range,
+        .spec = .{
+            .formatter = formatter,
+            .range = range,
+        },
         .value_default = value_default,
         .value_normalized = undefined,
     };
@@ -34,12 +41,16 @@ pub fn create(
     name: []const u8,
     range: NormalizableRange,
     value_default: f32,
+    formatter: ValueFormatter,
 ) !*@This() {
     const parameter = try allocator.create(@This());
     parameter.* = .{
         .id = id,
         .name = name,
-        .range = range,
+        .spec = .{
+            .formatter = formatter,
+            .range = range,
+        },
         .value_default = value_default,
         .value_normalized = undefined,
     };
@@ -65,11 +76,11 @@ pub fn setValueNormalized(self: *@This(), normalized: f32) void {
 }
 
 pub fn convertToNormalized(self: *const @This(), value: f32) f32 {
-    return self.range.toNormalized(value);
+    return self.spec.range.toNormalized(value);
 }
 
 pub fn convertFromNormalized(self: *const @This(), normalized: f32) f32 {
-    return self.range.fromNormalized(normalized);
+    return self.spec.range.fromNormalized(normalized);
 }
 
 pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify, index: usize) !void {
@@ -84,9 +95,9 @@ pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify, index
     try write_stream.objectField("name");
     try write_stream.write(self.name);
 
-    try write_stream.objectField("range");
+    try write_stream.objectField("spec");
     try write_stream.beginObject();
-    try self.range.save(write_stream);
+    try self.spec.save(write_stream);
     try write_stream.endObject();
 
     try write_stream.objectField("value_default");
@@ -114,7 +125,7 @@ pub fn save(self: *const @This(), write_stream: *std.json.Stringify, index: usiz
 }
 
 test "AudioParameter" {
-    var param: @This() = .init("test", "Test", .initLinear(10.0, 20.0), 12.0);
+    var param: @This() = .init("test", "Test", .initLinear(10.0, 20.0), 12.0, .init(2));
     try std.testing.expectApproxEqRel(12.0, param.getValue(), 1e-5);
     try std.testing.expectApproxEqRel(0.2, param.getValueNormalized(), 1e-5);
 

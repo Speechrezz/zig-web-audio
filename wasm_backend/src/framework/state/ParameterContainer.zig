@@ -64,6 +64,7 @@ test "ParameterContainer" {
         "Test 1",
         .initLinear(0.0, 2.0),
         1.0,
+        .init(2),
     ));
 
     _ = try container.add(allocator, try .create(
@@ -72,6 +73,7 @@ test "ParameterContainer" {
         "Test 2",
         .initLinear(10.0, 20.0),
         12.0,
+        .init(2),
     ));
 
     const param1 = container.getWithId("test1") orelse unreachable;

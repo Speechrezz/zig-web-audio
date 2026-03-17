@@ -13,7 +13,7 @@ range: NormalizableRange,
 
 pub fn deinit(self: *const @This(), allocator: std.mem.Allocator) void {
     self.formatter.deinit(allocator);
-    self.range.deinit();
+    self.range.deinit(allocator);
 }
 
 pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
@@ -35,7 +35,7 @@ pub fn load(self: *@This(), allocator: std.mem.Allocator, json: *const std.json.
     const range_json = try state.json.getField(json.object, "range");
 
     try self.formatter.load(allocator, formatter_json);
-    try self.range.load(range_json);
+    try self.range.load(allocator, range_json);
 }
 
 test "ParameterSpec" {
