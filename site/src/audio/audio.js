@@ -1,8 +1,8 @@
 /**
  * @global
- * @type {AudioContext}
+ * @type {AudioContext | null}
  */
-let audioContext;
+let audioContext = null;
 
 /**
  * @global
@@ -48,7 +48,7 @@ export async function initializeAudio() {
  * @returns {boolean}
  */
 export function isAudioContextRunning() {
-    return audioContext.state === 'running';
+    return audioContext !== null && audioContext.state === 'running';
 }
 
 /**
@@ -56,6 +56,8 @@ export function isAudioContextRunning() {
  * @returns {boolean} Is currently running
  */
 export function toggleAudioContext() {
+    if (audioContext === null) return false;
+
     if (isAudioContextRunning()) {
         audioContext.suspend();
         return false;
@@ -67,7 +69,7 @@ export function toggleAudioContext() {
 
 /**
  * Get current AudioContext object/
- * @returns {AudioContext} AudioContext
+ * @returns {AudioContext | null} AudioContext
  */
 export function getAudioContext() {
     return audioContext;
@@ -75,10 +77,10 @@ export function getAudioContext() {
 
 /**
  * Get current AudioWorkletNode object/
- * @returns {AudioWorkletNode} AudioWorkletNode
+ * @returns {AudioWorkletNode | null} AudioWorkletNode
  */
 export function getAudioWorkletNode() {
-    return /** @type {AudioWorkletNode} */ (audioWorkletNode);
+    return audioWorkletNode;
 }
 
 /**
@@ -96,8 +98,9 @@ export function getBlockSize() {
  * @returns Audio context time (is offset by a block)
  */
 export function getContextTime() {
-    const { performanceTime, contextTime } = /** @type {OutputTimestamp} */ (audioContext.getOutputTimestamp());
-    return contextTime + getBlockSize() / audioContext.sampleRate;
+    const ctx = /** @type {AudioContext} */ (audioContext);
+    const { performanceTime, contextTime } = /** @type {OutputTimestamp} */ (ctx.getOutputTimestamp());
+    return contextTime + getBlockSize() / ctx.sampleRate;
 }
 
 /**
@@ -105,7 +108,8 @@ export function getContextTime() {
  * @returns The audio time being heard at `timestampMs` (in seconds)
  */
 export function toAudibleTime(timestampMs) {
-    const { performanceTime, contextTime } = /** @type {OutputTimestamp} */ (audioContext.getOutputTimestamp());
+    const ctx = /** @type {AudioContext} */ (audioContext);
+    const { performanceTime, contextTime } = /** @type {OutputTimestamp} */ (ctx.getOutputTimestamp());
     return contextTime + (timestampMs - performanceTime) * 1e-3;
 }
 

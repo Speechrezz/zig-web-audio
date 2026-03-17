@@ -50,7 +50,7 @@ export class AudioParameter {
             this.valueNormalized = valueNormalized;
         }
 
-        console.log("[AudioParameter.constructor()] state:", this);
+        // console.log("[AudioParameter.constructor()] state:", this);
     }
 
     deinit() {
@@ -104,7 +104,8 @@ export class AudioParameter {
         for (const listener of this.listeners)
             listener();
 
-        getAudioWorkletNode().port.postMessage({
+        const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
+        node.port.postMessage({
             type: WorkletMessageType.setParameterValueNormalized,
             context: {
                 processorPtr: this.specJson.processor_ptr,

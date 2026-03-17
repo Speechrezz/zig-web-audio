@@ -390,12 +390,13 @@ export class PlaybackEngine {
      */
     sendMidiMessageFromDevice(midiEvent, timestampMs = undefined) {
         if (!isAudioContextRunning()) return;
+        const audioContext = /** @type {AudioContext} */ (getAudioContext());
 
         const track = this.tracks.getSelected();
         if (track === null) return;
 
         if (timestampMs !== undefined) {
-            const sampleRate = getAudioContext().sampleRate;
+            const sampleRate = audioContext.sampleRate;
             const audibleTimeSec = toAudibleTime(timestampMs);
             const blockSize = getBlockSize();
             const adjustedTimestamp = Math.max(0, blockSize + Math.floor(audibleTimeSec * sampleRate));

@@ -7,7 +7,8 @@ import { getAudioContext, getAudioWorkletNode } from "./audio.js";
  * @param {number} timeStampSeconds Time since start of the audio context (in seconds)
  */
 export function sendMidiMessageSeconds(instrumentIndex, midiEvent, timeStampSeconds) {
-    const sampleRate = getAudioContext().sampleRate;
+    const audioContext = /** @type {AudioContext} */ (getAudioContext());
+    const sampleRate = audioContext.sampleRate;
     sendMidiMessageSamples(instrumentIndex, midiEvent, Math.floor(sampleRate * timeStampSeconds))
 }
 
@@ -17,7 +18,10 @@ export function sendMidiMessageSeconds(instrumentIndex, midiEvent, timeStampSeco
  * @param {number} timeStampSamples Time since start of the audio context (in samples)
  */
 export function sendMidiMessageSamples(instrumentIndex, midiEvent, timeStampSamples) {
-    getAudioWorkletNode().port.postMessage({
+    const node = getAudioWorkletNode();
+    if (node === null) return;
+
+    node.port.postMessage({
         type: WorkletMessageType.midi,
         instrumentIndex: instrumentIndex,
         data: midiEvent.toPacked(),
@@ -26,7 +30,10 @@ export function sendMidiMessageSamples(instrumentIndex, midiEvent, timeStampSamp
 }
 
 export function sendStopAllNotes(allowTailOff = true) {
-    getAudioWorkletNode().port.postMessage({
+    const node = getAudioWorkletNode();
+    if (node === null) return;
+
+    node.port.postMessage({
         type: WorkletMessageType.stopAllNotes,
         allowTailOff: allowTailOff,
     });

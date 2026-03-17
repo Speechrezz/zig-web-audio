@@ -196,9 +196,12 @@ export class TracksContainer {
         for (const key of Object.keys(TrackEvent)) {
             this.instrumentEventListeners.push([]);
         }
+    }
 
+    initializeAudio() {
         // Listen to audio worklet
-        getAudioWorkletNode().port.addEventListener("message", (ev) => this.audioWorkletCallback(ev));
+        const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
+        node.port.addEventListener("message", (ev) => this.audioWorkletCallback(ev));
     }
 
     /**
@@ -213,20 +216,21 @@ export class TracksContainer {
     }
 
     /**
-     * @param {number} instrumentIndex 
+     * @param {number} trackIndex 
      * @param {InstrumentType} instrumentType
      * @param {boolean} addToUndo
      * @param {null | any} serialized
      */
-    addInstrument(instrumentIndex, instrumentType, addToUndo = true, serialized = null) {
-        if (instrumentIndex < 0) {
-            instrumentIndex = this.tracks.length;
+    addInstrument(trackIndex, instrumentType, addToUndo = true, serialized = null) {
+        if (trackIndex < 0) {
+            trackIndex = this.tracks.length;
         }
 
-        getAudioWorkletNode().port.postMessage({
+        const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
+        node.port.postMessage({
             type: WorkletMessageType.addInstrument,
             context: {
-                instrumentIndex,
+                trackIndex,
                 instrumentType,
                 addToUndo,
                 serialized,
@@ -249,7 +253,7 @@ export class TracksContainer {
         const data = ev.data.data;
         const trackSpec = data.spec;
         const instrumentType = data.context.instrumentType;
-        const trackIndex = data.context.instrumentIndex;
+        const trackIndex = data.context.trackIndex;
         const addToUndo = data.context.addToUndo;
         const serialized = data.context.serialized;
 
@@ -290,7 +294,8 @@ export class TracksContainer {
         removedTrack.deinit();
         this.updateTrackIndices();
 
-        getAudioWorkletNode().port.postMessage({
+        const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
+        node.port.postMessage({
             type: WorkletMessageType.removeTrack,
             instrumentIndex: trackIndex,
         });

@@ -27,13 +27,13 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     this.exports.stopAllNotes(msg.allowTailOff);
                     break;
                 case WorkletMessageType.addInstrument: {
-                    const success = Boolean(this.exports.addInstrument(msg.context.instrumentIndex, msg.context.instrumentType));
+                    const success = Boolean(this.exports.addInstrument(msg.context.trackIndex, msg.context.instrumentType));
                     if (success === false) {
                         this.port.postMessage({type: WorkletMessageType.addInstrument, success: false});
                         break;
                     }
 
-                    const stateSlice = unpackSlice(this.exports.getTrackSpec(msg.context.instrumentIndex));
+                    const stateSlice = unpackSlice(this.exports.getTrackSpec(msg.context.trackIndex));
                     const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
                     this.exports.freeString(stateSlice.ptr, stateSlice.len);
 

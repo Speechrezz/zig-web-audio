@@ -10,19 +10,33 @@ const instrumentTypeToTrackWeb = instruments_registry.instrumentTypeToTrackWeb;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
+const enableDebugPrint = false;
+
 var processor_container_web: ProcessorContainerWeb = undefined;
 
 // Audio processing
 
 export fn initAudio() void {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}()", .{@src().fn_name});
+    }
+
     processor_container_web.init();
 }
 
 export fn deinitAudio() void {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}()", .{@src().fn_name});
+    }
+
     processor_container_web.deinit();
 }
 
 export fn prepareAudio(sample_rate: f64, num_channels: usize, block_size: usize) bool {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}()", .{@src().fn_name});
+    }
+
     return processor_container_web.prepare(.{
         .sample_rate = sample_rate,
         .num_channels = num_channels,
@@ -41,6 +55,10 @@ export fn getOutputChannel(channel_index: usize) [*]f32 {
 // MIDI
 
 export fn sendMidiEvent(track_index: usize, packed_event: u32, sample_position: i64) void {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}(idx={}, ev={}, pos={})", .{ @src().fn_name, track_index, packed_event, sample_position });
+    }
+
     processor_container_web.sendMidiMessage(
         track_index,
         packed_event,
@@ -49,13 +67,19 @@ export fn sendMidiEvent(track_index: usize, packed_event: u32, sample_position: 
 }
 
 export fn stopAllNotes(allow_tail_off: bool) void {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}()", .{@src().fn_name});
+    }
+
     processor_container_web.onStopMessage(allow_tail_off);
 }
 
 // Track
 
 export fn addInstrument(track_index: usize, instrument_type: usize) bool {
-    logging.logDebug("[WASM] Adding instrument {} at index {}...", .{ instrument_type, track_index });
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}(idx={}, type={})", .{ @src().fn_name, track_index, instrument_type });
+    }
 
     const track = instrumentTypeToTrackWeb(
         wasm_allocator,
@@ -67,16 +91,25 @@ export fn addInstrument(track_index: usize, instrument_type: usize) bool {
 }
 
 export fn removeTrack(track_index: usize) void {
-    logging.logDebug("[WASM] Removing tracks at index {}...", .{track_index});
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({})", .{ @src().fn_name, track_index });
+    }
+
     processor_container_web.removeProcessor(track_index);
 }
 
 export fn clearTracks() void {
-    logging.logDebug("[WASM] Clearing all tracks...", .{});
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}()", .{@src().fn_name});
+    }
     // TODO
 }
 
 export fn getTrackSpec(track_index: usize) u64 {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({})", .{ @src().fn_name, track_index });
+    }
+
     const track = processor_container_web.getProcessor(track_index).audio_processor;
 
     const web_string = web.string.toJsonString(
@@ -89,6 +122,10 @@ export fn getTrackSpec(track_index: usize) u64 {
 }
 
 export fn saveTrackState(track_index: usize) u64 {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({})", .{ @src().fn_name, track_index });
+    }
+
     const track = processor_container_web.getProcessor(track_index);
     const web_string = web.string.toJsonString(
         wasm_allocator,
@@ -102,6 +139,10 @@ export fn saveTrackState(track_index: usize) u64 {
 // Parameter
 
 export fn setParameterValueNormalized(audio_processor: *audio.AudioProcessor, parameter_index: usize, value: f32) bool {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({s}-{}, {}, {})", .{ @src().fn_name, audio_processor.id, @intFromPtr(audio_processor.ptr), parameter_index, value });
+    }
+
     const param = audio_processor.parameters.list.items[parameter_index];
     param.setValueNormalized(value);
 
@@ -111,6 +152,10 @@ export fn setParameterValueNormalized(audio_processor: *audio.AudioProcessor, pa
 // General
 
 export fn freeString(ptr: [*]u8, len: usize) void {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({}, {})", .{ @src().fn_name, @intFromPtr(ptr), len });
+    }
+
     web.string.freeWebString(wasm_allocator, .{
         .ptr = ptr,
         .len = len,

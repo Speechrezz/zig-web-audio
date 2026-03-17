@@ -10,7 +10,6 @@ import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { TracksContainer } from "../audio/track.js"
 import { WasmContainer } from "../core/wasm.js"
-import { NormalizableRange } from "../core/normalizable-range.js"
 
 export class App {
     /** @type {WasmContainer} */
@@ -45,14 +44,33 @@ export class App {
 
     async initialize() {
         const startButton = /** @type {HTMLInputElement} */ (document.getElementById("start-audio-button"));
-        const startContainer = /** @type {HTMLDivElement} */ (document.getElementById("start-audio-container"));
         this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
 
         await this.initializeWasm();
-    
+
+        this.undoManager = new UndoManager(this.eventRouter);
+        const tracks = new TracksContainer(this.wasm, this.undoManager);
+        this.playbackEngine = new PlaybackEngine(this.config, tracks);
+        this.midiInput = new MidiInput(this.playbackEngine);
+        this.keyboardListener = new KeyboardListener(this.eventRouter);
+
+        const appContext = new AppContext(
+            this.config, 
+            this.playbackEngine, 
+            this.undoManager,
+            this.eventRouter,
+            this.clipboardManager,
+        );
+
+        this.appInterface = new AppInterface(appContext, this.canvasElement);
+        
+        this.resizeCanvas();
+        window.addEventListener("resize", () => this.resizeCanvas());
+
         startButton.onclick = async () => {
             this.startButtonClicked();
         }
+        startButton.value = "Start Audio Engine";
     }
 
     resizeCanvas() {
@@ -90,25 +108,9 @@ export class App {
         this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
 
         await initializeAudio();
+        // @ts-ignore
+        this.playbackEngine.tracks.initializeAudio();
+
         startContainer.style.display = "none";
-
-        this.undoManager = new UndoManager(this.eventRouter);
-        const tracks = new TracksContainer(this.wasm, this.undoManager);
-        this.playbackEngine = new PlaybackEngine(this.config, tracks);
-        this.midiInput = new MidiInput(this.playbackEngine);
-        this.keyboardListener = new KeyboardListener(this.eventRouter);
-
-        const appContext = new AppContext(
-            this.config, 
-            this.playbackEngine, 
-            this.undoManager,
-            this.eventRouter,
-            this.clipboardManager,
-        );
-
-        this.appInterface = new AppInterface(appContext, this.canvasElement);
-        
-        this.resizeCanvas();
-        window.addEventListener("resize", () => this.resizeCanvas());
     }
 }
