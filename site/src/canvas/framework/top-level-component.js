@@ -101,6 +101,8 @@ export class TopLevelComponent extends Component {
             componentWithCoords.y, 
             ev.offsetX, 
             ev.offsetY,
+            ev.movementX,
+            ev.movementY,
             mouseAction,
         );
 
@@ -121,6 +123,8 @@ export class TopLevelComponent extends Component {
             ev.offsetY - globalBounds.y, 
             ev.offsetX, 
             ev.offsetY,
+            ev.movementX,
+            ev.movementY,
             mouseAction,
         );
 

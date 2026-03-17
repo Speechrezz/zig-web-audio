@@ -15,7 +15,6 @@ export class NumberBox extends Component {
     dragCoefficient = 1e-3;
     scrollWheelScale = 4e-4;
 
-    mouseAnchor = new Point;
     valueAnchor = 0;
     distanceDragged = 0;
 
@@ -84,9 +83,6 @@ export class NumberBox extends Component {
 
     /** @param {MouseEvent} ev */
     mouseDown(ev) {
-        this.mouseAnchor.x = ev.x;
-        this.mouseAnchor.y = ev.y;
-
         this.distanceDragged = 0;
         this.valueAnchor = this.proxy.valueNormalized;
     }
@@ -96,8 +92,8 @@ export class NumberBox extends Component {
 
     /** @param {MouseEvent} ev */
     mouseDrag(ev) {
-        this.distanceDragged += this.mouseAnchor.y - ev.y;
-        const newValue = this.valueAnchor + this.distanceDragged * this.dragCoefficient;
+        this.distanceDragged += ev.deltaY;
+        const newValue = this.valueAnchor - this.distanceDragged * this.dragCoefficient;
         this.setValueNormalizedInternal(newValue);
     }
 

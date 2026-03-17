@@ -36,6 +36,9 @@ export class MouseEvent {
     globalX = 0;
     globalY = 0;
 
+    deltaX = 0;
+    deltaY = 0;
+
     /** @type {MouseAction} */
     mouseAction = MouseAction.none;
 
@@ -44,13 +47,17 @@ export class MouseEvent {
      * @param {number} y 
      * @param {number} globalX 
      * @param {number} globalY 
+     * @param {number} deltaX 
+     * @param {number} deltaY 
      * @param {MouseAction} mouseAction 
      */
-    constructor(x = 0, y = 0, globalX = 0, globalY = 0, mouseAction = MouseAction.none) {
+    constructor(x = 0, y = 0, globalX = 0, globalY = 0, deltaX = 0, deltaY = 0, mouseAction = MouseAction.none) {
         this.x = x;
         this.y = y;
         this.globalX = globalX;
         this.globalY = globalY;
+        this.deltaX = deltaX;
+        this.deltaY = deltaY;
         this.mouseAction = mouseAction;
     }
 }
