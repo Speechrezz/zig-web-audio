@@ -39,7 +39,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         "Attack",
         .initSkewedCenter(0.0, 1.0, 0.2),
         0.01,
-        .initBasic(1, .{ .scale = 100.0, .suffix = "%" }),
+        .initSeconds(2, 1),
     ));
     self.adsr_params.decay = try self.processor.parameters.add(allocator, try .create(
         allocator,
@@ -47,7 +47,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         "Decay",
         .initSkewedCenter(0.0, 1.0, 0.2),
         0.1,
-        .init(2),
+        .initSeconds(2, 1),
     ));
     self.adsr_params.sustain = try self.processor.parameters.add(allocator, try .create(
         allocator,
@@ -63,7 +63,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         "Release",
         .initSkewedCenter(0.0, 1.0, 0.2),
         0.1,
-        .init(2),
+        .initSeconds(2, 1),
     ));
 
     self.gain_param = try self.processor.parameters.add(allocator, try .create(
@@ -72,7 +72,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         "Gain",
         .initSkewedCenter(0.0, 1.0, 0.2),
         1.0,
-        .init(2),
+        .initBasic(1, .{ .scale = 100.0, .suffix = "%" }),
     ));
 
     self.synth_processor.init();

@@ -3,6 +3,7 @@ const audio = @import("framework").audio;
 const fmt = @import("framework").fmt;
 const logging = @import("framework").logging;
 const math = @import("framework").math;
+const state = @import("framework").state;
 const web = @import("framework").web;
 const wasm_allocator = @import("framework").wasm_allocator;
 
@@ -141,6 +142,55 @@ export fn valueFromText(formatter: *const ValueFormatter, ptr: [*]const u8, len:
         logging.logDebug("[WASM] {s}({s}) error: {}", .{ @src().fn_name, slice, err });
         return std.math.nan(f32);
     };
+}
+
+// ParameterSpec
+
+const ParameterSpec = state.ParameterSpec;
+
+fn createParameterSpec() ?*ParameterSpec {
+    return wasm_allocator.create(ParameterSpec) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return null;
+    };
+}
+
+export fn createParameterSpecFromJson(ptr: [*]u8, len: usize) ?*ParameterSpec {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({}, {})", .{ @src().fn_name, @intFromPtr(ptr), len });
+    }
+
+    const spec = createParameterSpec() orelse return null;
+
+    const slice = ptr[0..len];
+    const parsed = std.json.parseFromSlice(std.json.Value, wasm_allocator, slice, .{}) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return null;
+    };
+    defer parsed.deinit();
+
+    spec.load(wasm_allocator, &parsed.value) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return null;
+    };
+
+    return spec;
+}
+
+export fn destroyParameterSpec(ptr: *ParameterSpec) void {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({})", .{ @src().fn_name, @intFromPtr(ptr) });
+    }
+
+    wasm_allocator.destroy(ptr);
+}
+
+export fn getRangeFromParameterSpec(ptr: *ParameterSpec) *NormalizableRange {
+    return &ptr.range;
+}
+
+export fn getFormatterFromParameterSpec(ptr: *ParameterSpec) *ValueFormatter {
+    return &ptr.formatter;
 }
 
 // General

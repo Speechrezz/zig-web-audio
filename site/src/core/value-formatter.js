@@ -1,12 +1,4 @@
-import { ParameterProxy } from "../canvas/framework/parameter-proxy.js";
 import { WasmContainer } from "./wasm.js";
-
-/**
- * @typedef {object} FormatterSpec
- * @property {string} type
- * @property {number} decimals
- * @property {any} [ctx]
- */
 
 export class ValueFormatter {
     /** @type {WasmContainer} */

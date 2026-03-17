@@ -2,14 +2,6 @@ import { ParameterProxy } from "../canvas/framework/parameter-proxy.js";
 import { MoreMath } from "./math.js";
 import { WasmContainer } from "./wasm.js";
 
-/**
- * @typedef {object} RangeSpec
- * @property {string} type
- * @property {number} start
- * @property {number} end
- * @property {any} [ctx]
- */
-
 export class NormalizableRange {
     /** @type {WasmContainer} */
     wasm;

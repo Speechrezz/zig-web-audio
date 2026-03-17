@@ -26,7 +26,7 @@ test("ValueFormatter from spec", async () => {
     expect(range.valueFromText("31.4%")).toBeCloseTo(0.314, 4);
     expect(range.valueFromText("56.78")).toBeCloseTo(0.5678, 4);
 
-    range = ValueFormatter.createFromSpec(wasm, { type: "hertz", decimals: 1});
+    range = ValueFormatter.createFromSpec(wasm, { type: "hertz", decimals: 1 });
     expect(range.textFromValue(3.1415)).toBe("3.1 Hz");
     expect(range.textFromValue(12345)).toBe("12.3 kHz");
     expect(range.valueFromText("3.1415 Hz")).toBeCloseTo(3.1415, 4);

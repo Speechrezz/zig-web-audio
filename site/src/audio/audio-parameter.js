@@ -1,27 +1,27 @@
 import { ParameterProxy } from "../canvas/framework/parameter-proxy.js";
 import { NormalizableRange } from "../core/normalizable-range.js";
+import { ParameterSpec } from "../core/parameter-spec.js";
 import { WasmContainer } from "../core/wasm.js";
 import { getAudioWorkletNode } from "./audio.js";
-import { Track } from "./track.js";
 import { WorkletMessageType } from "./worklet-message.js";
 
 /**
  * AudioParameter spec
- * @typedef {object} ParameterSpec
+ * @typedef {object} ParameterSpecFull
  * @property {number} processor_ptr
  * @property {number} index
  * @property {string} id
  * @property {string} name
- * @property {any} range
+ * @property {{formatter: any, range: any}} spec
  * @property {number} value_default
  */
 
 export class AudioParameter {
+    /** @type {ParameterSpecFull} */
+    specJson;
+
     /** @type {ParameterSpec} */
     spec;
-
-    /** @type {NormalizableRange} */
-    range;
 
     /** @type {number} */
     value;
@@ -34,16 +34,16 @@ export class AudioParameter {
 
     /**
      * @param {WasmContainer} wasm 
-     * @param {ParameterSpec} spec 
+     * @param {ParameterSpecFull} specJson 
      * @param {undefined | number} valueNormalized 
      */
-    constructor(wasm, spec, valueNormalized = undefined) {
-        this.spec = spec;
-        this.range = NormalizableRange.createFromSpec(wasm, spec.range);
+    constructor(wasm, specJson, valueNormalized = undefined) {
+        this.specJson = specJson;
+        this.spec = ParameterSpec.createFromSpec(wasm, specJson.spec);
 
         if (valueNormalized === undefined) {
-            this.value = this.spec.value_default;
-            this.valueNormalized = this.convertToNormalized(this.spec.value_default);
+            this.value = this.specJson.value_default;
+            this.valueNormalized = this.convertToNormalized(this.specJson.value_default);
         }
         else {
             this.value = this.convertFromNormalized(valueNormalized);
@@ -54,15 +54,15 @@ export class AudioParameter {
     }
 
     deinit() {
-        this.range.deinit();
+        this.spec.deinit();
     }
 
     getId() {
-        return this.spec.id;
+        return this.specJson.id;
     }
 
     getName() {
-        return this.spec.name;
+        return this.specJson.name;
     }
 
     getValue() {
@@ -77,14 +77,14 @@ export class AudioParameter {
      * @param {number} value 
      */
     convertToNormalized(value) {
-        return this.range.toNormalized(value);
+        return this.spec.range.toNormalized(value);
     }
 
     /**
      * @param {number} value 
      */
     convertFromNormalized(value) {
-        return this.range.fromNormalized(value);
+        return this.spec.range.fromNormalized(value);
     }
 
     /**
@@ -94,10 +94,10 @@ export class AudioParameter {
     set(newValue, isNormalized) {
         if (isNormalized) {
             this.value = this.convertFromNormalized(newValue);
-            this.valueNormalized = this.range.clampNormalized(newValue);
+            this.valueNormalized = this.spec.range.clampNormalized(newValue);
         }
         else {
-            this.value = this.range.clampValue(newValue);
+            this.value = this.spec.range.clampValue(newValue);
             this.valueNormalized = this.convertToNormalized(newValue);
         }
 
@@ -107,8 +107,8 @@ export class AudioParameter {
         getAudioWorkletNode().port.postMessage({
             type: WorkletMessageType.setParameterValueNormalized,
             context: {
-                processorPtr: this.spec.processor_ptr,
-                parameterIndex: this.spec.index,
+                processorPtr: this.specJson.processor_ptr,
+                parameterIndex: this.specJson.index,
                 value: this.valueNormalized,
             }
         });
@@ -141,11 +141,11 @@ export class AudioParameter {
 
         proxy.value = this.value;
         proxy.valueNormalized = this.valueNormalized;
-        proxy.valueMin = this.range.start;
-        proxy.valueMax = this.range.end;
-        proxy.valueDefault = this.spec.value_default;
+        proxy.valueMin = this.spec.range.start;
+        proxy.valueMax = this.spec.range.end;
+        proxy.valueDefault = this.specJson.value_default;
 
-        proxy.name = this.spec.name;
+        proxy.name = this.specJson.name;
 
         proxy.ctx.parameterListener = () => {
             proxy.value = this.value;
@@ -158,6 +158,9 @@ export class AudioParameter {
 
         proxy.toNormalizedValue = (value) => this.convertToNormalized(value);
         proxy.fromNormalizedValue = (value) => this.convertFromNormalized(value);
+
+        proxy.textFromValue = (value) => this.spec.formatter.textFromValue(value);
+        proxy.valueFromText = (text) => this.spec.formatter.valueFromText(text);
 
         proxy.setValue = (value) => this.set(value, false);
         proxy.setNormalizedValue = (value) => this.set(value, true);
@@ -176,7 +179,7 @@ export class ParameterContainer {
     /**
      * @param {WasmContainer} wasm 
      * @param {number} processorPtr 
-     * @param {ParameterSpec[]} paramsSpec 
+     * @param {ParameterSpecFull[]} paramsSpec 
      */
     static initFromSpec(wasm, processorPtr, paramsSpec) {
         const params = new ParameterContainer;
