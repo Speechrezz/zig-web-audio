@@ -15,6 +15,21 @@ pub fn getFieldString(object: std.json.ObjectMap, name: []const u8) LoadError![]
     };
 }
 
+pub fn getFieldInt(comptime IntType: type, object: std.json.ObjectMap, name: []const u8) LoadError!IntType {
+    if (@typeInfo(IntType) != .int) {
+        @compileError("Expected a runtime integer type");
+    }
+
+    const value = try getField(object, name);
+
+    return switch (value.*) {
+        .float => |x| @intFromFloat(x),
+        .integer => |x| @intCast(x),
+        .number_string => |s| std.fmt.parseInt(IntType, s, 10) catch return LoadError.IncorrectFieldType,
+        else => LoadError.IncorrectFieldType,
+    };
+}
+
 pub fn getFieldFloat(comptime FloatType: type, object: std.json.ObjectMap, name: []const u8) LoadError!FloatType {
     if (@typeInfo(FloatType) != .float) {
         @compileError("Expected a runtime float type");

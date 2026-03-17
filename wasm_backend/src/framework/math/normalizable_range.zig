@@ -35,6 +35,11 @@ pub fn NormalizableRange(comptime T: type) type {
             return @This().initSkewed(start, end, exp);
         }
 
+        pub fn deinit(self: *const @This()) void {
+            _ = self;
+            // TODO
+        }
+
         pub fn toNormalized(self: *const @This(), v: T) T {
             return self.mapping.toNormalized(self.start, self.end, v);
         }
@@ -42,6 +47,8 @@ pub fn NormalizableRange(comptime T: type) type {
         pub fn fromNormalized(self: *const @This(), v: T) T {
             return self.mapping.fromNormalized(self.start, self.end, clamp(v));
         }
+
+        // ---Serialization---
 
         pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
             const active_tag = std.meta.activeTag(self.mapping);
@@ -248,7 +255,7 @@ test "NormalizableRange skewed JSON" {
 
     var range_load: NormalizableRange(f32) = undefined;
     try range_load.load(&parsed.value);
-    try std.testing.expect(range.mapping == .skewed);
+    try std.testing.expect(range_load.mapping == .skewed);
     try std.testing.expectApproxEqRel(range.start, range_load.start, 1e-5);
     try std.testing.expectApproxEqRel(range.end, range_load.end, 1e-5);
     try std.testing.expectApproxEqRel(range.mapping.skewed, range_load.mapping.skewed, 1e-5);
