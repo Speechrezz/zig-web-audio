@@ -93,7 +93,6 @@ export class Track extends AudioProcessor {
         this.params = ParameterContainer.initFromSpec(wasm, this.spec.ptr, this.spec.parameters);
 
         if (spec.generator !== null) {
-            console.log("generator:", spec.generator);
             this.generatorDevice = new Device(wasm, spec.generator);
         }
     }
