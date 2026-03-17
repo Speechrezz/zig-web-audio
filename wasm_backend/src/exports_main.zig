@@ -1,5 +1,6 @@
 const std = @import("std");
 const audio = @import("framework").audio;
+const fmt = @import("framework").fmt;
 const logging = @import("framework").logging;
 const math = @import("framework").math;
 const web = @import("framework").web;
@@ -82,6 +83,64 @@ export fn fromNormalizedValue(range: *const NormalizableRange, v: f32) f32 {
     }
 
     return range.fromNormalized(v);
+}
+
+// ValueFormatter
+
+const ValueFormatter = fmt.ValueFormatter(f32);
+
+fn createValueFormatter() ?*ValueFormatter {
+    return wasm_allocator.create(ValueFormatter) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return null;
+    };
+}
+
+export fn createValueFormatterFromJson(ptr: [*]u8, len: usize) ?*ValueFormatter {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({}, {})", .{ @src().fn_name, @intFromPtr(ptr), len });
+    }
+
+    const formatter = createValueFormatter() orelse return null;
+
+    const slice = ptr[0..len];
+    const parsed = std.json.parseFromSlice(std.json.Value, wasm_allocator, slice, .{}) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return null;
+    };
+    defer parsed.deinit();
+
+    formatter.load(wasm_allocator, &parsed.value) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return null;
+    };
+
+    return formatter;
+}
+
+export fn destroyValueFormatter(ptr: *ValueFormatter) void {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({})", .{ @src().fn_name, @intFromPtr(ptr) });
+    }
+
+    wasm_allocator.destroy(ptr);
+}
+
+export fn textFromValue(formatter: *const ValueFormatter, value: f32) u64 {
+    const text = formatter.textFromValue(wasm_allocator, value) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return 0;
+    };
+
+    return @bitCast(web.string.WebString{ .ptr = text.ptr, .len = text.len });
+}
+
+export fn valueFromText(formatter: *const ValueFormatter, ptr: [*]const u8, len: usize) f32 {
+    const slice = ptr[0..len];
+    return formatter.valueFromText(slice) catch |err| {
+        logging.logDebug("[WASM] {s}({s}) error: {}", .{ @src().fn_name, slice, err });
+        return std.math.nan(f32);
+    };
 }
 
 // General

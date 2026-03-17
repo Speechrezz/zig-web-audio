@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { WasmContainer } from "./wasm";
-import { NormalizableRange } from "./normalizable-range";
+import { WasmContainer } from "./wasm.js";
+import { NormalizableRange } from "./normalizable-range.js";
 
 async function createWasm() {
     const wasm = new WasmContainer;

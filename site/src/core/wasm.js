@@ -69,6 +69,16 @@ export class WasmContainer {
     }
 
     /**
+     * @param {BigInt} packed 
+     */
+    wasmSliceToString(packed) {
+        const slice = unpackSlice(packed);
+        const string = this.getWasmString(slice.ptr, slice.len);
+        this.freeWasmString(slice);
+        return string;
+    }
+
+    /**
      * @param {string} str 
      */
     allocAndCopyToWasmString(str) {
