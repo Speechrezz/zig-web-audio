@@ -128,7 +128,7 @@ pub fn ValueFormatter(comptime T: type) type {
             }
         }
 
-        pub fn load(self: *@This(), json: *const std.json.Value) !void {
+        pub fn load(self: *@This(), allocator: std.mem.Allocator, json: *const std.json.Value) !void {
             if (json.* != .object) return LoadError.MissingField;
 
             const type_string = try state.json.getFieldString(json.object, "type");
@@ -142,13 +142,19 @@ pub fn ValueFormatter(comptime T: type) type {
                 .basic => {
                     const ctx_object = try state.json.getFieldObject(json.object, "ctx");
                     const scale = try state.json.getFieldFloat(T, ctx_object, "scale");
-                    const prefix = try state.json.getFieldString(ctx_object, "prefix");
-                    const suffix = try state.json.getFieldString(ctx_object, "suffix");
+                    const prefix_json = try state.json.getFieldString(ctx_object, "prefix");
+                    const suffix_json = try state.json.getFieldString(ctx_object, "suffix");
+
+                    const prefix = try allocator.dupe(u8, prefix_json);
+                    const suffix = try allocator.dupe(u8, suffix_json);
+
                     self.formatting = .{ .basic = .{
                         .scale = scale,
                         .prefix = prefix,
                         .suffix = suffix,
                     } };
+
+                    self.owns_strings = true;
                 },
                 .hertz => self.formatting = .hertz,
                 .seconds => {
@@ -268,6 +274,7 @@ test "ValueFormatter basic JSON" {
         .{ .scale = 100.0, .suffix = "%" },
         false,
     );
+    defer formatter.deinit(allocator);
 
     var out: std.io.Writer.Allocating = .init(allocator);
     defer out.deinit();
@@ -291,7 +298,9 @@ test "ValueFormatter basic JSON" {
     defer parsed.deinit();
 
     var formatter_load: ValueFormatter(f32) = undefined;
-    try formatter_load.load(&parsed.value);
+    try formatter_load.load(allocator, &parsed.value);
+    defer formatter_load.deinit(allocator);
+
     try std.testing.expect(formatter_load.formatting == .basic);
     try std.testing.expectEqual(formatter.decimals, formatter_load.decimals);
     try std.testing.expectApproxEqRel(formatter.formatting.basic.scale, formatter_load.formatting.basic.scale, 1e-5);
@@ -305,6 +314,7 @@ test "ValueFormatter hertz JSON" {
     // Serialize formatter to JSON
 
     const formatter = ValueFormatter(f32).initHertz(2);
+    defer formatter.deinit(allocator);
 
     var out: std.io.Writer.Allocating = .init(allocator);
     defer out.deinit();
@@ -326,7 +336,9 @@ test "ValueFormatter hertz JSON" {
     defer parsed.deinit();
 
     var formatter_load: ValueFormatter(f32) = undefined;
-    try formatter_load.load(&parsed.value);
+    try formatter_load.load(allocator, &parsed.value);
+    defer formatter_load.deinit(allocator);
+
     try std.testing.expect(formatter_load.formatting == .hertz);
     try std.testing.expectEqual(formatter.decimals, formatter_load.decimals);
 }
@@ -337,6 +349,7 @@ test "ValueFormatter seconds JSON" {
     // Serialize formatter to JSON
 
     const formatter = ValueFormatter(f32).initSeconds(2, 1);
+    defer formatter.deinit(allocator);
 
     var out: std.io.Writer.Allocating = .init(allocator);
     defer out.deinit();
@@ -359,7 +372,9 @@ test "ValueFormatter seconds JSON" {
     defer parsed.deinit();
 
     var formatter_load: ValueFormatter(f32) = undefined;
-    try formatter_load.load(&parsed.value);
+    try formatter_load.load(allocator, &parsed.value);
+    defer formatter_load.deinit(allocator);
+
     try std.testing.expect(formatter_load.formatting == .seconds);
     try std.testing.expectEqual(formatter.decimals, formatter_load.decimals);
     try std.testing.expectEqual(formatter.formatting.seconds.decimals_ms, formatter_load.formatting.seconds.decimals_ms);
