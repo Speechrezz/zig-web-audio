@@ -1,5 +1,6 @@
 const std = @import("std");
 const audio = @import("framework").audio;
+const dsp = @import("framework").dsp;
 const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
 const state = @import("framework").state;
@@ -11,6 +12,7 @@ pub const name = "Wavetable Synth";
 
 processor: audio.AudioProcessor,
 synth_processor: SynthProcessor(SynthVoice),
+gain_processor: dsp.GainProcessor,
 
 gain_param: *state.AudioParameter,
 adsr_params: struct {
@@ -32,6 +34,8 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
             .stop = stop,
         },
     );
+
+    self.gain_processor = .init;
 
     self.adsr_params.attack = try self.processor.parameters.add(allocator, try .create(
         allocator,
@@ -88,12 +92,15 @@ fn destroy(ctx: *anyopaque, allocator: std.mem.Allocator) void {
     const self: *@This() = @ptrCast(@alignCast(ctx));
 
     self.synth_processor.deinit(allocator);
+    self.gain_processor.deinit(allocator);
+
     allocator.destroy(self);
 }
 
 fn prepare(ctx: *anyopaque, allocator: std.mem.Allocator, spec: audio.ProcessSpec) !void {
     const self: *@This() = @ptrCast(@alignCast(ctx));
     try self.synth_processor.prepare(allocator, spec);
+    try self.gain_processor.prepare(allocator, spec);
 }
 
 fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.AudioView, midi_events: []MidiEvent) !void {
@@ -110,7 +117,8 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     }
 
     self.synth_processor.process(audio_view, midi_events);
-    audio_view.multiplyBy(self.gain_param.getValue());
+    self.gain_processor.setGain(self.gain_param.getValue());
+    self.gain_processor.process(audio_view);
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {

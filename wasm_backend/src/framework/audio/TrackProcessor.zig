@@ -1,5 +1,6 @@
 const std = @import("std");
 const audio = @import("audio.zig");
+const dsp = @import("../dsp/dsp.zig");
 const midi = @import("../midi/midi.zig");
 const state = @import("../state/state.zig");
 
@@ -25,6 +26,7 @@ generator_device: ?Device,
 effect_device_list: std.ArrayList(Device),
 
 gain_param: *state.AudioParameter,
+gain_processor: dsp.GainProcessor,
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
@@ -51,6 +53,7 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
         0.2,
         .initBasic(1, .{ .scale = 100.0, .suffix = "%" }),
     ));
+    self.gain_processor = .init;
 }
 
 pub fn create(allocator: std.mem.Allocator) !*@This() {
@@ -71,6 +74,8 @@ fn destroy(ctx: *anyopaque, allocator: std.mem.Allocator) void {
     }
     self.effect_device_list.deinit(allocator);
 
+    self.gain_processor.deinit(allocator);
+
     allocator.destroy(self);
 }
 
@@ -84,6 +89,8 @@ fn prepare(ctx: *anyopaque, allocator: std.mem.Allocator, spec: audio.ProcessSpe
     for (self.effect_device_list.items) |*device| {
         try device.processor.prepare(allocator, spec);
     }
+
+    try self.gain_processor.prepare(allocator, spec);
 }
 
 fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.AudioView, midi_events: []midi.MidiEvent) !void {
@@ -97,7 +104,8 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
         try device.processor.process(allocator, audio_view, midi_events);
     }
 
-    audio_view.multiplyBy(self.gain_param.getValue());
+    self.gain_processor.setGain(self.gain_param.getValue());
+    self.gain_processor.process(audio_view);
 }
 
 fn stop(ctx: *anyopaque, allow_tail_off: bool) void {

@@ -47,6 +47,15 @@ pub fn multiplyBy(self: @This(), value: f32) void {
     }
 }
 
+pub fn multiplyByArray(self: @This(), array: []const f32) void {
+    for (0..self.getNumChannels()) |channel_index| {
+        const channel = self.getChannel(channel_index);
+        for (channel, array) |*sample, other| {
+            sample.* *= other;
+        }
+    }
+}
+
 pub fn addFrom(self: @This(), other: @This()) void {
     std.debug.assert(self.getNumSamples() == other.getNumSamples());
     std.debug.assert(self.getNumChannels() == other.getNumChannels());
