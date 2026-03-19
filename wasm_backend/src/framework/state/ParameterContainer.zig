@@ -1,5 +1,7 @@
 const std = @import("std");
+const state = @import("../state/state.zig");
 const AudioParameter = @import("AudioParameter.zig");
+const LoadError = state.json.LoadError;
 
 list: std.ArrayList(*AudioParameter) = .empty,
 map: std.StringHashMapUnmanaged(usize) = .empty,
@@ -45,11 +47,24 @@ pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify) !void
 
 pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
-    for (self.list.items, 0..) |param, i| {
+    for (self.list.items) |param| {
         try write_stream.objectField(param.id);
-        try param.save(write_stream, i);
+        try param.save(write_stream);
     }
     try write_stream.endObject();
+}
+
+pub fn load(self: *@This(), parsed: *const std.json.Value) !void {
+    if (parsed.* != .object) return LoadError.IncorrectFieldType;
+    const object = parsed.object;
+
+    for (self.list.items) |param| {
+        if (object.getPtr(param.id)) |parsed_param| {
+            try param.load(parsed_param);
+        } else {
+            param.setToDefault();
+        }
+    }
 }
 
 test "ParameterContainer" {
@@ -84,7 +99,8 @@ test "ParameterContainer" {
     const param2 = container.getWithIndex(param2_index);
     try std.testing.expectEqualStrings("Test 2", param2.name);
 
-    // Stringify
+    // Save to JSON
+
     var out: std.io.Writer.Allocating = .init(allocator);
     defer out.deinit();
     var write_stream: std.json.Stringify = .{
@@ -95,6 +111,20 @@ test "ParameterContainer" {
     try container.save(&write_stream);
     // std.debug.print("{s}\n", .{out.written()});
 
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"id\": \"test1\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"id\": \"test2\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"test1\":") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"test2\":") != null);
+
+    // Load from JSON
+
+    container.getWithIndex(0).setValue(0.0);
+    container.getWithIndex(1).setValue(0.0);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, out.written(), .{});
+    defer parsed.deinit();
+
+    try container.load(&parsed.value);
+
+    for (container.list.items) |param| {
+        try std.testing.expectApproxEqRel(param.value_default, param.getValue(), 1e-5);
+    }
 }

@@ -10,7 +10,7 @@ const instrumentTypeToTrackWeb = instruments_registry.instrumentTypeToTrackWeb;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
-const enableDebugPrint = false;
+const enableDebugPrint = true;
 
 var processor_container_web: ProcessorContainerWeb = undefined;
 
@@ -134,6 +134,27 @@ export fn saveTrackState(track_index: usize) u64 {
     );
 
     return @bitCast(web_string);
+}
+
+export fn loadTrackState(track_index: usize, ptr: [*]u8, len: usize) bool {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({}, {}, {})", .{ @src().fn_name, track_index, @intFromPtr(ptr), len });
+    }
+
+    const slice = ptr[0..len];
+    const parsed = std.json.parseFromSlice(std.json.Value, wasm_allocator, slice, .{}) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return false;
+    };
+    defer parsed.deinit();
+
+    const track = processor_container_web.getProcessor(track_index);
+    track.load(wasm_allocator, &parsed.value) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return false;
+    };
+
+    return true;
 }
 
 // Parameter

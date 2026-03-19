@@ -44,6 +44,6 @@ pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
     try self.audio_processor.save(write_stream);
 }
 
-pub fn load(self: *@This(), parsed: *const std.json.Value) void {
-    self.audio_processor.load(parsed);
+pub fn load(self: *@This(), allocator: std.mem.Allocator, parsed: *const std.json.Value) !void {
+    try self.audio_processor.load(allocator, parsed);
 }

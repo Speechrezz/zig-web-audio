@@ -80,6 +80,6 @@ test "returnJsonString" {
 
     const slice = web_string.ptr[0..web_string.len];
     // std.debug.print("{s}\n", .{slice});
-    try std.testing.expect(std.mem.indexOf(u8, slice, "\"id\": \"test1\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, slice, "\"id\": \"test2\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, slice, "\"test1\":") != null);
+    try std.testing.expect(std.mem.indexOf(u8, slice, "\"test2\":") != null);
 }

@@ -1,21 +1,22 @@
 const std = @import("std");
 
-pub const LoadError = error{ MissingField, IncorrectFieldType };
+const LoadErrorOnly = error{ MissingField, IncorrectFieldType };
+pub const LoadError = LoadErrorOnly || std.mem.Allocator.Error;
 
-pub fn getField(object: std.json.ObjectMap, name: []const u8) LoadError!*std.json.Value {
-    return object.getPtr(name) orelse LoadError.MissingField;
+pub fn getField(object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!*std.json.Value {
+    return object.getPtr(name) orelse LoadErrorOnly.MissingField;
 }
 
-pub fn getFieldString(object: std.json.ObjectMap, name: []const u8) LoadError![]const u8 {
+pub fn getFieldString(object: std.json.ObjectMap, name: []const u8) LoadErrorOnly![]const u8 {
     const value = try getField(object, name);
 
     return switch (value.*) {
         .string => |s| s,
-        else => LoadError.IncorrectFieldType,
+        else => LoadErrorOnly.IncorrectFieldType,
     };
 }
 
-pub fn getFieldInt(comptime IntType: type, object: std.json.ObjectMap, name: []const u8) LoadError!IntType {
+pub fn getFieldInt(comptime IntType: type, object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!IntType {
     if (@typeInfo(IntType) != .int) {
         @compileError("Expected a runtime integer type");
     }
@@ -25,12 +26,12 @@ pub fn getFieldInt(comptime IntType: type, object: std.json.ObjectMap, name: []c
     return switch (value.*) {
         .float => |x| @intFromFloat(x),
         .integer => |x| @intCast(x),
-        .number_string => |s| std.fmt.parseInt(IntType, s, 10) catch return LoadError.IncorrectFieldType,
-        else => LoadError.IncorrectFieldType,
+        .number_string => |s| std.fmt.parseInt(IntType, s, 10) catch return LoadErrorOnly.IncorrectFieldType,
+        else => LoadErrorOnly.IncorrectFieldType,
     };
 }
 
-pub fn getFieldFloat(comptime FloatType: type, object: std.json.ObjectMap, name: []const u8) LoadError!FloatType {
+pub fn getFieldFloat(comptime FloatType: type, object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!FloatType {
     if (@typeInfo(FloatType) != .float) {
         @compileError("Expected a runtime float type");
     }
@@ -40,16 +41,25 @@ pub fn getFieldFloat(comptime FloatType: type, object: std.json.ObjectMap, name:
     return switch (value.*) {
         .float => |x| @floatCast(x),
         .integer => |x| @floatFromInt(x),
-        .number_string => |s| std.fmt.parseFloat(FloatType, s) catch return LoadError.IncorrectFieldType,
-        else => LoadError.IncorrectFieldType,
+        .number_string => |s| std.fmt.parseFloat(FloatType, s) catch return LoadErrorOnly.IncorrectFieldType,
+        else => LoadErrorOnly.IncorrectFieldType,
     };
 }
 
-pub fn getFieldObject(object: std.json.ObjectMap, name: []const u8) LoadError!std.json.ObjectMap {
+pub fn getFieldObject(object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!std.json.ObjectMap {
     const value = try getField(object, name);
 
     return switch (value.*) {
         .object => |o| o,
-        else => LoadError.IncorrectFieldType,
+        else => LoadErrorOnly.IncorrectFieldType,
+    };
+}
+
+pub fn getFieldArray(object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!std.json.Array {
+    const value = try getField(object, name);
+
+    return switch (value.*) {
+        .array => |a| a,
+        else => LoadErrorOnly.IncorrectFieldType,
     };
 }

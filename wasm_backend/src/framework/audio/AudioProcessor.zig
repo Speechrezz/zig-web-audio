@@ -23,10 +23,10 @@ pub const VTable = struct {
     // --Serialization--
     toJsonSpec: *const fn (*anyopaque, write_stream: *std.json.Stringify) std.io.Writer.Error!void = saveFallback,
     save: *const fn (*anyopaque, write_stream: *std.json.Stringify) std.io.Writer.Error!void = saveFallback,
-    load: *const fn (*anyopaque, *const std.json.Value) LoadError!void = loadFallback,
+    load: *const fn (*anyopaque, std.mem.Allocator, std.json.ObjectMap) LoadError!void = loadFallback,
 
     fn saveFallback(_: *anyopaque, _: *std.json.Stringify) std.io.Writer.Error!void {}
-    fn loadFallback(_: *anyopaque, _: *const std.json.Value) LoadError!void {}
+    fn loadFallback(_: *anyopaque, _: std.mem.Allocator, _: std.json.ObjectMap) LoadError!void {}
 };
 
 pub fn init(
@@ -76,7 +76,7 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
     try write_stream.objectField("parameters");
     try self.parameters.toJsonSpec(write_stream);
 
-    try self.vtable.toJsonSpec(self, write_stream);
+    try self.vtable.toJsonSpec(self.ptr, write_stream);
 
     try write_stream.endObject();
 }
@@ -87,11 +87,17 @@ pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
     try write_stream.objectField("parameters");
     try self.parameters.save(write_stream);
 
-    try self.vtable.save(self, write_stream);
+    try self.vtable.save(self.ptr, write_stream);
 
     try write_stream.endObject();
 }
 
-pub fn load(self: *@This(), parsed: *const std.json.Value) void {
-    self.vtable.load(parsed);
+pub fn load(self: *@This(), allocator: std.mem.Allocator, parsed: *const std.json.Value) !void {
+    if (parsed.* != .object) return LoadError.IncorrectFieldType;
+    const object = parsed.object;
+
+    const parameters_value = try state.json.getField(object, "parameters");
+    try self.parameters.load(parameters_value);
+
+    try self.vtable.load(self.ptr, allocator, object);
 }

@@ -1,7 +1,9 @@
 const std = @import("std");
 const fmt = @import("../fmt/fmt.zig");
 const math = @import("../math/math.zig");
+const state = @import("state.zig");
 const ParameterSpec = @import("ParameterSpec.zig");
+const LoadError = state.json.LoadError;
 
 const ValueFormatter = fmt.ValueFormatter(f32);
 const NormalizableRange = math.NormalizableRange(f32);
@@ -75,6 +77,10 @@ pub fn setValueNormalized(self: *@This(), normalized: f32) void {
     self.value_normalized = normalized;
 }
 
+pub fn setToDefault(self: *@This()) void {
+    self.setValue(self.value_default);
+}
+
 pub fn convertToNormalized(self: *const @This(), value: f32) f32 {
     return self.spec.range.toNormalized(value);
 }
@@ -106,22 +112,20 @@ pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify, index
     try write_stream.endObject();
 }
 
-pub fn save(self: *const @This(), write_stream: *std.json.Stringify, index: usize) !void {
+pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
 
-    try write_stream.objectField("index");
-    try write_stream.write(index);
-
-    try write_stream.objectField("id");
-    try write_stream.write(self.id);
-
-    try write_stream.objectField("value_normalized");
+    try write_stream.objectField("value");
     try write_stream.write(self.value_normalized);
 
-    try write_stream.objectField("value");
-    try write_stream.write(self.getValue());
-
     try write_stream.endObject();
+}
+
+pub fn load(self: *@This(), parsed: *const std.json.Value) !void {
+    if (parsed.* != .object) return LoadError.IncorrectFieldType;
+    const object = parsed.object;
+
+    self.value_normalized = try state.json.getFieldFloat(f32, object, "value");
 }
 
 test "AudioParameter" {

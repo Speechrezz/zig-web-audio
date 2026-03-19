@@ -3,6 +3,7 @@ const audio = @import("audio.zig");
 const dsp = @import("../dsp/dsp.zig");
 const midi = @import("../midi/midi.zig");
 const state = @import("../state/state.zig");
+const LoadError = state.json.LoadError;
 
 pub const id = "trackProcessor";
 pub const name = "Track Processor";
@@ -39,6 +40,8 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
             .process = process,
             .stop = stop,
             .toJsonSpec = toJsonSpec,
+            .save = save,
+            .load = load,
         },
     );
 
@@ -137,6 +140,46 @@ pub fn toJsonSpec(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
     }
 
     try write_stream.endArray();
+}
+
+pub fn save(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
+    const self: *@This() = @ptrCast(@alignCast(ctx));
+
+    if (self.generator_device) |*device| {
+        try write_stream.objectField("generator");
+        try device.processor.save(write_stream);
+    }
+
+    try write_stream.objectField("effects");
+    try write_stream.beginArray();
+    for (self.effect_device_list.items) |*device| {
+        try device.processor.save(write_stream);
+    }
+    try write_stream.endArray();
+}
+
+pub fn load(ctx: *anyopaque, allocator: std.mem.Allocator, parsed: std.json.ObjectMap) !void {
+    const self: *@This() = @ptrCast(@alignCast(ctx));
+
+    if (parsed.getPtr("generator")) |gen| {
+        // TODO: This is very wrong. Need to dynamically assign correct type of generator.
+        //       Don't forget to deallocate old generator if exists.
+        try self.generator_device.?.processor.load(allocator, gen);
+    } else if (self.generator_device) |*device| {
+        device.deinit(allocator);
+        self.generator_device = null;
+    }
+
+    for (self.effect_device_list.items) |*device| {
+        device.deinit(allocator);
+    }
+    self.effect_device_list.clearRetainingCapacity();
+
+    const effects_array = try state.json.getFieldArray(parsed, "effects");
+    for (effects_array.items) |*value| {
+        _ = value;
+        // TODO: Dynamically add correct effect device and load.
+    }
 }
 
 test "TrackProcessor processing" {
