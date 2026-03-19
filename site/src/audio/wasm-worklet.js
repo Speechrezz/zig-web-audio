@@ -52,6 +52,15 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     this.exports.clearTracks();
                     break;
 
+                case WorkletMessageType.saveTrackState: {
+                    const stateSlice = unpackSlice(this.exports.saveTrackState(msg.context.trackIndex));
+                    const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
+                    this.exports.freeString(stateSlice.ptr, stateSlice.len);
+
+                    this.port.postMessage({ type: WorkletMessageType.saveTrackState, success: true, stateString: stateString });
+                    break;
+                }
+
                 case WorkletMessageType.setParameterValueNormalized: {
                     const processorPtr = msg.context.processorPtr;
                     const parameterIndex = msg.context.parameterIndex;

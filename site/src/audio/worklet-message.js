@@ -7,10 +7,11 @@ export const WorkletMessageType = Object.freeze({
     midi: "midi",
     stopAllNotes: "stopAllNotes",
     
-    // --Instrument--
+    // --Track--
     addInstrument: "addInstrument",
     removeTrack: "removeInstrument",
     clearTracks: "clearInstruments",
+    saveTrackState: "saveTrackState",
 
     // --Parameter--
     setParameterValueNormalized: "setParameter",
