@@ -3,7 +3,10 @@ const audio = @import("../audio/audio.zig");
 const AudioProcessorWrapper = @import("../audio/AudioProcessorWrapper.zig");
 const AudioProcessor = @import("../audio/AudioProcessor.zig");
 const logging = @import("../web/logging.zig");
+const state = @import("../state/state.zig");
 const wasm_allocator = @import("../mem/allocator.zig").wasm_allocator;
+
+const LoadError = state.json.LoadError;
 
 pub const StopAllFlag = enum { none, stopWithTail, stopImmediately };
 
@@ -132,4 +135,33 @@ pub fn clearProcessors(self: *@This()) void {
 
 pub fn getProcessor(self: *@This(), index: usize) *AudioProcessorWrapper {
     return &self.processor_list.items[index];
+}
+
+pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
+    try write_stream.beginObject();
+
+    try write_stream.objectField("processors");
+    try write_stream.beginArray();
+    for (self.processor_list.items) |*proc| {
+        try proc.save(write_stream);
+    }
+    try write_stream.endArray();
+
+    try write_stream.endObject();
+}
+
+pub fn load(self: *@This(), allocator: std.mem.Allocator, parsed: *const std.json.Value) !void {
+    if (parsed.* != .object) return LoadError.IncorrectFieldType;
+    const object = parsed.object;
+
+    for (self.processor_list.items) |*proc| {
+        proc.deinit(allocator);
+    }
+    self.processor_list.clearRetainingCapacity();
+
+    const processors = try state.json.getFieldArray(object, "processors");
+    for (processors.items) |*value| {
+        _ = value;
+        // TODO: Dynamically add correct effect device and load.
+    }
 }

@@ -74,6 +74,22 @@ export fn stopAllNotes(allow_tail_off: bool) void {
     processor_container_web.onStopMessage(allow_tail_off);
 }
 
+// Global
+
+export fn saveState() u64 {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}()", .{@src().fn_name});
+    }
+
+    const web_string = web.string.toJsonString(
+        wasm_allocator,
+        &processor_container_web,
+        ProcessorContainerWeb.save,
+    );
+
+    return @bitCast(web_string);
+}
+
 // Track
 
 export fn addInstrument(track_index: usize, instrument_type: usize) bool {
