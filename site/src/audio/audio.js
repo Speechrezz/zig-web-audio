@@ -84,6 +84,17 @@ export function getAudioWorkletNode() {
 }
 
 /**
+ * @param {any} message 
+ * @returns `true` if message was successfully sent
+ */
+export function postWorkletMessage(message) {
+    if (audioWorkletNode === null) return false;
+
+    audioWorkletNode.port.postMessage(message);
+    return true;
+}
+
+/**
  * @returns Block size of audio
  */
 export function getBlockSize() {

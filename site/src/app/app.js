@@ -1,5 +1,5 @@
 import { Config } from "./config.js"
-import { initializeAudio, toggleAudioContext, isAudioContextRunning } from "../audio/audio.js"
+import { initializeAudio } from "../audio/audio.js"
 import { MidiInput } from "../audio/midi-input.js"
 import { PlaybackEngine } from "../audio/playback-engine.js"
 import { AppInterface } from "../canvas/interface/app-interface.js"
@@ -10,6 +10,7 @@ import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { TracksContainer } from "../audio/track.js"
 import { WasmContainer } from "../core/wasm.js"
+import { StorageController } from "../state/storage-controller.js"
 
 export class App {
     /** @type {WasmContainer} */
@@ -36,6 +37,9 @@ export class App {
     /** @type {KeyboardListener | undefined} */
     keyboardListener = undefined;
 
+    /** @type {StorageController | undefined} */
+    storage = undefined;
+
     /** @type {Config} */
     config = new Config();
 
@@ -53,6 +57,7 @@ export class App {
         this.playbackEngine = new PlaybackEngine(this.config, tracks);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.keyboardListener = new KeyboardListener(this.eventRouter);
+        this.storage = new StorageController(this.playbackEngine);
 
         const appContext = new AppContext(
             this.config, 
@@ -60,6 +65,7 @@ export class App {
             this.undoManager,
             this.eventRouter,
             this.clipboardManager,
+            this.storage,
         );
 
         this.appInterface = new AppInterface(appContext, this.canvasElement);

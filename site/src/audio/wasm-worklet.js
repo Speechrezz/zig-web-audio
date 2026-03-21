@@ -20,12 +20,27 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                 default:
                     console.warn("[WasmProcessor] Unhandled 'onmessage':", msg);
                     break;
+                
+                // --MIDI--
                 case WorkletMessageType.midi:
                     this.exports.sendMidiEvent(msg.instrumentIndex, msg.data, msg.time);
                     break;
                 case WorkletMessageType.stopAllNotes:
                     this.exports.stopAllNotes(msg.allowTailOff);
                     break;
+
+                // --Global--
+                case WorkletMessageType.saveState: {
+                    const stateSlice = unpackSlice(this.exports.saveState());
+                    const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
+                    this.exports.freeString(stateSlice.ptr, stateSlice.len);
+
+                    console.log("save:", JSON.parse(stateString));
+                    this.port.postMessage({ type: WorkletMessageType.saveState, success: true, stateString: stateString });
+                    break;
+                }
+
+                // --Track--
                 case WorkletMessageType.addInstrument: {
                     const success = Boolean(this.exports.addInstrument(msg.context.trackIndex, msg.context.instrumentType));
                     if (success === false) {
@@ -53,14 +68,16 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     break;
 
                 case WorkletMessageType.saveTrackState: {
-                    const stateSlice = unpackSlice(this.exports.saveTrackState(msg.context.trackIndex));
+                    const stateSlice = unpackSlice(this.exports.saveTrackState(msg.trackIndex));
                     const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
                     this.exports.freeString(stateSlice.ptr, stateSlice.len);
 
+                    console.log("save:", JSON.parse(stateString));
                     this.port.postMessage({ type: WorkletMessageType.saveTrackState, success: true, stateString: stateString });
                     break;
                 }
 
+                // --Parameter--
                 case WorkletMessageType.setParameterValueNormalized: {
                     const processorPtr = msg.context.processorPtr;
                     const parameterIndex = msg.context.parameterIndex;
