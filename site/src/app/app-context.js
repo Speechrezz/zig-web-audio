@@ -4,7 +4,7 @@ import { AppEventRouter } from "./app-event-router.js";
 import { ClipboardManager } from "./clipboard-manager.js";
 import { UndoManager } from "./undo-manager.js";
 import { TracksContainer } from "../audio/track.js";
-import { StorageController } from "../state/storage-controller.js";
+import { WorkletState } from "../state/worklet-state.js";
 
 export class AppContext {
     /** @type {Config} */
@@ -25,8 +25,8 @@ export class AppContext {
     /** @type {ClipboardManager} */
     clipboardManager;
 
-    /** @type {StorageController} */
-    storage;
+    /** @type {WorkletState} */
+    workletState;
 
     /**
      * @param {Config} config
@@ -34,15 +34,15 @@ export class AppContext {
      * @param {UndoManager} undoManager
      * @param {AppEventRouter} eventRouter
      * @param {ClipboardManager} clipboardManager
-     * @param {StorageController} storage
+     * @param {WorkletState} workletState
      */
-    constructor(config, playbackEngine, undoManager, eventRouter, clipboardManager, storage) {
+    constructor(config, playbackEngine, undoManager, eventRouter, clipboardManager, workletState) {
         this.config = config;
         this.playbackEngine = playbackEngine;
         this.undoManager = undoManager;
         this.eventRouter = eventRouter;
         this.clipboardManager = clipboardManager;
-        this.storage = storage;
+        this.workletState = workletState;
 
         this.tracks = this.playbackEngine.tracks;
     }

@@ -35,8 +35,12 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
                     this.exports.freeString(stateSlice.ptr, stateSlice.len);
 
-                    console.log("save:", JSON.parse(stateString));
-                    this.port.postMessage({ type: WorkletMessageType.saveState, success: true, stateString: stateString });
+                    this.port.postMessage({
+                        type: WorkletMessageType.saveState,
+                        success: true,
+                        stateString: stateString,
+                        callbackId: msg.callbackId,
+                    });
                     break;
                 }
 
@@ -72,8 +76,13 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
                     this.exports.freeString(stateSlice.ptr, stateSlice.len);
 
-                    console.log("save:", JSON.parse(stateString));
-                    this.port.postMessage({ type: WorkletMessageType.saveTrackState, success: true, stateString: stateString });
+                    this.port.postMessage({
+                        type: WorkletMessageType.saveTrackState,
+                        success: true,
+                        stateString: stateString,
+                        callbackId: msg.callbackId,
+                        ctx: { index: msg.trackIndex },
+                    });
                     break;
                 }
 

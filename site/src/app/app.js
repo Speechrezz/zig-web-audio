@@ -10,7 +10,8 @@ import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { TracksContainer } from "../audio/track.js"
 import { WasmContainer } from "../core/wasm.js"
-import { StorageController } from "../state/storage-controller.js"
+import { WorkletState } from "../state/worklet-state.js"
+import { AppState } from "../state/app-state.js"
 
 export class App {
     /** @type {WasmContainer} */
@@ -37,8 +38,11 @@ export class App {
     /** @type {KeyboardListener | undefined} */
     keyboardListener = undefined;
 
-    /** @type {StorageController | undefined} */
-    storage = undefined;
+    /** @type {WorkletState | undefined} */
+    workletState = undefined;
+
+    /** @type {AppState | undefined} */
+    appState = undefined;
 
     /** @type {Config} */
     config = new Config();
@@ -57,7 +61,8 @@ export class App {
         this.playbackEngine = new PlaybackEngine(this.config, tracks);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.keyboardListener = new KeyboardListener(this.eventRouter);
-        this.storage = new StorageController(this.playbackEngine);
+        this.workletState = new WorkletState();
+        this.appState = new AppState(this.workletState, this.playbackEngine);
 
         const appContext = new AppContext(
             this.config, 
@@ -65,7 +70,7 @@ export class App {
             this.undoManager,
             this.eventRouter,
             this.clipboardManager,
-            this.storage,
+            this.workletState,
         );
 
         this.appInterface = new AppInterface(appContext, this.canvasElement);
@@ -113,9 +118,11 @@ export class App {
         const startContainer = /** @type {HTMLDivElement} */ (document.getElementById("start-audio-container"));
         this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
 
-        await initializeAudio();
+        const node = await initializeAudio();
         // @ts-ignore
         this.playbackEngine.tracks.initializeAudio();
+        // @ts-ignore
+        this.workletState.workletInitialized(node);
 
         startContainer.style.display = "none";
     }

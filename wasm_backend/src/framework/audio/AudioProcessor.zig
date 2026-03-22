@@ -84,6 +84,9 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
 pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
 
+    try write_stream.objectField("id");
+    try write_stream.write(self.id);
+
     try write_stream.objectField("parameters");
     try self.parameters.save(write_stream);
 

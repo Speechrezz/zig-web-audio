@@ -41,6 +41,7 @@ export async function initializeAudio() {
 
     await audioContext.resume();
     console.log("Audio initialized!");
+    return audioWorkletNode;
 }
 
 /**
