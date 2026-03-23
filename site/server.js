@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Define the port to run the server on
-const port = 8000;
+const port = 8080;
 
 // Function to determine the MIME type based on the file extension
 function getContentType(extname) {
