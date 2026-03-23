@@ -17,6 +17,7 @@ const BLOCK_SIZE = 128;
  */
 export async function initializeAudio() {
     audioContext = new AudioContext;
+    await audioContext.suspend(); // Necessary to minimize latency for some reason
 
     const workletUrl = new URL("./wasm-worklet.js", import.meta.url);
     await audioContext.audioWorklet.addModule(workletUrl);

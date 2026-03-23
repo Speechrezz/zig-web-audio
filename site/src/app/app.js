@@ -79,8 +79,9 @@ export class App {
         window.addEventListener("resize", () => this.resizeCanvas());
 
         startButton.onclick = async () => {
-            this.startButtonClicked();
+            this.startButtonClicked(startButton);
         }
+        startButton.disabled = false;
         startButton.value = "Start Audio Engine";
     }
 
@@ -114,7 +115,12 @@ export class App {
         console.log("WASM main initialized - exports:", this.wasm.exports);
     }
 
-    async startButtonClicked() {
+    /**
+     * @param {HTMLInputElement} startButton 
+     */
+    async startButtonClicked(startButton) {
+        startButton.value = "Loading...";
+        startButton.disabled = true;
         const startContainer = /** @type {HTMLDivElement} */ (document.getElementById("start-audio-container"));
         this.canvasElement = /** @type {HTMLCanvasElement} */ (document.getElementById("pianoroll"));
 

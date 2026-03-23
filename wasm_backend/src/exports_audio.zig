@@ -10,7 +10,7 @@ const instrumentTypeToTrackWeb = instruments_registry.instrumentTypeToTrackWeb;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
-const enableDebugPrint = true;
+const enableDebugPrint = false;
 
 var processor_container_web: ProcessorContainerWeb = undefined;
 
