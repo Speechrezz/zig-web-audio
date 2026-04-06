@@ -13,10 +13,13 @@ pub const StopAllFlag = enum { none, stopWithTail, stopImmediately };
 processor_list: std.ArrayList(AudioProcessorWrapper) = .empty,
 audio_buffer: audio.AudioBuffer = undefined,
 process_spec: ?audio.ProcessSpec = null,
+context: *const audio.ProcessorContext,
 stop_all_notes_flag: StopAllFlag = .none,
 
-pub fn init(self: *@This()) void {
-    self.* = .{};
+pub fn init(self: *@This(), context: *const audio.ProcessorContext) void {
+    self.* = .{
+        .context = context,
+    };
     self.audio_buffer.init();
 }
 

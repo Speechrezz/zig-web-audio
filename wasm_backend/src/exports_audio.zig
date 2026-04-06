@@ -5,14 +5,15 @@ const std = @import("std");
 const state = @import("framework").state;
 const web = @import("framework").web;
 const ProcessorContainerWeb = @import("framework").ProcessorContainerWeb;
-const instruments_registry = @import("processor/instrument_registry.zig");
-const instrumentTypeToTrackWeb = instruments_registry.instrumentTypeToTrackWeb;
+const processor_registry = @import("processor/processor_registry.zig");
+const trackFromInstrumentKindIndexWeb = processor_registry.trackFromInstrumentKindIndexWeb;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
 const enableDebugPrint = false;
 
 var processor_container_web: ProcessorContainerWeb = undefined;
+var processor_context: audio.ProcessorContext = undefined;
 
 // Audio processing
 
@@ -21,7 +22,7 @@ export fn initAudio() void {
         logging.logDebug("[WASM] {s}()", .{@src().fn_name});
     }
 
-    processor_container_web.init();
+    processor_container_web.init(&processor_context);
 }
 
 export fn deinitAudio() void {
@@ -97,8 +98,9 @@ export fn addInstrument(track_index: usize, instrument_type: usize) bool {
         logging.logDebug("[WASM] {s}(idx={}, type={})", .{ @src().fn_name, track_index, instrument_type });
     }
 
-    const track = instrumentTypeToTrackWeb(
+    const track = trackFromInstrumentKindIndexWeb(
         wasm_allocator,
+        &processor_context,
         instrument_type,
     );
 

@@ -5,7 +5,7 @@ const midi = @import("../midi/midi.zig");
 const state = @import("../state/state.zig");
 const LoadError = state.json.LoadError;
 
-pub const id = "trackProcessor";
+pub const kind = "trackProcessor";
 pub const name = "Track Processor";
 
 pub const Device = struct {
@@ -29,10 +29,11 @@ effect_device_list: std.ArrayList(Device),
 gain_param: *state.AudioParameter,
 gain_processor: dsp.GainProcessor,
 
-pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
+pub fn init(self: *@This(), allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !void {
     try self.processor.init(
-        id,
+        kind,
         name,
+        context,
         self,
         &.{
             .destroy = destroy,
@@ -59,9 +60,9 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     self.gain_processor = .init;
 }
 
-pub fn create(allocator: std.mem.Allocator) !*@This() {
+pub fn create(allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !*@This() {
     const self = try allocator.create(@This());
-    try self.init(allocator);
+    try self.init(allocator, context);
     return self;
 }
 
@@ -184,11 +185,12 @@ pub fn load(ctx: *anyopaque, allocator: std.mem.Allocator, parsed: std.json.Obje
 
 test "TrackProcessor processing" {
     const allocator = std.testing.allocator;
+    const dummy_context: audio.ProcessorContext = undefined;
 
     const num_channels = 2;
     const block_size = 128;
 
-    var track_processor = try @This().create(allocator);
+    var track_processor = try @This().create(allocator, &dummy_context);
     var track = &track_processor.processor;
     defer track.destroy(allocator);
 
@@ -211,12 +213,13 @@ test "TrackProcessor processing" {
 
 test "TrackProcessor toJsonSpec" {
     const allocator = std.testing.allocator;
+    const dummy_context: audio.ProcessorContext = undefined;
 
-    var track_processor = try @This().create(allocator);
+    var track_processor = try @This().create(allocator, &dummy_context);
     var track = &track_processor.processor;
     defer track.destroy(allocator);
 
-    const generator_dummy = try @This().create(allocator);
+    const generator_dummy = try @This().create(allocator, &dummy_context);
     track_processor.generator_device = Device.init(&generator_dummy.processor);
 
     // Stringify
@@ -230,7 +233,7 @@ test "TrackProcessor toJsonSpec" {
     try track.toJsonSpec(&write_stream);
     // std.debug.print("{s}\n", .{out.written()});
 
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"id\": \"trackProcessor\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"trackProcessor\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"parameters\":") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": {") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": null") != null);

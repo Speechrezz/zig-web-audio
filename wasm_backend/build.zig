@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/framework/framework.zig"),
     });
     const processor_mod = b.addModule("audio_processor", .{
-        .root_source_file = b.path("src/processor/instrument_registry.zig"),
+        .root_source_file = b.path("src/processor/processor_registry.zig"),
     });
 
     processor_mod.addImport("framework", framework_mod);
@@ -79,7 +79,7 @@ pub fn build(b: *std.Build) void {
     // Test the processor module
     const processor_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/processor/instrument_registry.zig"),
+            .root_source_file = b.path("src/processor/processor_registry.zig"),
             .target = native_target,
             .optimize = optimize,
             .imports = &.{

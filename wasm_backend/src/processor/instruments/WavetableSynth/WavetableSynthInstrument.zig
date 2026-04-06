@@ -7,7 +7,7 @@ const state = @import("framework").state;
 const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
 const SynthVoice = @import("WavetableSynthVoice.zig");
 
-pub const id = "wavetableSynth";
+pub const kind = "wavetableSynth";
 pub const name = "Wavetable Synth";
 
 processor: audio.AudioProcessor,
@@ -22,10 +22,11 @@ adsr_params: struct {
     release: *state.AudioParameter,
 },
 
-pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
+pub fn init(self: *@This(), allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !void {
     try self.processor.init(
-        id,
+        kind,
         name,
+        context,
         self,
         &.{
             .destroy = destroy,
@@ -82,9 +83,9 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     self.synth_processor.init();
 }
 
-pub fn create(allocator: std.mem.Allocator) !*audio.AudioProcessor {
+pub fn create(allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !*audio.AudioProcessor {
     const self = try allocator.create(@This());
-    try self.init(allocator);
+    try self.init(allocator, context);
     return &self.processor;
 }
 

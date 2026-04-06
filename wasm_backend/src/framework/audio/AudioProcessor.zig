@@ -6,8 +6,14 @@ const state = @import("../state/state.zig");
 const Error = std.mem.Allocator.Error;
 const LoadError = state.json.LoadError;
 
+// Context struct which is passed to all AudioProcessor's upon initialization
+pub const ProcessorContext = struct {
+    // TODO
+};
+
 id: []const u8,
 name: []const u8,
+context: *const ProcessorContext,
 ptr: *anyopaque,
 vtable: *const VTable,
 
@@ -31,14 +37,16 @@ pub const VTable = struct {
 
 pub fn init(
     self: *@This(),
-    id: []const u8,
+    kind: []const u8,
     name: []const u8,
+    context: *const ProcessorContext,
     ptr: *anyopaque,
     vtable: *const VTable,
 ) !void {
     self.* = .{
-        .id = id,
+        .id = kind,
         .name = name,
+        .context = context,
         .ptr = ptr,
         .vtable = vtable,
     };
@@ -67,7 +75,7 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
     try write_stream.objectField("ptr");
     try write_stream.write(@intFromPtr(self));
 
-    try write_stream.objectField("id");
+    try write_stream.objectField("kind");
     try write_stream.write(self.id);
 
     try write_stream.objectField("name");

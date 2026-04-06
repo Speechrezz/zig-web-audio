@@ -7,42 +7,59 @@ const WavetableSynthInstrument = @import("instruments/WavetableSynth/WavetableSy
 
 pub const Error = std.mem.Allocator.Error || error{InstrumentTypeDoesNotExist};
 
-pub fn instrumentTypeToProcessor(allocator: std.mem.Allocator, instrument_type: usize) !*audio.AudioProcessor {
-    switch (instrument_type) {
-        0 => return SineSynthInstrument.create(allocator),
-        1 => return TriangleSynthInstrument.create(allocator),
-        2 => return WavetableSynthInstrument.create(allocator),
+pub fn processorFromKindIndex(
+    allocator: std.mem.Allocator,
+    context: *const audio.ProcessorContext,
+    index: usize,
+) !*audio.AudioProcessor {
+    switch (index) {
+        0 => return SineSynthInstrument.create(allocator, context),
+        1 => return TriangleSynthInstrument.create(allocator, context),
+        2 => return WavetableSynthInstrument.create(allocator, context),
 
         else => return Error.InstrumentTypeDoesNotExist,
     }
 }
 
-pub fn instrumentTypeToProcessorWeb(allocator: std.mem.Allocator, instrument_type: usize) ?*audio.AudioProcessor {
-    return instrumentTypeToProcessor(
+pub fn processorFromKindIndexWeb(
+    allocator: std.mem.Allocator,
+    context: *const audio.ProcessorContext,
+    index: usize,
+) ?*audio.AudioProcessor {
+    return processorFromKindIndex(
         allocator,
-        instrument_type,
+        context,
+        index,
     ) catch |err| {
         logging.logDebug(
-            "[WASM.addInstrument()] Failed to create instrument '{}': {}",
-            .{ instrument_type, err },
+            "[WASM.addInstrument()] Failed to create audio processor '{}': {}",
+            .{ index, err },
         );
         return null;
     };
 }
 
-pub fn instrumentTypeToTrack(allocator: std.mem.Allocator, instrument_type: usize) !*audio.AudioProcessor {
-    const instrument = try instrumentTypeToProcessor(allocator, instrument_type);
-    const track = try audio.TrackProcessor.create(allocator);
+pub fn trackFromInstrumentKindIndex(
+    allocator: std.mem.Allocator,
+    context: *const audio.ProcessorContext,
+    index: usize,
+) !*audio.AudioProcessor {
+    const instrument = try processorFromKindIndex(allocator, context, index);
+    const track = try audio.TrackProcessor.create(allocator, context);
 
     track.generator_device = audio.TrackProcessor.Device.init(instrument);
     return &track.processor;
 }
 
-pub fn instrumentTypeToTrackWeb(allocator: std.mem.Allocator, instrument_type: usize) ?*audio.AudioProcessor {
-    return instrumentTypeToTrack(allocator, instrument_type) catch |err| {
+pub fn trackFromInstrumentKindIndexWeb(
+    allocator: std.mem.Allocator,
+    context: *const audio.ProcessorContext,
+    index: usize,
+) ?*audio.AudioProcessor {
+    return trackFromInstrumentKindIndex(allocator, context, index) catch |err| {
         logging.logDebug(
             "[WASM.instrumentTypeToTrack()] Failed to create instrument track '{}': {}",
-            .{ instrument_type, err },
+            .{ index, err },
         );
         return null;
     };
@@ -50,6 +67,7 @@ pub fn instrumentTypeToTrackWeb(allocator: std.mem.Allocator, instrument_type: u
 
 test "Registering instrument test" {
     const allocator = std.testing.allocator;
+    const dummy_context: audio.ProcessorContext = undefined;
 
     var processor_list: std.ArrayList(audio.AudioProcessorWrapper) = .empty;
     defer {
@@ -60,7 +78,7 @@ test "Registering instrument test" {
     }
 
     const instrument1 = audio.AudioProcessorWrapper.init(
-        try SineSynthInstrument.create(allocator),
+        try SineSynthInstrument.create(allocator, &dummy_context),
     );
 
     try processor_list.append(allocator, instrument1);
