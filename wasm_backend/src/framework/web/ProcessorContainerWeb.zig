@@ -13,13 +13,10 @@ pub const StopAllFlag = enum { none, stopWithTail, stopImmediately };
 processor_list: std.ArrayList(AudioProcessorWrapper) = .empty,
 audio_buffer: audio.AudioBuffer = undefined,
 process_spec: ?audio.ProcessSpec = null,
-context: *const audio.ProcessorContext,
 stop_all_notes_flag: StopAllFlag = .none,
 
-pub fn init(self: *@This(), context: *const audio.ProcessorContext) void {
-    self.* = .{
-        .context = context,
-    };
+pub fn init(self: *@This()) void {
+    self.* = .{};
     self.audio_buffer.init();
 }
 
@@ -140,22 +137,23 @@ pub fn getProcessor(self: *@This(), index: usize) *AudioProcessorWrapper {
     return &self.processor_list.items[index];
 }
 
-pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
+pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
 
     try write_stream.objectField("processors");
     try write_stream.beginArray();
     for (self.processor_list.items) |*proc| {
-        try proc.save(write_stream);
+        try proc.save(ctx, write_stream);
     }
     try write_stream.endArray();
 
     try write_stream.endObject();
 }
 
-pub fn load(self: *@This(), allocator: std.mem.Allocator, parsed: *const std.json.Value) !void {
+pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: *const std.json.Value) !void {
     if (parsed.* != .object) return LoadError.IncorrectFieldType;
     const object = parsed.object;
+    _ = ctx;
 
     for (self.processor_list.items) |*proc| {
         proc.deinit(allocator);

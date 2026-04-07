@@ -9,13 +9,12 @@ pub const Error = std.mem.Allocator.Error || error{InstrumentTypeDoesNotExist};
 
 pub fn processorFromKindIndex(
     allocator: std.mem.Allocator,
-    context: *const audio.ProcessorContext,
     index: usize,
 ) !*audio.AudioProcessor {
     switch (index) {
-        0 => return SineSynthInstrument.create(allocator, context),
-        1 => return TriangleSynthInstrument.create(allocator, context),
-        2 => return WavetableSynthInstrument.create(allocator, context),
+        0 => return SineSynthInstrument.create(allocator),
+        1 => return TriangleSynthInstrument.create(allocator),
+        2 => return WavetableSynthInstrument.create(allocator),
 
         else => return Error.InstrumentTypeDoesNotExist,
     }
@@ -23,14 +22,9 @@ pub fn processorFromKindIndex(
 
 pub fn processorFromKindIndexWeb(
     allocator: std.mem.Allocator,
-    context: *const audio.ProcessorContext,
     index: usize,
 ) ?*audio.AudioProcessor {
-    return processorFromKindIndex(
-        allocator,
-        context,
-        index,
-    ) catch |err| {
+    return processorFromKindIndex(allocator, index) catch |err| {
         logging.logDebug(
             "[WASM.addInstrument()] Failed to create audio processor '{}': {}",
             .{ index, err },
@@ -41,11 +35,10 @@ pub fn processorFromKindIndexWeb(
 
 pub fn trackFromInstrumentKindIndex(
     allocator: std.mem.Allocator,
-    context: *const audio.ProcessorContext,
     index: usize,
 ) !*audio.AudioProcessor {
-    const instrument = try processorFromKindIndex(allocator, context, index);
-    const track = try audio.TrackProcessor.create(allocator, context);
+    const instrument = try processorFromKindIndex(allocator, index);
+    const track = try audio.TrackProcessor.create(allocator);
 
     track.generator_device = audio.TrackProcessor.Device.init(instrument);
     return &track.processor;
@@ -53,10 +46,9 @@ pub fn trackFromInstrumentKindIndex(
 
 pub fn trackFromInstrumentKindIndexWeb(
     allocator: std.mem.Allocator,
-    context: *const audio.ProcessorContext,
     index: usize,
 ) ?*audio.AudioProcessor {
-    return trackFromInstrumentKindIndex(allocator, context, index) catch |err| {
+    return trackFromInstrumentKindIndex(allocator, index) catch |err| {
         logging.logDebug(
             "[WASM.instrumentTypeToTrack()] Failed to create instrument track '{}': {}",
             .{ index, err },
@@ -67,7 +59,6 @@ pub fn trackFromInstrumentKindIndexWeb(
 
 test "Registering instrument test" {
     const allocator = std.testing.allocator;
-    const dummy_context: audio.ProcessorContext = undefined;
 
     var processor_list: std.ArrayList(audio.AudioProcessorWrapper) = .empty;
     defer {
@@ -78,7 +69,7 @@ test "Registering instrument test" {
     }
 
     const instrument1 = audio.AudioProcessorWrapper.init(
-        try SineSynthInstrument.create(allocator, &dummy_context),
+        try SineSynthInstrument.create(allocator),
     );
 
     try processor_list.append(allocator, instrument1);

@@ -14,8 +14,8 @@ pub fn build(b: *std.Build) void {
     const framework_mod = b.addModule("framework", .{
         .root_source_file = b.path("src/framework/framework.zig"),
     });
-    const processor_mod = b.addModule("audio_processor", .{
-        .root_source_file = b.path("src/processor/processor_registry.zig"),
+    const processor_mod = b.addModule("chordic", .{
+        .root_source_file = b.path("src/chordic/chordic.zig"),
     });
 
     processor_mod.addImport("framework", framework_mod);
@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) void {
     });
 
     wasm_audio.root_module.addImport("framework", framework_mod);
-    wasm_audio.root_module.addImport("AudioProcessor", processor_mod);
+    wasm_audio.root_module.addImport("chordic", processor_mod);
 
     // Typical wasm-friendly options (pick what you need)
     wasm_audio.entry = .disabled; // no Zig "main" required
@@ -70,7 +70,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "framework", .module = framework_mod },
-                .{ .name = "AudioProcessor", .module = processor_mod }, // only if framework tests import it
+                // .{ .name = "AudioProcessor", .module = processor_mod }, // only if framework tests import it
             },
         }),
     });
@@ -79,7 +79,7 @@ pub fn build(b: *std.Build) void {
     // Test the processor module
     const processor_tests = b.addTest(.{
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/processor/processor_registry.zig"),
+            .root_source_file = b.path("src/chordic/chordic.zig"),
             .target = native_target,
             .optimize = optimize,
             .imports = &.{

@@ -5,15 +5,15 @@ const std = @import("std");
 const state = @import("framework").state;
 const web = @import("framework").web;
 const ProcessorContainerWeb = @import("framework").ProcessorContainerWeb;
-const processor_registry = @import("processor/processor_registry.zig");
-const trackFromInstrumentKindIndexWeb = processor_registry.trackFromInstrumentKindIndexWeb;
+const chordic = @import("chordic");
+const trackFromInstrumentKindIndexWeb = chordic.trackFromInstrumentKindIndexWeb;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
 const enableDebugPrint = false;
 
 var processor_container_web: ProcessorContainerWeb = undefined;
-var processor_context: audio.ProcessorContext = undefined;
+var serialization_context: i32 = undefined; // TODO
 
 // Audio processing
 
@@ -22,7 +22,7 @@ export fn initAudio() void {
         logging.logDebug("[WASM] {s}()", .{@src().fn_name});
     }
 
-    processor_container_web.init(&processor_context);
+    processor_container_web.init();
 }
 
 export fn deinitAudio() void {
@@ -82,9 +82,10 @@ export fn saveState() u64 {
         logging.logDebug("[WASM] {s}()", .{@src().fn_name});
     }
 
-    const web_string = web.string.toJsonString(
+    const web_string = web.string.saveStateToJsonLogging(
         wasm_allocator,
         &processor_container_web,
+        &serialization_context,
         ProcessorContainerWeb.save,
     );
 
@@ -98,11 +99,7 @@ export fn addInstrument(track_index: usize, instrument_type: usize) bool {
         logging.logDebug("[WASM] {s}(idx={}, type={})", .{ @src().fn_name, track_index, instrument_type });
     }
 
-    const track = trackFromInstrumentKindIndexWeb(
-        wasm_allocator,
-        &processor_context,
-        instrument_type,
-    );
+    const track = trackFromInstrumentKindIndexWeb(wasm_allocator, instrument_type);
 
     if (track == null) return false;
     return processor_container_web.addProcessor(track_index, track.?);
@@ -145,9 +142,10 @@ export fn saveTrackState(track_index: usize) u64 {
     }
 
     const track = processor_container_web.getProcessor(track_index);
-    const web_string = web.string.toJsonString(
+    const web_string = web.string.saveStateToJsonLogging(
         wasm_allocator,
         track,
+        &serialization_context,
         audio.AudioProcessorWrapper.save,
     );
 
@@ -167,7 +165,11 @@ export fn loadTrackState(track_index: usize, ptr: [*]u8, len: usize) bool {
     defer parsed.deinit();
 
     const track = processor_container_web.getProcessor(track_index);
-    track.load(wasm_allocator, &parsed.value) catch |err| {
+    track.load(
+        wasm_allocator,
+        &serialization_context,
+        &parsed.value,
+    ) catch |err| {
         logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
         return false;
     };

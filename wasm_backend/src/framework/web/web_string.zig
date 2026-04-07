@@ -5,8 +5,16 @@ pub const WebString = packed struct {
     ptr: [*]u8,
     len: usize,
 };
+const null_web_string: WebString = .{
+    .ptr = undefined,
+    .len = 0,
+};
 
 const JsonWriteError = std.json.Stringify.Error;
+
+pub const json_options: std.json.Stringify.Options = .{
+    .whitespace = .indent_2,
+};
 
 pub fn toJsonString(
     allocator: std.mem.Allocator,
@@ -28,10 +36,44 @@ fn toJsonStringImpl(
     defer out.deinit();
     var write_stream: std.json.Stringify = .{
         .writer = &out.writer,
-        .options = .{ .whitespace = .indent_2 },
+        .options = json_options,
     };
 
     try toJsonFn(context, &write_stream);
+
+    const owned_slice = try out.toOwnedSlice();
+    return .{
+        .ptr = owned_slice.ptr,
+        .len = owned_slice.len,
+    };
+}
+
+pub fn saveStateToJsonLogging(
+    allocator: std.mem.Allocator,
+    processor: anytype,
+    serialization_context: *const anyopaque,
+    comptime saveFn: fn (@TypeOf(processor), @TypeOf(serialization_context), *std.json.Stringify) JsonWriteError!void,
+) WebString {
+    return saveStateToJson(allocator, processor, serialization_context, saveFn) catch |err| {
+        logging.logDebug("[WASM] {s}(): Error creating string: {}", .{ @src().fn_name, err });
+        return null_web_string;
+    };
+}
+
+pub fn saveStateToJson(
+    allocator: std.mem.Allocator,
+    processor: anytype,
+    serialization_context: *const anyopaque,
+    comptime saveFn: fn (@TypeOf(processor), @TypeOf(serialization_context), *std.json.Stringify) JsonWriteError!void,
+) !WebString {
+    var out: std.io.Writer.Allocating = .init(allocator);
+    defer out.deinit();
+    var write_stream: std.json.Stringify = .{
+        .writer = &out.writer,
+        .options = json_options,
+    };
+
+    try saveFn(processor, serialization_context, &write_stream);
 
     const owned_slice = try out.toOwnedSlice();
     return .{

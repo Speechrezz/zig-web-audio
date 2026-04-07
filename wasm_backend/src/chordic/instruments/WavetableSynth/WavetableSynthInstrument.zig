@@ -22,11 +22,10 @@ adsr_params: struct {
     release: *state.AudioParameter,
 },
 
-pub fn init(self: *@This(), allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !void {
+pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
         kind,
         name,
-        context,
         self,
         &.{
             .destroy = destroy,
@@ -83,9 +82,9 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator, context: *const audio.
     self.synth_processor.init();
 }
 
-pub fn create(allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !*audio.AudioProcessor {
+pub fn create(allocator: std.mem.Allocator) !*audio.AudioProcessor {
     const self = try allocator.create(@This());
-    try self.init(allocator, context);
+    try self.init(allocator);
     return &self.processor;
 }
 

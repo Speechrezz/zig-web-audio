@@ -29,11 +29,10 @@ effect_device_list: std.ArrayList(Device),
 gain_param: *state.AudioParameter,
 gain_processor: dsp.GainProcessor,
 
-pub fn init(self: *@This(), allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !void {
+pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
     try self.processor.init(
         kind,
         name,
-        context,
         self,
         &.{
             .destroy = destroy,
@@ -60,9 +59,9 @@ pub fn init(self: *@This(), allocator: std.mem.Allocator, context: *const audio.
     self.gain_processor = .init;
 }
 
-pub fn create(allocator: std.mem.Allocator, context: *const audio.ProcessorContext) !*@This() {
+pub fn create(allocator: std.mem.Allocator) !*@This() {
     const self = try allocator.create(@This());
-    try self.init(allocator, context);
+    try self.init(allocator);
     return self;
 }
 
@@ -143,29 +142,29 @@ pub fn toJsonSpec(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
     try write_stream.endArray();
 }
 
-pub fn save(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
-    const self: *@This() = @ptrCast(@alignCast(ctx));
+pub fn save(ptr: *anyopaque, ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
+    const self: *@This() = @ptrCast(@alignCast(ptr));
 
     if (self.generator_device) |*device| {
         try write_stream.objectField("generator");
-        try device.processor.save(write_stream);
+        try device.processor.save(ctx, write_stream);
     }
 
     try write_stream.objectField("effects");
     try write_stream.beginArray();
     for (self.effect_device_list.items) |*device| {
-        try device.processor.save(write_stream);
+        try device.processor.save(ctx, write_stream);
     }
     try write_stream.endArray();
 }
 
-pub fn load(ctx: *anyopaque, allocator: std.mem.Allocator, parsed: std.json.ObjectMap) !void {
-    const self: *@This() = @ptrCast(@alignCast(ctx));
+pub fn load(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, parsed: std.json.ObjectMap) !void {
+    const self: *@This() = @ptrCast(@alignCast(ptr));
 
     if (parsed.getPtr("generator")) |gen| {
         // TODO: This is very wrong. Need to dynamically assign correct type of generator.
         //       Don't forget to deallocate old generator if exists.
-        try self.generator_device.?.processor.load(allocator, gen);
+        try self.generator_device.?.processor.load(allocator, ctx, gen);
     } else if (self.generator_device) |*device| {
         device.deinit(allocator);
         self.generator_device = null;
@@ -185,12 +184,11 @@ pub fn load(ctx: *anyopaque, allocator: std.mem.Allocator, parsed: std.json.Obje
 
 test "TrackProcessor processing" {
     const allocator = std.testing.allocator;
-    const dummy_context: audio.ProcessorContext = undefined;
 
     const num_channels = 2;
     const block_size = 128;
 
-    var track_processor = try @This().create(allocator, &dummy_context);
+    var track_processor = try @This().create(allocator);
     var track = &track_processor.processor;
     defer track.destroy(allocator);
 
@@ -213,13 +211,12 @@ test "TrackProcessor processing" {
 
 test "TrackProcessor toJsonSpec" {
     const allocator = std.testing.allocator;
-    const dummy_context: audio.ProcessorContext = undefined;
 
-    var track_processor = try @This().create(allocator, &dummy_context);
+    var track_processor = try @This().create(allocator);
     var track = &track_processor.processor;
     defer track.destroy(allocator);
 
-    const generator_dummy = try @This().create(allocator, &dummy_context);
+    const generator_dummy = try @This().create(allocator);
     track_processor.generator_device = Device.init(&generator_dummy.processor);
 
     // Stringify

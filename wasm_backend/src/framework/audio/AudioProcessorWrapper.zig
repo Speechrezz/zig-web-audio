@@ -40,10 +40,14 @@ pub fn stop(self: *@This(), allow_tail_off: bool) void {
     self.audio_processor.stop(allow_tail_off);
 }
 
-pub fn save(self: *@This(), write_stream: *std.json.Stringify) !void {
-    try self.audio_processor.save(write_stream);
+pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
+    try self.audio_processor.toJsonSpec(write_stream);
 }
 
-pub fn load(self: *@This(), allocator: std.mem.Allocator, parsed: *const std.json.Value) !void {
-    try self.audio_processor.load(allocator, parsed);
+pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
+    try self.audio_processor.save(ctx, write_stream);
+}
+
+pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: *const std.json.Value) !void {
+    try self.audio_processor.load(allocator, ctx, parsed);
 }
