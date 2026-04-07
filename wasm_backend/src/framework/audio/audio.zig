@@ -13,6 +13,5 @@ pub const TrackProcessor = @import("TrackProcessor.zig");
 
 test {
     _ = AudioView;
-    _ = ProcessorRegistry;
     _ = TrackProcessor;
 }

@@ -4,7 +4,7 @@ const dsp = @import("framework").dsp;
 const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
 const state = @import("framework").state;
-const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
+const SynthProcessor = @import("../../../synth/synth_processor.zig").SynthProcessor;
 const SynthVoice = @import("WavetableSynthVoice.zig");
 
 pub const kind = "wavetableSynth";

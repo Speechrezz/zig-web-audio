@@ -6,14 +6,15 @@ const state = @import("framework").state;
 const web = @import("framework").web;
 const ProcessorContainerWeb = @import("framework").ProcessorContainerWeb;
 const chordic = @import("chordic");
-const trackFromInstrumentKindIndexWeb = chordic.trackFromInstrumentKindIndexWeb;
+const ProcessorRegistry = chordic.ProcessorRegistry;
+const trackFromInstrumentKindIndexLogging = ProcessorRegistry.trackFromInstrumentKindIndexLogging;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
 const enableDebugPrint = false;
 
 var processor_container_web: ProcessorContainerWeb = undefined;
-var serialization_context: i32 = undefined; // TODO
+var serialization_context: chordic.SerializationContext = undefined;
 
 // Audio processing
 
@@ -23,6 +24,7 @@ export fn initAudio() void {
     }
 
     processor_container_web.init();
+    serialization_context = .init(ProcessorRegistry.createInstance());
 }
 
 export fn deinitAudio() void {
@@ -99,7 +101,7 @@ export fn addInstrument(track_index: usize, instrument_type: usize) bool {
         logging.logDebug("[WASM] {s}(idx={}, type={})", .{ @src().fn_name, track_index, instrument_type });
     }
 
-    const track = trackFromInstrumentKindIndexWeb(wasm_allocator, instrument_type);
+    const track = trackFromInstrumentKindIndexLogging(wasm_allocator, instrument_type);
 
     if (track == null) return false;
     return processor_container_web.addProcessor(track_index, track.?);

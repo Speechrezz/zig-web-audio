@@ -2,7 +2,7 @@ const std = @import("std");
 const audio = @import("framework").audio;
 const logging = @import("framework").logging;
 const MidiEvent = @import("framework").MidiEvent;
-const SynthProcessor = @import("../../synth/synth_processor.zig").SynthProcessor;
+const SynthProcessor = @import("../../../synth/synth_processor.zig").SynthProcessor;
 const SynthVoice = @import("SineSynthVoice.zig");
 
 pub const kind = "sineSynth";
