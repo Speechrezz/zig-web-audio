@@ -6,7 +6,7 @@ const midi = framework.midi;
 const LoadError = framework.state.json.LoadError;
 const SerializationContext = @import("../state/SerializationContext.zig");
 
-pub const kind = "trackProcessor";
+pub const kind = "track";
 pub const name = "Track Processor";
 
 pub const Device = struct {
@@ -290,7 +290,7 @@ test "TrackProcessor toJsonSpec" {
     try track.toJsonSpec(&write_stream);
     // std.debug.print("{s}\n", .{out.written()});
 
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"trackProcessor\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"track\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"testProcessor\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"parameters\":") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": {") != null);

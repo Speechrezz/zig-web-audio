@@ -16,7 +16,7 @@ const enableDebugPrint = false;
 var processor: chordic.ChordicProcessor = undefined;
 var serialization_context: chordic.SerializationContext = undefined;
 
-// Audio processing
+// --Audio processing--
 
 export fn initAudio() void {
     if (enableDebugPrint) {
@@ -55,7 +55,7 @@ export fn getOutputChannel(channel_index: usize) [*]f32 {
     return processor.audio_buffer.getChannel(channel_index).ptr;
 }
 
-// MIDI
+// --MIDI--
 
 export fn sendMidiEvent(track_index: usize, packed_event: u32, sample_position: i64) void {
     if (enableDebugPrint) {
@@ -77,7 +77,21 @@ export fn stopAllNotes(allow_tail_off: bool) void {
     processor.onStopMessage(allow_tail_off);
 }
 
-// Global
+// --Global--
+
+export fn getSpec(track_index: usize) u64 {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({})", .{ @src().fn_name, track_index });
+    }
+
+    const web_string = web.string.toJsonString(
+        wasm_allocator,
+        &processor,
+        chordic.ChordicProcessor.toJsonSpec,
+    );
+
+    return @bitCast(web_string);
+}
 
 export fn saveState() u64 {
     if (enableDebugPrint) {
@@ -94,7 +108,31 @@ export fn saveState() u64 {
     return @bitCast(web_string);
 }
 
-// Track
+export fn loadState(ptr: [*]u8, len: usize) bool {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] {s}({}, {})", .{ @src().fn_name, @intFromPtr(ptr), len });
+    }
+
+    const slice = ptr[0..len];
+    const parsed = std.json.parseFromSlice(std.json.Value, wasm_allocator, slice, .{}) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return false;
+    };
+    defer parsed.deinit();
+
+    processor.load(
+        wasm_allocator,
+        &serialization_context,
+        &parsed.value,
+    ) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return false;
+    };
+
+    return true;
+}
+
+// --Track--
 
 export fn addInstrument(track_index: usize, instrument_type: usize) bool {
     if (enableDebugPrint) {
@@ -164,22 +202,20 @@ export fn loadTrackState(track_index: usize, ptr: [*]u8, len: usize) bool {
     };
     defer parsed.deinit();
 
-    logging.logDebug("[WASM] {s}(): TODO", .{@src().fn_name});
-
-    // const track = processor.getTrack(track_index);
-    // track.load(
-    //     wasm_allocator,
-    //     &serialization_context,
-    //     &parsed.value,
-    // ) catch |err| {
-    //     logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
-    //     return false;
-    // };
+    const track = processor.getTrack(track_index);
+    track.load(
+        wasm_allocator,
+        &serialization_context,
+        &parsed.value,
+    ) catch |err| {
+        logging.logDebug("[WASM] {s} error: {}", .{ @src().fn_name, err });
+        return false;
+    };
 
     return true;
 }
 
-// Parameter
+// --Parameter--
 
 export fn setParameterValueNormalized(container: *state.ParameterContainer, parameter_index: usize, value: f32) bool {
     if (enableDebugPrint) {
@@ -195,7 +231,7 @@ export fn setParameterValueNormalized(container: *state.ParameterContainer, para
     return true;
 }
 
-// General
+// --General--
 
 export fn freeString(ptr: [*]u8, len: usize) void {
     if (enableDebugPrint) {

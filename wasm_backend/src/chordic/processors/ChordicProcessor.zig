@@ -204,7 +204,7 @@ test "toJsonSpec" {
     // std.debug.print("{s}\n", .{out.written()});
 
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"tracks\":") != null);
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"trackProcessor\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"track\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"testProcessor\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"parameters\":") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": {") != null);
