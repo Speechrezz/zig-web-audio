@@ -31,19 +31,22 @@ pub fn getFieldInt(comptime IntType: type, object: std.json.ObjectMap, name: []c
     };
 }
 
-pub fn getFieldFloat(comptime FloatType: type, object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!FloatType {
-    if (@typeInfo(FloatType) != .float) {
-        @compileError("Expected a runtime float type");
-    }
-
-    const value = try getField(object, name);
-
+pub fn toFloat(comptime FloatType: type, value: *const std.json.Value) LoadErrorOnly!FloatType {
     return switch (value.*) {
         .float => |x| @floatCast(x),
         .integer => |x| @floatFromInt(x),
         .number_string => |s| std.fmt.parseFloat(FloatType, s) catch return LoadErrorOnly.IncorrectFieldType,
         else => LoadErrorOnly.IncorrectFieldType,
     };
+}
+
+pub fn getFieldFloat(comptime FloatType: type, object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!FloatType {
+    if (@typeInfo(FloatType) != .float) {
+        @compileError("Expected a runtime float type");
+    }
+
+    const value = try getField(object, name);
+    return toFloat(FloatType, value);
 }
 
 pub fn getFieldObject(object: std.json.ObjectMap, name: []const u8) LoadErrorOnly!std.json.ObjectMap {

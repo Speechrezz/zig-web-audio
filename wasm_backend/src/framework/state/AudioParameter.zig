@@ -112,22 +112,6 @@ pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify, index
     try write_stream.endObject();
 }
 
-pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
-    try write_stream.beginObject();
-
-    try write_stream.objectField("value");
-    try write_stream.write(self.value_normalized);
-
-    try write_stream.endObject();
-}
-
-pub fn load(self: *@This(), parsed: *const std.json.Value) !void {
-    if (parsed.* != .object) return LoadError.IncorrectFieldType;
-    const object = parsed.object;
-
-    self.value_normalized = try state.json.getFieldFloat(f32, object, "value");
-}
-
 test "AudioParameter" {
     var param: @This() = .init("test", "Test", .initLinear(10.0, 20.0), 12.0, .init(2));
     try std.testing.expectApproxEqRel(12.0, param.getValue(), 1e-5);

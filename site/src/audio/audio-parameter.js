@@ -1,20 +1,8 @@
 import { ParameterProxy } from "../canvas/framework/parameter-proxy.js";
-import { NormalizableRange } from "../core/normalizable-range.js";
 import { ParameterSpec } from "../core/parameter-spec.js";
 import { WasmContainer } from "../core/wasm.js";
 import { getAudioWorkletNode } from "./audio.js";
 import { WorkletMessageType } from "./worklet-message.js";
-
-/**
- * AudioParameter spec
- * @typedef {object} ParameterSpecFull
- * @property {number} processor_ptr
- * @property {number} index
- * @property {string} id
- * @property {string} name
- * @property {{formatter: any, range: any}} spec
- * @property {number} value_default
- */
 
 export class AudioParameter {
     /** @type {ParameterSpecFull} */
@@ -108,7 +96,7 @@ export class AudioParameter {
         node.port.postMessage({
             type: WorkletMessageType.setParameterValueNormalized,
             context: {
-                processorPtr: this.specJson.processor_ptr,
+                containerPtr: this.specJson.container_ptr,
                 parameterIndex: this.specJson.index,
                 value: this.valueNormalized,
             }
@@ -179,14 +167,13 @@ export class ParameterContainer {
 
     /**
      * @param {WasmContainer} wasm 
-     * @param {number} processorPtr 
-     * @param {ParameterSpecFull[]} paramsSpec 
+     * @param {ParameterContainerSpecFull} containerSpec 
      */
-    static initFromSpec(wasm, processorPtr, paramsSpec) {
+    static initFromSpec(wasm, containerSpec) {
         const params = new ParameterContainer;
 
-        for (const paramSpec of paramsSpec) {
-            paramSpec.processor_ptr = processorPtr;
+        for (const paramSpec of containerSpec.list) {
+            paramSpec.container_ptr = containerSpec.ptr;
             const param = new AudioParameter(wasm, paramSpec);
             params.list.push(param);
             params.map.set(paramSpec.id, param);

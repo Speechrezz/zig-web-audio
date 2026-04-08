@@ -181,15 +181,15 @@ export fn loadTrackState(track_index: usize, ptr: [*]u8, len: usize) bool {
 
 // Parameter
 
-export fn setParameterValueNormalized(audio_processor: *audio.AudioProcessor, parameter_index: usize, value: f32) bool {
+export fn setParameterValueNormalized(container: *state.ParameterContainer, parameter_index: usize, value: f32) bool {
     if (enableDebugPrint) {
         logging.logDebug(
-            "[WASM] {s}({s}-{}, {}, {})",
-            .{ @src().fn_name, audio_processor.kind, @intFromPtr(audio_processor.ptr), parameter_index, value },
+            "[WASM] {s}({}, {}, {})",
+            .{ @src().fn_name, @intFromPtr(container), parameter_index, value },
         );
     }
 
-    const param = audio_processor.parameters.list.items[parameter_index];
+    const param = container.list.items[parameter_index];
     param.setValueNormalized(value);
 
     return true;

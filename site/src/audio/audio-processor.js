@@ -19,6 +19,6 @@ export class AudioProcessor {
         this.wasm = wasm;
         this.spec = spec;
 
-        this.params = ParameterContainer.initFromSpec(wasm, this.spec.ptr, this.spec.parameters);
+        this.params = ParameterContainer.initFromSpec(wasm, this.spec.parameters);
     }
 }

@@ -38,18 +38,26 @@ pub fn idToIndex(self: *const @This(), parameter_id: []const u8) ?usize {
 }
 
 pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify) !void {
+    try write_stream.beginObject();
+
+    try write_stream.objectField("ptr");
+    try write_stream.write(@intFromPtr(self));
+
+    try write_stream.objectField("list");
     try write_stream.beginArray();
     for (self.list.items, 0..) |param, i| {
         try param.toJsonSpec(write_stream, i);
     }
     try write_stream.endArray();
+
+    try write_stream.endObject();
 }
 
 pub fn save(self: *const @This(), write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
     for (self.list.items) |param| {
         try write_stream.objectField(param.id);
-        try param.save(write_stream);
+        try write_stream.write(param.getValueNormalized());
     }
     try write_stream.endObject();
 }
@@ -59,8 +67,9 @@ pub fn load(self: *@This(), parsed: *const std.json.Value) !void {
     const object = parsed.object;
 
     for (self.list.items) |param| {
-        if (object.getPtr(param.id)) |parsed_param| {
-            try param.load(parsed_param);
+        if (object.getPtr(param.id)) |parsed_value| {
+            const value = try state.json.toFloat(f32, parsed_value);
+            param.setValueNormalized(value);
         } else {
             param.setToDefault();
         }
