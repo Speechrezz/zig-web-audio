@@ -33,7 +33,7 @@ pub const VTable = struct {
         std.mem.Allocator,
         serialization_context: *anyopaque,
         std.json.ObjectMap,
-    ) LoadError!void = loadFallback,
+    ) anyerror!void = loadFallback,
 
     fn toJsonSpecFallback(_: *anyopaque, _: *std.json.Stringify) !void {}
     fn saveFallback(_: *anyopaque, _: *const anyopaque, _: *std.json.Stringify) !void {}
@@ -95,7 +95,7 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
 pub fn save(self: *@This(), serialization_context: *const anyopaque, write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
 
-    try write_stream.objectField("id");
+    try write_stream.objectField("kind");
     try write_stream.write(self.kind);
 
     try write_stream.objectField("parameters");

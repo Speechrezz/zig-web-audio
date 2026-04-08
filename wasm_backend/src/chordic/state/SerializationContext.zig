@@ -8,3 +8,7 @@ pub fn init(registry: ProcessorRegistry) @This() {
         .registry = registry,
     };
 }
+
+pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+    self.registry.destroy(allocator);
+}

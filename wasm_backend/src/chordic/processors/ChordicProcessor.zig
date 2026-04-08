@@ -3,6 +3,7 @@ const framework = @import("framework");
 const audio = framework.audio;
 const TrackProcessor = @import("TrackProcessor.zig");
 const LoadError = framework.state.json.LoadError;
+const SerializationContext = @import("../state/SerializationContext.zig");
 
 pub const StopAllFlag = enum { none, stopWithTail, stopImmediately };
 
@@ -148,7 +149,6 @@ pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Strin
 pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: *const std.json.Value) !void {
     if (parsed.* != .object) return LoadError.IncorrectFieldType;
     const object = parsed.object;
-    _ = ctx;
 
     for (self.track_list.items) |proc| {
         proc.destroy(allocator);
@@ -156,8 +156,11 @@ pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parse
     self.track_list.clearRetainingCapacity();
 
     const tracks = try framework.state.json.getFieldArray(object, "tracks");
-    for (tracks.items) |*value| {
-        _ = value;
-        // TODO: Dynamically add correct effect device and load.
+    for (tracks.items) |*track_json| {
+        const track = try TrackProcessor.create(allocator);
+        errdefer track.destroy(allocator);
+
+        try track.load(allocator, ctx, track_json);
+        try self.track_list.append(allocator, track);
     }
 }

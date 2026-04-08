@@ -7,6 +7,7 @@ pub const logging = @import("web/logging.zig");
 pub const wasm_allocator = @import("mem/allocator.zig").wasm_allocator;
 pub const MidiEvent = @import("midi/MidiEvent.zig");
 pub const state = @import("state/state.zig");
+pub const testing = @import("testing/testing.zig");
 pub const web = @import("web/web.zig");
 
 test {
@@ -16,5 +17,6 @@ test {
     _ = midi;
     _ = math;
     _ = state;
+    _ = testing;
     _ = web;
 }

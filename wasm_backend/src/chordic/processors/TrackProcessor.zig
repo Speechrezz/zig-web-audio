@@ -4,6 +4,7 @@ const audio = framework.audio;
 const dsp = framework.dsp;
 const midi = framework.midi;
 const LoadError = framework.state.json.LoadError;
+const SerializationContext = @import("../state/SerializationContext.zig");
 
 pub const kind = "trackProcessor";
 pub const name = "Track Processor";
@@ -201,15 +202,27 @@ pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Strin
 
 fn loadErased(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, parsed: std.json.ObjectMap) !void {
     const self: *@This() = @ptrCast(@alignCast(ptr));
+    const context: *SerializationContext = @ptrCast(@alignCast(ctx));
 
-    if (parsed.getPtr("generator")) |gen| {
-        // TODO: This is very wrong. Need to dynamically assign correct type of generator.
-        //       Don't forget to deallocate old generator if exists.
-        try self.generator_device.?.processor.load(allocator, ctx, gen);
-    } else if (self.generator_device) |*device| {
+    // --Generator--
+
+    if (self.generator_device) |*device| {
         device.deinit(allocator);
         self.generator_device = null;
     }
+
+    if (parsed.getPtr("generator")) |gen| {
+        if (gen.* != .object) return LoadError.IncorrectFieldType;
+        const gen_kind = try framework.state.json.getFieldString(gen.object, "kind");
+
+        const proc = try context.registry.createProcessorFromKind(allocator, gen_kind);
+        errdefer proc.destroy(allocator);
+        try proc.load(allocator, ctx, gen);
+
+        self.generator_device = Device.init(proc);
+    }
+
+    // --Effects--
 
     for (self.effect_device_list.items) |*device| {
         device.deinit(allocator);
@@ -223,7 +236,7 @@ fn loadErased(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, pa
     }
 }
 
-pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: std.json.ObjectMap) !void {
+pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: *const std.json.Value) !void {
     try self.processor.load(allocator, ctx, parsed);
 }
 
@@ -255,14 +268,16 @@ test "TrackProcessor processing" {
 }
 
 test "TrackProcessor toJsonSpec" {
+    const TestingAudioProcessor = framework.testing.TestingAudioProcessor;
+
     const allocator = std.testing.allocator;
 
     var track_processor = try @This().create(allocator);
     var track = &track_processor.processor;
     defer track.destroy(allocator);
 
-    const generator_dummy = try @This().create(allocator);
-    track_processor.generator_device = Device.init(&generator_dummy.processor);
+    const generator_dummy = try TestingAudioProcessor.create(allocator);
+    track_processor.generator_device = Device.init(generator_dummy);
 
     // Stringify
     var out: std.io.Writer.Allocating = .init(allocator);
@@ -276,8 +291,61 @@ test "TrackProcessor toJsonSpec" {
     // std.debug.print("{s}\n", .{out.written()});
 
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"trackProcessor\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"kind\": \"testProcessor\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"parameters\":") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": {") != null);
-    try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"generator\": null") != null);
     try std.testing.expect(std.mem.indexOf(u8, out.written(), "\"effects\": []") != null);
+}
+
+test "TrackProcessor save/load" {
+    const TestingAudioProcessor = framework.testing.TestingAudioProcessor;
+    const TestingProcessorRegistry = framework.testing.TestingProcessorRegistry;
+
+    const allocator = std.testing.allocator;
+    var context = SerializationContext.init(TestingProcessorRegistry.createInstance());
+    defer context.deinit(allocator);
+
+    // --Saving--
+
+    var track1 = try @This().create(allocator);
+    defer track1.destroy(allocator);
+
+    const generator_dummy = try TestingAudioProcessor.create(allocator);
+    track1.generator_device = Device.init(generator_dummy);
+
+    // Stringify
+    var out1: std.io.Writer.Allocating = .init(allocator);
+    defer out1.deinit();
+    var write_stream1: std.json.Stringify = .{
+        .writer = &out1.writer,
+        .options = .{ .whitespace = .indent_2 },
+    };
+
+    try track1.processor.save(&context, &write_stream1);
+    // std.debug.print("out1:\n{s}\n", .{out1.written()});
+
+    try std.testing.expect(std.mem.indexOf(u8, out1.written(), "\"kind\": \"testProcessor\"") != null);
+
+    // --Loading--
+
+    var track2 = try @This().create(allocator);
+    defer track2.destroy(allocator);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, out1.written(), .{});
+    defer parsed.deinit();
+
+    try track2.load(allocator, &context, &parsed.value);
+
+    // Stringify
+    var out2: std.io.Writer.Allocating = .init(allocator);
+    defer out2.deinit();
+    var write_stream2: std.json.Stringify = .{
+        .writer = &out2.writer,
+        .options = .{ .whitespace = .indent_2 },
+    };
+
+    try track2.processor.save(&context, &write_stream2);
+    // std.debug.print("\nout2:\n{s}\n", .{out2.written()});
+
+    try std.testing.expectEqualSlices(u8, out1.written(), out2.written());
 }
