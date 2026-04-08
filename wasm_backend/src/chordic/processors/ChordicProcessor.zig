@@ -1,0 +1,163 @@
+const std = @import("std");
+const framework = @import("framework");
+const audio = framework.audio;
+const TrackProcessor = @import("TrackProcessor.zig");
+const LoadError = framework.state.json.LoadError;
+
+pub const StopAllFlag = enum { none, stopWithTail, stopImmediately };
+
+track_list: std.ArrayList(*TrackProcessor),
+audio_buffer: audio.AudioBuffer,
+process_spec: ?audio.ProcessSpec,
+stop_all_notes_flag: StopAllFlag,
+
+pub fn init(self: *@This()) void {
+    self.track_list = .empty;
+    self.audio_buffer.init();
+
+    self.process_spec = null;
+    self.stop_all_notes_flag = .none;
+}
+
+pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
+    for (self.track_list.items) |track| {
+        track.destroy(allocator);
+    }
+    self.track_list.deinit(allocator);
+
+    self.audio_buffer.deinit(allocator);
+}
+
+pub fn prepare(self: *@This(), allocator: std.mem.Allocator, spec: audio.ProcessSpec) bool {
+    self.process_spec = spec;
+
+    self.audio_buffer.resize(
+        allocator,
+        spec.num_channels,
+        spec.block_size,
+    ) catch |err| {
+        framework.logging.logDebug(
+            "[WASM] Error in {s}(): Unable to allocate audio buffer, {}",
+            .{ @src().fn_name, err },
+        );
+        return false;
+    };
+
+    for (self.track_list.items) |track| {
+        track.prepare(allocator, spec) catch |err| {
+            framework.logging.logDebug(
+                "[WASM] Error in {s}(): Unable to prepare track, {}",
+                .{ @src().fn_name, err },
+            );
+            return false;
+        };
+    }
+
+    return true;
+}
+
+pub fn process(self: *@This(), allocator: std.mem.Allocator, block_size: usize) bool {
+    if (self.stop_all_notes_flag != .none) {
+        self.stop(self.stop_all_notes_flag == .stopWithTail);
+        self.stop_all_notes_flag = .none;
+    }
+
+    self.audio_buffer.clear();
+    var output_view = self.audio_buffer.createViewWithLength(block_size);
+
+    for (self.track_list.items) |track| {
+        track.process(allocator, block_size) catch |err| {
+            framework.logging.logDebug(
+                "[WASM] Error in {s}(): Unable to process track, {}",
+                .{ @src().fn_name, err },
+            );
+            return false;
+        };
+        output_view.addFrom(track.audio_buffer.createViewWithLength(block_size));
+    }
+
+    return true;
+}
+
+pub fn sendMidiMessage(self: *@This(), track_index: usize, packed_event: u32, sample_position: i64) void {
+    const track = self.track_list.items[track_index];
+    track.midi_buffer.appendPacked(packed_event, sample_position);
+}
+
+pub fn stop(self: *@This(), allow_tail_off: bool) void {
+    for (self.track_list.items) |track| {
+        track.stop(allow_tail_off);
+    }
+}
+
+pub fn onStopMessage(self: *@This(), allow_tail_off: bool) void {
+    self.stop_all_notes_flag = if (allow_tail_off) .stopWithTail else .stopImmediately;
+}
+
+pub fn insertTrack(self: *@This(), allocator: std.mem.Allocator, index: usize, track: *TrackProcessor) bool {
+    if (self.process_spec) |spec| {
+        track.prepare(allocator, spec) catch |err| {
+            framework.logging.logDebug(
+                "[WASM] Error in {s}(): Unable to prepare track, {}",
+                .{ @src().fn_name, err },
+            );
+            return false;
+        };
+    }
+
+    self.track_list.insert(allocator, index, track) catch |err| {
+        framework.logging.logDebug(
+            "[WASM] Error in {s}(): Unable to insert track, {}",
+            .{ @src().fn_name, err },
+        );
+        return false;
+    };
+
+    return true;
+}
+
+pub fn removeProcessor(self: *@This(), allocator: std.mem.Allocator, index: usize) void {
+    var removed = self.track_list.orderedRemove(index);
+    removed.destroy(allocator);
+}
+
+pub fn clearProcessors(self: *@This(), allocator: std.mem.Allocator) void {
+    for (self.track_list.items) |track| {
+        track.destroy(allocator);
+    }
+    self.track_list.clearRetainingCapacity();
+}
+
+pub fn getTrack(self: *@This(), index: usize) *TrackProcessor {
+    return self.track_list.items[index];
+}
+
+pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
+    try write_stream.beginObject();
+
+    try write_stream.objectField("tracks");
+    try write_stream.beginArray();
+    for (self.track_list.items) |track| {
+        try track.save(ctx, write_stream);
+    }
+    try write_stream.endArray();
+
+    try write_stream.endObject();
+}
+
+pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: *const std.json.Value) !void {
+    if (parsed.* != .object) return LoadError.IncorrectFieldType;
+    const object = parsed.object;
+    _ = ctx;
+
+    for (self.track_list.items) |proc| {
+        proc.destroy(allocator);
+    }
+    self.track_list.clearRetainingCapacity();
+
+    const tracks = try framework.state.json.getFieldArray(object, "tracks");
+    for (tracks.items) |*value| {
+        _ = value;
+        // TODO: Dynamically add correct effect device and load.
+    }
+}

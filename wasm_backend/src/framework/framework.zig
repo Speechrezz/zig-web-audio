@@ -9,8 +9,6 @@ pub const MidiEvent = @import("midi/MidiEvent.zig");
 pub const state = @import("state/state.zig");
 pub const web = @import("web/web.zig");
 
-pub const ProcessorContainerWeb = @import("web/ProcessorContainerWeb.zig");
-
 test {
     _ = audio;
     _ = dsp;

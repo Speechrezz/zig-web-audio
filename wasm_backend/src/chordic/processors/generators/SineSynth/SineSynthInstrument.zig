@@ -12,7 +12,7 @@ processor: audio.AudioProcessor,
 synth_processor: SynthProcessor(SynthVoice),
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
-    try self.processor.init(
+    self.processor.init(
         kind,
         name,
         self,

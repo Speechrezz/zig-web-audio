@@ -64,18 +64,18 @@ pub fn processorFromKindIndexLogging(allocator: std.mem.Allocator, index: usize)
     };
 }
 
-pub fn trackFromInstrumentKindIndex(allocator: std.mem.Allocator, index: usize) !*audio.AudioProcessor {
+pub fn trackFromInstrumentKindIndex(allocator: std.mem.Allocator, index: usize) !*processors.TrackProcessor {
     const instrument = try processorFromKindIndex(allocator, index);
-    const track = try audio.TrackProcessor.create(allocator);
+    const track = try processors.TrackProcessor.create(allocator);
 
-    track.generator_device = audio.TrackProcessor.Device.init(instrument);
-    return &track.processor;
+    track.generator_device = processors.TrackProcessor.Device.init(instrument);
+    return track;
 }
 
 pub fn trackFromInstrumentKindIndexLogging(
     allocator: std.mem.Allocator,
     index: usize,
-) ?*audio.AudioProcessor {
+) ?*processors.TrackProcessor {
     return trackFromInstrumentKindIndex(allocator, index) catch |err| {
         logging.logDebug(
             "[WASM.instrumentTypeToTrack()] Failed to create instrument track '{}': {}",

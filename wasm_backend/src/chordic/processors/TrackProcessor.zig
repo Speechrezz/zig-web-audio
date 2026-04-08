@@ -1,9 +1,9 @@
 const std = @import("std");
-const audio = @import("audio.zig");
-const dsp = @import("../dsp/dsp.zig");
-const midi = @import("../midi/midi.zig");
-const state = @import("../state/state.zig");
-const LoadError = state.json.LoadError;
+const framework = @import("framework");
+const audio = framework.audio;
+const dsp = framework.dsp;
+const midi = framework.midi;
+const LoadError = framework.state.json.LoadError;
 
 pub const kind = "trackProcessor";
 pub const name = "Track Processor";
@@ -23,27 +23,34 @@ pub const Device = struct {
 };
 
 processor: audio.AudioProcessor,
+
+audio_buffer: audio.AudioBuffer,
+midi_buffer: midi.MidiBuffer,
+
 generator_device: ?Device,
 effect_device_list: std.ArrayList(Device),
 
-gain_param: *state.AudioParameter,
+gain_param: *framework.state.AudioParameter,
 gain_processor: dsp.GainProcessor,
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
-    try self.processor.init(
+    self.processor.init(
         kind,
         name,
         self,
         &.{
-            .destroy = destroy,
-            .prepare = prepare,
-            .process = process,
-            .stop = stop,
-            .toJsonSpec = toJsonSpec,
-            .save = save,
-            .load = load,
+            .destroy = destroyErased,
+            .prepare = prepareErased,
+            .process = processErased,
+            .stop = stopErased,
+            .toJsonSpec = toJsonSpecErased,
+            .save = saveErased,
+            .load = loadErased,
         },
     );
+
+    self.audio_buffer.init();
+    self.midi_buffer.init();
 
     self.generator_device = null;
     self.effect_device_list = .empty;
@@ -65,8 +72,11 @@ pub fn create(allocator: std.mem.Allocator) !*@This() {
     return self;
 }
 
-fn destroy(ctx: *anyopaque, allocator: std.mem.Allocator) void {
-    const self: *@This() = @ptrCast(@alignCast(ctx));
+fn destroyErased(ptr: *anyopaque, allocator: std.mem.Allocator) void {
+    const self: *@This() = @ptrCast(@alignCast(ptr));
+
+    self.audio_buffer.deinit(allocator);
+    self.midi_buffer.deinit(allocator);
 
     if (self.generator_device) |*device| {
         device.deinit(allocator);
@@ -82,8 +92,12 @@ fn destroy(ctx: *anyopaque, allocator: std.mem.Allocator) void {
     allocator.destroy(self);
 }
 
-fn prepare(ctx: *anyopaque, allocator: std.mem.Allocator, spec: audio.ProcessSpec) !void {
-    const self: *@This() = @ptrCast(@alignCast(ctx));
+pub fn destroy(self: *@This(), allocator: std.mem.Allocator) void {
+    self.processor.destroy(allocator);
+}
+
+fn prepareErased(ptr: *anyopaque, allocator: std.mem.Allocator, spec: audio.ProcessSpec) !void {
+    const self: *@This() = @ptrCast(@alignCast(ptr));
 
     if (self.generator_device) |*device| {
         try device.processor.prepare(allocator, spec);
@@ -96,8 +110,15 @@ fn prepare(ctx: *anyopaque, allocator: std.mem.Allocator, spec: audio.ProcessSpe
     try self.gain_processor.prepare(allocator, spec);
 }
 
-fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.AudioView, midi_events: []midi.MidiEvent) !void {
-    const self: *@This() = @ptrCast(@alignCast(ctx));
+pub fn prepare(self: *@This(), allocator: std.mem.Allocator, spec: audio.ProcessSpec) !void {
+    try self.audio_buffer.resize(allocator, spec.num_channels, spec.block_size);
+    try self.midi_buffer.resize(allocator, 4 * spec.block_size);
+
+    try self.processor.prepare(allocator, spec);
+}
+
+fn processErased(ptr: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.AudioView, midi_events: []midi.MidiEvent) !void {
+    const self: *@This() = @ptrCast(@alignCast(ptr));
 
     if (self.generator_device) |*device| {
         try device.processor.process(allocator, audio_view, midi_events);
@@ -111,8 +132,15 @@ fn process(ctx: *anyopaque, allocator: std.mem.Allocator, audio_view: audio.Audi
     self.gain_processor.process(audio_view);
 }
 
-fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
-    const self: *@This() = @ptrCast(@alignCast(ctx));
+pub fn process(self: *@This(), allocator: std.mem.Allocator, block_size: usize) !void {
+    const audio_view = self.audio_buffer.createViewWithLength(block_size);
+    const midi_events = self.midi_buffer.getCurrentBlockEvents(block_size);
+
+    try self.processor.process(allocator, audio_view, midi_events);
+}
+
+fn stopErased(ptr: *anyopaque, allow_tail_off: bool) void {
+    const self: *@This() = @ptrCast(@alignCast(ptr));
 
     if (self.generator_device) |*device| {
         device.processor.stop(allow_tail_off);
@@ -123,8 +151,13 @@ fn stop(ctx: *anyopaque, allow_tail_off: bool) void {
     }
 }
 
-pub fn toJsonSpec(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
-    const self: *@This() = @ptrCast(@alignCast(ctx));
+pub fn stop(self: *@This(), allow_tail_off: bool) void {
+    self.midi_buffer.clear();
+    self.processor.stop(allow_tail_off);
+}
+
+fn toJsonSpecErased(ptr: *anyopaque, write_stream: *std.json.Stringify) !void {
+    const self: *@This() = @ptrCast(@alignCast(ptr));
 
     try write_stream.objectField("generator");
     if (self.generator_device) |*device| {
@@ -142,7 +175,11 @@ pub fn toJsonSpec(ctx: *anyopaque, write_stream: *std.json.Stringify) !void {
     try write_stream.endArray();
 }
 
-pub fn save(ptr: *anyopaque, ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
+pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
+    try self.processor.toJsonSpec(write_stream);
+}
+
+fn saveErased(ptr: *anyopaque, ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
     const self: *@This() = @ptrCast(@alignCast(ptr));
 
     if (self.generator_device) |*device| {
@@ -158,7 +195,11 @@ pub fn save(ptr: *anyopaque, ctx: *const anyopaque, write_stream: *std.json.Stri
     try write_stream.endArray();
 }
 
-pub fn load(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, parsed: std.json.ObjectMap) !void {
+pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
+    try self.processor.save(ctx, write_stream);
+}
+
+fn loadErased(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, parsed: std.json.ObjectMap) !void {
     const self: *@This() = @ptrCast(@alignCast(ptr));
 
     if (parsed.getPtr("generator")) |gen| {
@@ -175,11 +216,15 @@ pub fn load(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, pars
     }
     self.effect_device_list.clearRetainingCapacity();
 
-    const effects_array = try state.json.getFieldArray(parsed, "effects");
+    const effects_array = try framework.state.json.getFieldArray(parsed, "effects");
     for (effects_array.items) |*value| {
         _ = value;
         // TODO: Dynamically add correct effect device and load.
     }
+}
+
+pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: std.json.ObjectMap) !void {
+    try self.processor.load(allocator, ctx, parsed);
 }
 
 test "TrackProcessor processing" {

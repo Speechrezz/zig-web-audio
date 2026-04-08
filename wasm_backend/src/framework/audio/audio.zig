@@ -6,12 +6,9 @@ pub const ProcessSpec = struct {
 
 pub const AudioBuffer = @import("AudioBuffer.zig");
 pub const AudioProcessor = @import("AudioProcessor.zig");
-pub const AudioProcessorWrapper = @import("AudioProcessorWrapper.zig");
 pub const AudioView = @import("AudioView.zig");
 pub const ProcessorRegistry = @import("ProcessorRegistry.zig");
-pub const TrackProcessor = @import("TrackProcessor.zig");
 
 test {
     _ = AudioView;
-    _ = TrackProcessor;
 }

@@ -23,7 +23,7 @@ adsr_params: struct {
 },
 
 pub fn init(self: *@This(), allocator: std.mem.Allocator) !void {
-    try self.processor.init(
+    self.processor.init(
         kind,
         name,
         self,

@@ -6,7 +6,7 @@ const state = @import("../state/state.zig");
 const Error = std.mem.Allocator.Error;
 const LoadError = state.json.LoadError;
 
-id: []const u8,
+kind: []const u8,
 name: []const u8,
 ptr: *anyopaque,
 vtable: *const VTable,
@@ -46,9 +46,9 @@ pub fn init(
     name: []const u8,
     ptr: *anyopaque,
     vtable: *const VTable,
-) !void {
+) void {
     self.* = .{
-        .id = kind,
+        .kind = kind,
         .name = name,
         .ptr = ptr,
         .vtable = vtable,
@@ -79,7 +79,7 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
     try write_stream.write(@intFromPtr(self));
 
     try write_stream.objectField("kind");
-    try write_stream.write(self.id);
+    try write_stream.write(self.kind);
 
     try write_stream.objectField("name");
     try write_stream.write(self.name);
@@ -96,7 +96,7 @@ pub fn save(self: *@This(), serialization_context: *const anyopaque, write_strea
     try write_stream.beginObject();
 
     try write_stream.objectField("id");
-    try write_stream.write(self.id);
+    try write_stream.write(self.kind);
 
     try write_stream.objectField("parameters");
     try self.parameters.save(write_stream);
