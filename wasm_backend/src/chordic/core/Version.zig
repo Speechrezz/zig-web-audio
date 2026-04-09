@@ -5,6 +5,8 @@ minor: u16 = 0,
 patch: u16 = 0,
 revision: u16 = 0,
 
+pub const zero: @This() = .{};
+
 pub fn init(major: u16, minor: u16, patch: u16, revision: u16) @This() {
     return .{
         .major = major,

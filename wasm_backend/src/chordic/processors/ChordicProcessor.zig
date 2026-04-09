@@ -148,10 +148,15 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
 }
 
 pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
+    const context: *const SerializationContext = @ptrCast(@alignCast(ctx));
+
     try write_stream.beginObject();
 
     try write_stream.objectField("version");
     try write_stream.write(config.version_str);
+
+    try write_stream.objectField("next_id");
+    try write_stream.write(context.next_id);
 
     try write_stream.objectField("tracks");
     try write_stream.beginArray();
@@ -164,8 +169,14 @@ pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Strin
 }
 
 pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: *const std.json.Value) !void {
+    const context: *SerializationContext = @ptrCast(@alignCast(ctx));
+
     if (parsed.* != .object) return LoadError.IncorrectFieldType;
     const object = parsed.object;
+
+    const version_string = try framework.state.json.getFieldString(object, "version");
+    context.version = .parseString(version_string);
+    context.next_id = try framework.state.json.getFieldInt(u64, object, "next_id");
 
     for (self.track_list.items) |proc| {
         proc.destroy(allocator);
