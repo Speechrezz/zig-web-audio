@@ -1,10 +1,12 @@
 pub const ChordicProcessor = @import("processors/ChordicProcessor.zig");
+pub const core = @import("core/core.zig");
 pub const processors = @import("processors/processors.zig");
 pub const ProcessorRegistry = @import("processors/ProcessorRegistry.zig");
 pub const SerializationContext = @import("state/SerializationContext.zig");
 
 test {
     _ = ChordicProcessor;
+    _ = core;
     _ = ProcessorRegistry;
 }
 

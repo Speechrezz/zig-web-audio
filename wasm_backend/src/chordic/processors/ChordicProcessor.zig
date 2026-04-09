@@ -1,6 +1,7 @@
 const std = @import("std");
 const framework = @import("framework");
 const audio = framework.audio;
+const config = @import("../core/core.zig").config;
 const TrackProcessor = @import("TrackProcessor.zig");
 const LoadError = framework.state.json.LoadError;
 const SerializationContext = @import("../state/SerializationContext.zig");
@@ -148,6 +149,9 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
 
 pub fn save(self: *@This(), ctx: *const anyopaque, write_stream: *std.json.Stringify) !void {
     try write_stream.beginObject();
+
+    try write_stream.objectField("version");
+    try write_stream.write(config.version_str);
 
     try write_stream.objectField("tracks");
     try write_stream.beginArray();
