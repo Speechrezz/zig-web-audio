@@ -120,6 +120,8 @@ export fn loadState(ptr: [*]u8, len: usize) bool {
     };
     defer parsed.deinit();
 
+    serialization_context.assign_ids = true;
+
     processor.load(
         wasm_allocator,
         &serialization_context,
@@ -140,6 +142,8 @@ export fn addInstrument(track_index: usize, instrument_type: usize) bool {
     }
 
     const track = trackFromInstrumentKindIndexLogging(wasm_allocator, instrument_type) orelse return false;
+    track.processor.id = serialization_context.getNextId();
+    track.generator_device.?.processor.id = serialization_context.getNextId();
     return processor.insertTrack(wasm_allocator, track_index, track);
 }
 
@@ -190,7 +194,7 @@ export fn saveTrackState(track_index: usize) u64 {
     return @bitCast(web_string);
 }
 
-export fn loadTrackState(track_index: usize, ptr: [*]u8, len: usize) bool {
+export fn loadTrackState(track_index: usize, ptr: [*]u8, len: usize, assign_ids: bool) bool {
     if (enableDebugPrint) {
         logging.logDebug("[WASM] {s}({}, {}, {})", .{ @src().fn_name, track_index, @intFromPtr(ptr), len });
     }
@@ -201,6 +205,8 @@ export fn loadTrackState(track_index: usize, ptr: [*]u8, len: usize) bool {
         return false;
     };
     defer parsed.deinit();
+
+    serialization_context.assign_ids = assign_ids;
 
     const track = processor.getTrack(track_index);
     track.load(

@@ -8,6 +8,7 @@ const LoadError = state.json.LoadError;
 
 kind: []const u8,
 name: []const u8,
+id: u64 = 0,
 ptr: *anyopaque,
 vtable: *const VTable,
 
@@ -81,6 +82,9 @@ pub fn toJsonSpec(self: *@This(), write_stream: *std.json.Stringify) !void {
     try write_stream.objectField("kind");
     try write_stream.write(self.kind);
 
+    try write_stream.objectField("id");
+    try write_stream.write(self.id);
+
     try write_stream.objectField("name");
     try write_stream.write(self.name);
 
@@ -98,6 +102,9 @@ pub fn save(self: *@This(), serialization_context: *const anyopaque, write_strea
     try write_stream.objectField("kind");
     try write_stream.write(self.kind);
 
+    try write_stream.objectField("id");
+    try write_stream.write(self.id);
+
     try write_stream.objectField("parameters");
     try self.parameters.save(write_stream);
 
@@ -106,9 +113,19 @@ pub fn save(self: *@This(), serialization_context: *const anyopaque, write_strea
     try write_stream.endObject();
 }
 
-pub fn load(self: *@This(), allocator: std.mem.Allocator, serialization_context: *anyopaque, parsed: *const std.json.Value) !void {
+pub fn load(
+    self: *@This(),
+    allocator: std.mem.Allocator,
+    serialization_context: *anyopaque,
+    parsed: *const std.json.Value,
+    load_id: bool,
+) !void {
     if (parsed.* != .object) return LoadError.IncorrectFieldType;
     const object = parsed.object;
+
+    if (load_id) {
+        self.id = try state.json.getFieldInt(u64, object, "id");
+    }
 
     const parameters_value = try state.json.getField(object, "parameters");
     try self.parameters.load(parameters_value);

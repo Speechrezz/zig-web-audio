@@ -215,9 +215,9 @@ fn loadErased(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, pa
         if (gen.* != .object) return LoadError.IncorrectFieldType;
         const gen_kind = try framework.state.json.getFieldString(gen.object, "kind");
 
-        const proc = try context.registry.createProcessorFromKind(allocator, gen_kind);
+        const proc = try context.createProcessorFromKind(allocator, gen_kind);
         errdefer proc.destroy(allocator);
-        try proc.load(allocator, ctx, gen);
+        try proc.load(allocator, ctx, gen, context.shouldLoadId());
 
         self.generator_device = Device.init(proc);
     }
@@ -237,7 +237,8 @@ fn loadErased(ptr: *anyopaque, allocator: std.mem.Allocator, ctx: *anyopaque, pa
 }
 
 pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parsed: *const std.json.Value) !void {
-    try self.processor.load(allocator, ctx, parsed);
+    const context: *SerializationContext = @ptrCast(@alignCast(ctx));
+    try self.processor.load(allocator, ctx, parsed, context.shouldLoadId());
 }
 
 test "TrackProcessor processing" {

@@ -174,9 +174,13 @@ pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parse
     if (parsed.* != .object) return LoadError.IncorrectFieldType;
     const object = parsed.object;
 
+    // --Global state--
+
     const version_string = try framework.state.json.getFieldString(object, "version");
     context.version = .parseString(version_string);
     context.next_id = try framework.state.json.getFieldInt(u64, object, "next_id");
+
+    // --Track state--
 
     for (self.track_list.items) |proc| {
         proc.destroy(allocator);
@@ -188,6 +192,9 @@ pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parse
         const track = try TrackProcessor.create(allocator);
         errdefer track.destroy(allocator);
 
+        if (context.assign_ids) {
+            track.processor.id = context.getNextId();
+        }
         try track.load(allocator, ctx, track_json);
         try self.track_list.append(allocator, track);
     }
