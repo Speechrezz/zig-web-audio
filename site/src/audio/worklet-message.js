@@ -13,6 +13,7 @@ export const WorkletMessageType = Object.freeze({
     
     // --Track--
     addInstrument: "addInstrument",
+    insertTrack: "insertTrack",
     removeTrack: "removeInstrument",
     clearTracks: "clearInstruments",
     saveTrackState: "saveTrackState",
