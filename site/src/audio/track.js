@@ -1,5 +1,5 @@
 import { getAudioWorkletNode } from "./audio.js";
-import { InstrumentDetailsList, InstrumentType, TrackEvent } from "./audio-constants.js";
+import { processorDetails, ProcessorKind, TrackEvent } from "./audio-constants.js";
 import { WorkletMessageType } from "./worklet-message.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { Note, NoteEvent } from "./note.js";
@@ -41,8 +41,8 @@ export class Track extends AudioProcessor {
     /** @type {number} */
     index;
 
-    /** @type {InstrumentType} */
-    type;
+    /** @type {ProcessorKind} */
+    kind;
 
     /** @type {string} */
     name;
@@ -80,14 +80,14 @@ export class Track extends AudioProcessor {
     /**
      * @param {WasmContainer} wasm 
      * @param {number} index 
-     * @param {InstrumentType} type 
+     * @param {ProcessorKind} kind 
      * @param {string} name 
      * @param {AudioProcessorSpec} spec 
      */
-    constructor(wasm, index, type, name, spec) {
+    constructor(wasm, index, kind, name, spec) {
         super(wasm, spec);
         this.index = index;
-        this.type = type;
+        this.kind = kind;
         this.name = name;
 
         this.params = ParameterContainer.initFromSpec(wasm, this.spec.parameters);
@@ -140,7 +140,7 @@ export class Track extends AudioProcessor {
     serialize() {
         return {
             index: this.index,
-            type: this.type,
+            kind: this.kind,
             name: this.name,
             spec: this.spec,
             notes: this.notes,
@@ -217,11 +217,11 @@ export class TracksContainer {
 
     /**
      * @param {number} trackIndex 
-     * @param {InstrumentType} instrumentType
+     * @param {ProcessorKind} processorKind
      * @param {boolean} addToUndo
      * @param {null | any} serialized
      */
-    addInstrument(trackIndex, instrumentType, addToUndo = true, serialized = null) {
+    addInstrument(trackIndex, processorKind, addToUndo = true, serialized = null) {
         if (trackIndex < 0) {
             trackIndex = this.tracks.length;
         }
@@ -231,7 +231,7 @@ export class TracksContainer {
             type: WorkletMessageType.addInstrument,
             context: {
                 trackIndex,
-                instrumentType,
+                processorKind: processorKind,
                 addToUndo,
                 serialized,
             }
@@ -249,19 +249,19 @@ export class TracksContainer {
             return;
         }
 
-        console.log("Track data:", ev.data.data);
         const data = ev.data.data;
-        const trackSpec = data.spec;
-        const instrumentType = data.context.instrumentType;
+        const trackSpec = JSON.parse(data.spec);
+        const processorKind = /** @type {ProcessorKind} */ (data.context.processorKind);
         const trackIndex = data.context.trackIndex;
         const addToUndo = data.context.addToUndo;
         const serialized = data.context.serialized;
+        console.log("[addInstrumentCallback] context:", data.context, "\n spec:", trackSpec);
 
         /** @type {Track} */
         let track;
         if (serialized === null) {
-            const instrumentDetails = InstrumentDetailsList[instrumentType];
-            track = new Track(this.wasm, trackIndex, instrumentType, instrumentDetails.name, trackSpec);
+            const details = processorDetails[processorKind];
+            track = new Track(this.wasm, trackIndex, processorKind, details.name, trackSpec);
         }
         else { // Load existing instrument with existing state
             track = Track.deserialize(this.wasm, trackSpec, serialized);

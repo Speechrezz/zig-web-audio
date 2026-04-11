@@ -7,7 +7,7 @@ const state = framework.state;
 const web = framework.web;
 const chordic = @import("chordic");
 const ProcessorRegistry = chordic.ProcessorRegistry;
-const trackFromInstrumentKindIndexLogging = ProcessorRegistry.trackFromInstrumentKindIndexLogging;
+const createProcessorFromKindLogging = ProcessorRegistry.createProcessorFromKindLogging;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
@@ -136,14 +136,23 @@ export fn loadState(ptr: [*]u8, len: usize) bool {
 
 // --Track--
 
-export fn addInstrument(track_index: usize, instrument_type: usize) bool {
+export fn addInstrument(track_index: usize, kind_ptr: [*]const u8, kind_len: usize) bool {
+    const kind_slice = kind_ptr[0..kind_len];
     if (enableDebugPrint) {
-        logging.logDebug("[WASM] {s}(idx={}, type={})", .{ @src().fn_name, track_index, instrument_type });
+        logging.logDebug("[WASM] {s}(idx={}, kind={s})", .{ @src().fn_name, track_index, kind_slice });
     }
 
-    const track = trackFromInstrumentKindIndexLogging(wasm_allocator, instrument_type) orelse return false;
+    const track = chordic.processors.TrackProcessor.create(wasm_allocator) catch |err| {
+        logging.logDebug("[WASM] Error in {s}: Unable to create track, {}", .{ @src().fn_name, err });
+        return false;
+    };
+
+    const generator_proc = createProcessorFromKindLogging(wasm_allocator, kind_slice) orelse return false;
+    track.generator_device = chordic.processors.TrackProcessor.Device.init(generator_proc);
+
     track.processor.id = serialization_context.getNextId();
     track.generator_device.?.processor.id = serialization_context.getNextId();
+
     return processor.insertTrack(wasm_allocator, track_index, track);
 }
 
@@ -238,6 +247,19 @@ export fn setParameterValueNormalized(container: *state.ParameterContainer, para
 }
 
 // --General--
+
+export fn allocString(len: usize) ?[*]u8 {
+    if (enableDebugPrint) {
+        logging.logDebug("[WASM] allocString({})", .{len});
+    }
+
+    const slice = wasm_allocator.alloc(u8, len) catch |err| {
+        logging.logDebug("[WASM] allocString error: {}", .{err});
+        return null;
+    };
+
+    return slice.ptr;
+}
 
 export fn freeString(ptr: [*]u8, len: usize) void {
     if (enableDebugPrint) {

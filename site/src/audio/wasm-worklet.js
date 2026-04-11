@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { decodeUtf8, unpackSlice } from "../core/wasm.js";
+import { decodeUtf8, encodeAscii, unpackSlice } from "../core/wasm.js";
 import { WorkletMessageType } from "./worklet-message.js";
 
 const BLOCK_SIZE = 128;
@@ -31,9 +31,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
                 // --Global--
                 case WorkletMessageType.saveState: {
-                    const stateSlice = unpackSlice(this.exports.saveState());
-                    const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
-                    this.exports.freeString(stateSlice.ptr, stateSlice.len);
+                    const stateString = this.wasmSliceToString(this.exports.saveState());
 
                     this.port.postMessage({
                         type: WorkletMessageType.saveState,
@@ -46,18 +44,19 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
                 // --Track--
                 case WorkletMessageType.addInstrument: {
-                    const success = Boolean(this.exports.addInstrument(msg.context.trackIndex, msg.context.instrumentType));
+                    const kindSlice = this.allocAndCopyToWasmString(msg.context.processorKind);
+                    const success = Boolean(this.exports.addInstrument(msg.context.trackIndex, kindSlice.ptr, kindSlice.len));
+                    this.freeWasmString(kindSlice);
+
                     if (success === false) {
                         this.port.postMessage({type: WorkletMessageType.addInstrument, success: false});
                         break;
                     }
 
-                    const stateSlice = unpackSlice(this.exports.getTrackSpec(msg.context.trackIndex));
-                    const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
-                    this.exports.freeString(stateSlice.ptr, stateSlice.len);
+                    const specString = this.wasmSliceToString(this.exports.getTrackSpec(msg.context.trackIndex));
 
                     const data = {
-                        spec: JSON.parse(stateString),
+                        spec: specString,
                         context: msg.context,
                     }
 
@@ -72,9 +71,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     break;
 
                 case WorkletMessageType.saveTrackState: {
-                    const stateSlice = unpackSlice(this.exports.saveTrackState(msg.trackIndex));
-                    const stateString = this.getWasmString(stateSlice.ptr, stateSlice.len);
-                    this.exports.freeString(stateSlice.ptr, stateSlice.len);
+                    const stateString = this.wasmSliceToString(this.exports.saveTrackState(msg.trackIndex));
 
                     this.port.postMessage({
                         type: WorkletMessageType.saveTrackState,
@@ -133,6 +130,36 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
     getWasmString(ptr, len) {
         const mem = new Uint8Array(this.exports.memory.buffer, ptr, len);
         return decodeUtf8(mem);
+    }
+
+    /**
+     * @param {BigInt} packed 
+     */
+    wasmSliceToString(packed) {
+        const slice = unpackSlice(packed);
+        const string = this.getWasmString(slice.ptr, slice.len);
+        this.freeWasmString(slice);
+        return string;
+    }
+
+    /**
+     * @param {string} str 
+     */
+    allocAndCopyToWasmString(str) {
+        const len = str.length;
+        /** @type {number} */
+        const ptr = this.exports.allocString(str.length);
+        const mem = new Uint8Array(this.exports.memory.buffer, ptr, len);
+
+        encodeAscii(str, mem);
+        return {ptr, len};
+    }
+
+    /**
+     * @param {{ptr: number, len: number}} slice 
+     */
+    freeWasmString(slice) {
+        this.exports.freeString(slice.ptr, slice.len);
     }
 
     process(inputs, outputs) {

@@ -44,47 +44,6 @@ pub fn createProcessorFromKindLogging(allocator: std.mem.Allocator, kind: []cons
     };
 }
 
-pub fn processorFromKindIndex(allocator: std.mem.Allocator, index: usize) !*audio.AudioProcessor {
-    switch (index) {
-        0 => return processors.generators.SineSynth.create(allocator),
-        1 => return processors.generators.TriangleSynth.create(allocator),
-        2 => return processors.generators.WavetableSynth.create(allocator),
-
-        else => return Error.ProcessorKindDoesNotExist,
-    }
-}
-
-pub fn processorFromKindIndexLogging(allocator: std.mem.Allocator, index: usize) ?*audio.AudioProcessor {
-    return processorFromKindIndex(allocator, index) catch |err| {
-        logging.logDebug(
-            "[WASM.addInstrument()] Failed to create audio processor '{}': {}",
-            .{ index, err },
-        );
-        return null;
-    };
-}
-
-pub fn trackFromInstrumentKindIndex(allocator: std.mem.Allocator, index: usize) !*processors.TrackProcessor {
-    const instrument = try processorFromKindIndex(allocator, index);
-    const track = try processors.TrackProcessor.create(allocator);
-
-    track.generator_device = processors.TrackProcessor.Device.init(instrument);
-    return track;
-}
-
-pub fn trackFromInstrumentKindIndexLogging(
-    allocator: std.mem.Allocator,
-    index: usize,
-) ?*processors.TrackProcessor {
-    return trackFromInstrumentKindIndex(allocator, index) catch |err| {
-        logging.logDebug(
-            "[WASM.instrumentTypeToTrack()] Failed to create instrument track '{}': {}",
-            .{ index, err },
-        );
-        return null;
-    };
-}
-
 test {
     const allocator = std.testing.allocator;
 

@@ -19,6 +19,19 @@ export function encodeUtf8(str, mem) {
 }
 
 /**
+ * Encodes ASCII text into a Uint8Array. AudioWorklet friendly.
+ *
+ * @param {string} str
+ * @param {Uint8Array} mem
+ */
+export function encodeAscii(str, mem) {
+    for (let i = 0; i < mem.length; i++) {
+        const code = str.charCodeAt(i);
+        mem[i] = code <= 0x7F ? code : 0x3F; // Replace non-ASCII with '?'
+    }
+}
+
+/**
  * @param {BigInt} x 
  */
 export function unpackSlice(x) {

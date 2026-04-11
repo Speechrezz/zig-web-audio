@@ -24,3 +24,8 @@
  *   parameters: any,
  * } & Object<string, any>} AudioProcessorSpec
  */
+
+
+/**
+ * @typedef {{ name: string }} ProcessorDetails
+ */

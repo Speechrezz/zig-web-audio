@@ -1,5 +1,5 @@
 import { AppContext } from "../../../app/app-context.js";
-import { InstrumentDetailsList, TrackEvent } from "../../../audio/audio-constants.js";
+import { processorDetails, ProcessorKind, TrackEvent } from "../../../audio/audio-constants.js";
 import { Component } from "../../framework/component.js";
 import { ComboBox } from "../../framework/components/combo-box.js";
 import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
@@ -21,6 +21,9 @@ export class TracksSection extends Component {
 
     /** @type {TrackControls[]} */
     trackComponents = [];
+
+    /** @type {ProcessorKind[]} */
+    processorKindList = [];
 
     /**
      * @param {AppContext} context 
@@ -83,8 +86,10 @@ export class TracksSection extends Component {
 
     initializeDropdown() {
         const popupMenu = this.addInstrumentComboBox.popupMenu;
-        for (const instrumentDetails of InstrumentDetailsList)
-            popupMenu.menuItems.push(instrumentDetails.name);
+        for (const [kind, details] of Object.entries(processorDetails)) {
+            this.processorKindList.push(kind);
+            popupMenu.menuItems.push(details.name);
+        }
 
         popupMenu.onSelectedChanged = (index) => this.instrumentDropdownItemClicked(index);
     }
@@ -94,7 +99,7 @@ export class TracksSection extends Component {
      */
     instrumentDropdownItemClicked(index) {
         if (index === null) return;
-        this.context.tracks.addInstrument(-1, index);
+        this.context.tracks.addInstrument(-1, this.processorKindList[index]);
     }
 
     /**

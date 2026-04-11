@@ -1,21 +1,29 @@
 /**
+ * Enum of all processor kinds
  * @readonly
- * @enum {number}
+ * @enum {string}
  */
-export const InstrumentType = Object.freeze({
-    SineSynth: 0,
-    TriangleSynth: 1,
-    WavetableSynth: 2,
+export const ProcessorKind = Object.freeze({
+    SineSynth: "sineSynth",
+    TriangleSynth: "triangleSynth",
+    WavetableSynth: "wavetableSynth",
 });
 
 /**
+ * @type {Readonly<Record<ProcessorKind, ProcessorDetails>>}
  * @readonly
  */
-export const InstrumentDetailsList = Object.freeze([
-    { name: "Sine Synth" },
-    { name: "Triangle Synth" },
-    { name: "Wavetable Synth" },
-]);
+export const processorDetails = Object.freeze({
+    [ProcessorKind.SineSynth]: {
+        name: "Sine Synth",
+    },
+    [ProcessorKind.TriangleSynth]: {
+        name: "Triangle Synth",
+    },
+    [ProcessorKind.WavetableSynth]: {
+        name: "Wavetable Synth",
+    },
+});
 
 /**
  * @readonly
