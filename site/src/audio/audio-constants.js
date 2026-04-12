@@ -34,12 +34,3 @@ export const AudioEvent = Object.freeze({
     PlayStop: 1,
     MidiDeviceMessage: 2,
 });
-
-/**
- * @readonly
- * @enum {number}
- */
-export const TrackEvent = Object.freeze({
-    TracksChanged: 0,
-    TrackSelected: 1,
-});

@@ -72,7 +72,7 @@ export class PianoComponent extends Component {
             }
         }
 
-        const track = this.context.tracks.getSelected();
+        const track = this.context.daw.getSelectedTrack();
 
         if (track !== null) {
             ctx.fillStyle = "oklch(70.7% 0.165 254.624 / 0.3)";

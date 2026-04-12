@@ -1,5 +1,5 @@
 import { AppContext } from "../../../app/app-context.js";
-import { TrackEvent } from "../../../audio/audio-constants.js";
+import { DawEvent } from "../../../daw/daw-constants.js";
 import { Track } from "../../../audio/track.js";
 import { Component } from "../../framework/component.js";
 import { DeviceWrapper } from "./device-wrapper.js";
@@ -18,7 +18,7 @@ export class DevicePanelSection extends Component {
         super();
         this.context = context;
 
-        this.context.tracks.addListener(TrackEvent.TrackSelected, () => this.instrumentSelected());
+        this.context.daw.addListener((ev, ctx) => this.trackSelected(ev, ctx));
     }
 
     /**
@@ -26,7 +26,7 @@ export class DevicePanelSection extends Component {
      */
     draw(ctx) {
         const bounds = this.getLocalBounds();
-        const selectedTrack = this.context.tracks.getSelected();
+        const selectedTrack = this.context.daw.getSelectedTrack();
 
         ctx.fillStyle = "oklch(96.7% 0.003 264.542)";
         ctx.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -49,16 +49,26 @@ export class DevicePanelSection extends Component {
         this.repaint();
     }
 
-    instrumentSelected() {
-        this.clearDeviceList();
+    /**
+     * 
+     * @param {DawEvent} ev 
+     * @param {any} ctx 
+     */
+    trackSelected(ev, ctx) {
+        switch (ev) {
+            case DawEvent.TrackSelected: {
+                this.clearDeviceList();
 
-        const selectedTrack = this.context.tracks.getSelected();
-        if (selectedTrack) {
-            this.populateDeviceList(selectedTrack);
-            this.updateDeviceBounds();
+                const selectedTrack = this.context.daw.getSelectedTrack();
+                if (selectedTrack) {
+                    this.populateDeviceList(selectedTrack);
+                    this.updateDeviceBounds();
+                }
+
+                this.repaint();
+                break;
+            }
         }
-
-        this.repaint();
     }
 
     clearDeviceList() {

@@ -5,7 +5,7 @@ import { CursorStyle, setCursorStyle } from "../../framework/cursor-style.js"
 import { AppContext } from "../../../app/app-context.js"
 import { cloneNotes, NotesManager } from "../../../audio/notes-manager.js";
 import { NoteComponent } from "./note-component.js";
-import { TrackEvent } from "../../../audio/audio-constants.js";
+import { DawEvent } from "../../../daw/daw-constants.js";
 import { MouseAction, MouseActionPolicy, MouseEvent } from "../../framework/mouse-event.js";
 import { AppCommand, AppEvent } from "../../../app/app-event.js";
 import { Note } from "../../../audio/note.js";
@@ -74,10 +74,10 @@ export class PianoRoll extends Component {
         
         this.context = context;
 
-        this.notesManager = new NotesManager(this.context.tracks, this.context.undoManager);
+        this.notesManager = new NotesManager(this.context.undoManager, this.context.daw);
         this.notesManager.pianoRollCallback = () => { this.resetNotes(); this.repaint(); };
 
-        this.context.tracks.addListener(TrackEvent.TrackSelected, () => this.trackSelected());
+        this.context.daw.addListener((ev, ctx) => this.trackSelected(ev, ctx));
         this.context.eventRouter.addListener(this);
 
         this.lastPpqLength = this.context.config.ppqResolution;
@@ -193,9 +193,9 @@ export class PianoRoll extends Component {
         }
     }
 
-    /** @returns {this is this & { context: { tracks: { selectedIndex: number } } }} */
+    /** @returns {this is this & { context: { daw: { selectedTrackIndex: number } } }} */
     isEditable() {
-        return this.context.tracks.selectedIndex !== null;
+        return this.context.daw.selectedTrackIndex !== null;
     }
 
     /**
@@ -337,16 +337,25 @@ export class PianoRoll extends Component {
         }
     }
 
-    trackSelected() {
-        this.clearSelection();
-        this.resetNotes();
-        this.repaint();
+    /**
+     * @param {DawEvent} ev 
+     * @param {any} ctx 
+     */
+    trackSelected(ev, ctx) {
+        switch (ev) {
+            case DawEvent.TrackSelected: {
+                this.clearSelection();
+                this.resetNotes();
+                this.repaint();
+                break;
+            }
+        }
     }
 
     resetNotes() {
         this.noteComponents.length = 0;
 
-        const track = this.context.tracks.getSelected();
+        const track = this.context.daw.getSelectedTrack();
         if (track === null) return;
 
         for (const note of track.notes) {
@@ -477,7 +486,7 @@ export class PianoRoll extends Component {
     addNotes(notes) {
         if (!this.isEditable()) return [];
 
-        this.notesManager.addNotes(this.context.tracks.selectedIndex, notes);
+        this.notesManager.addNotes(this.context.daw.selectedTrackIndex, notes);
 
         /** @type {NoteComponent[]} */
         const noteComponents = [];
@@ -520,7 +529,7 @@ export class PianoRoll extends Component {
             notes.push(noteComponent.note);
         }
 
-        this.notesManager.removeNotes(this.context.tracks.selectedIndex, notes);
+        this.notesManager.removeNotes(this.context.daw.selectedTrackIndex, notes);
     }
 
     /**
@@ -701,7 +710,7 @@ export class PianoRoll extends Component {
                 noteDiffs.push(noteComponent.getNoteDiff());        
             }
             
-            this.notesManager.moveNotesGestureEnd(this.context.tracks.selectedIndex, noteDiffs);
+            this.notesManager.moveNotesGestureEnd(this.context.daw.selectedTrackIndex, noteDiffs);
         }
 
         this.lastPpqLength = this.selectedNoteMain.note.timeLength;
@@ -717,7 +726,7 @@ export class PianoRoll extends Component {
         setCursorStyle(this.interactionTypeToCursor(InteractionType.removeNote));
         this.clearSelection();
 
-        this.notesManager.removeNotesGestureBegin(this.context.tracks.selectedIndex);
+        this.notesManager.removeNotesGestureBegin(this.context.daw.selectedTrackIndex);
 
         const noteToRemove = this.findNoteAtScreen(ev.x, ev.y);
         if (noteToRemove !== null) {

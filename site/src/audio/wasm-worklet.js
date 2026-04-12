@@ -60,7 +60,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                         context: msg.context,
                     }
 
-                    this.port.postMessage({ type: WorkletMessageType.addInstrument, success: true, data });
+                    this.port.postMessage({ type: WorkletMessageType.insertTrack, success: true, data });
                     break;
                 }
                 case WorkletMessageType.removeTrack:

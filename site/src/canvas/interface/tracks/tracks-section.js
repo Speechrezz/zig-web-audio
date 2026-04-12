@@ -1,5 +1,6 @@
 import { AppContext } from "../../../app/app-context.js";
-import { processorDetails, ProcessorKind, TrackEvent } from "../../../audio/audio-constants.js";
+import { processorDetails, ProcessorKind } from "../../../audio/audio-constants.js";
+import { DawEvent } from "../../../daw/daw-constants.js";
 import { Component } from "../../framework/component.js";
 import { ComboBox } from "../../framework/components/combo-box.js";
 import { MouseAction, MouseActionPolicy } from "../../framework/mouse-event.js";
@@ -36,10 +37,9 @@ export class TracksSection extends Component {
         this.addChildComponent(this.addInstrumentComboBox);
         this.initializeDropdown();
 
-        this.context.tracks.addListener(TrackEvent.TracksChanged, () => this.instrumentsChanged());
-        this.context.tracks.addListener(TrackEvent.TrackSelected, () => this.updateSelectedInstrument());
+        this.context.daw.addListener((ev, ctx) => this.dawEventCallback(ev, ctx));
 
-        this.instrumentsChanged();
+        this.tracksChanged();
     }
 
     /**
@@ -84,6 +84,23 @@ export class TracksSection extends Component {
         this.updateInstrumentBounds();
     }
 
+    /**
+     * @param {DawEvent} ev 
+     * @param {any} ctx 
+     */
+    dawEventCallback(ev, ctx) {
+        switch (ev) {
+            case DawEvent.TrackSelected:
+                this.updateSelectedTrack();
+                break;
+            
+            case DawEvent.TrackInserted:
+            case DawEvent.TrackRemoved:
+                this.tracksChanged();
+                break;
+        }
+    }
+
     initializeDropdown() {
         const popupMenu = this.addInstrumentComboBox.popupMenu;
         for (const [kind, details] of Object.entries(processorDetails)) {
@@ -99,18 +116,18 @@ export class TracksSection extends Component {
      */
     instrumentDropdownItemClicked(index) {
         if (index === null) return;
-        this.context.tracks.addInstrument(-1, this.processorKindList[index]);
+        this.context.daw.addInstrument(-1, this.processorKindList[index]);
     }
 
     /**
      * @param {number} index 
      */
     instrumentClicked(index) {
-        this.context.tracks.selectTrack(index);
+        this.context.daw.selectTrack(index);
     }
 
-    instrumentsChanged() {
-        const tracks = this.context.tracks.getList();
+    tracksChanged() {
+        const tracks = this.context.daw.tracks;
         this.clearInstruments();
 
         for (const track of tracks) {
@@ -122,7 +139,7 @@ export class TracksSection extends Component {
             this.addChildComponent(component);
         }
 
-        this.updateSelectedInstrument();
+        this.updateSelectedTrack();
         this.updateInstrumentBounds();
     }
 
@@ -137,8 +154,8 @@ export class TracksSection extends Component {
         }
     }
 
-    updateSelectedInstrument() {
-        const selectedIndex = this.context.tracks.selectedIndex;
+    updateSelectedTrack() {
+        const selectedIndex = this.context.daw.selectedTrackIndex;
 
         for (const component of this.trackComponents) {
             const isSelected = component.track.index === selectedIndex;
@@ -150,7 +167,7 @@ export class TracksSection extends Component {
      * @param {number} index 
      */
     deleteInstrument(index) {
-        this.context.tracks.removeTrack(index);
+        this.context.daw.removeTrack(index);
     }
 
     clearInstruments() {

@@ -1,6 +1,6 @@
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { Note } from "./note.js";
-import { TracksContainer } from "./track.js";
+import { DawController } from "../daw/daw-controller.js";
 
 const UNDO_ID = "notes-manager";
 const UndoType = Object.freeze({
@@ -10,8 +10,8 @@ const UndoType = Object.freeze({
 });
 
 export class NotesManager {
-    /** @type {TracksContainer} */
-    tracks;
+    /** @type {DawController} */
+    daw;
 
     /** @type {UndoManager} */
     undoManager;
@@ -26,11 +26,11 @@ export class NotesManager {
     pianoRollCallback = () => {};
 
     /**
-     * @param {TracksContainer} tracks 
      * @param {UndoManager} undoManager 
+     * @param {DawController} daw 
      */
-    constructor(tracks, undoManager) {
-        this.tracks = tracks;
+    constructor(undoManager, daw) {
+        this.daw = daw;
         this.undoManager = undoManager;
 
         this.undoManager.addListener(UNDO_ID, this);
@@ -42,7 +42,7 @@ export class NotesManager {
      * @param {boolean} newNotes `true` if the notes being added are brand-new.
      */
     addNotes(trackIndex, notes, newNotes = true) {
-        const track = this.tracks.get(trackIndex);
+        const track = this.daw.trackAt(trackIndex);
 
         for (const note of notes) {
             if (newNotes) {
@@ -70,7 +70,7 @@ export class NotesManager {
      * @param {boolean} addToUndo `true` if this remove event should be communicated to the undo manager.
      */
     removeNotes(trackIndex, notes, addToUndo = true) {
-        const track = this.tracks.get(trackIndex);
+        const track = this.daw.trackAt(trackIndex);
 
         for (const note of notes) {
             const trackNoteIndex = track.notes.indexOf(note);
@@ -140,7 +140,7 @@ export class NotesManager {
     undo(transaction) {
         /** @type {number} */
         const trackIndex = transaction.diff.trackIndex;
-        const track = this.tracks.get(trackIndex);
+        const track = this.daw.trackAt(trackIndex);
         /** @type {Note[]} */
         const notesDiff = transaction.diff.notes;
         
@@ -185,7 +185,7 @@ export class NotesManager {
     redo(transaction) {
         /** @type {number} */
         const trackIndex = transaction.diff.trackIndex;
-        const track = this.tracks.get(trackIndex);
+        const track = this.daw.trackAt(trackIndex);
         /** @type {Note[]} */
         const notesDiff = transaction.diff.notes;
 

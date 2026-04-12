@@ -8,7 +8,7 @@ import { AppEventRouter } from "./app-event-router.js"
 import { AppContext } from "./app-context.js"
 import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
-import { TracksContainer } from "../audio/track.js"
+import { DawController } from "../daw/daw-controller.js"
 import { WasmContainer } from "../core/wasm.js"
 import { WorkletState } from "../state/worklet-state.js"
 import { AppState } from "../state/app-state.js"
@@ -19,6 +19,9 @@ export class App {
 
     /** @type {PlaybackEngine | undefined} */
     playbackEngine = undefined;
+
+    /** @type {DawController | undefined} */
+    daw = undefined;
 
     /** @type {MidiInput | undefined} */
     midiInput = undefined;
@@ -57,8 +60,8 @@ export class App {
         await this.initializeWasm();
 
         this.undoManager = new UndoManager(this.eventRouter);
-        const tracks = new TracksContainer(this.wasm, this.undoManager);
-        this.playbackEngine = new PlaybackEngine(this.config, tracks);
+        this.daw = new DawController(this.wasm, this.undoManager);
+        this.playbackEngine = new PlaybackEngine(this.config, this.daw);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.keyboardListener = new KeyboardListener(this.eventRouter);
         this.workletState = new WorkletState();
@@ -66,7 +69,8 @@ export class App {
 
         const appContext = new AppContext(
             this.config, 
-            this.playbackEngine, 
+            this.playbackEngine,
+            this.daw,
             this.undoManager,
             this.eventRouter,
             this.clipboardManager,
@@ -126,7 +130,7 @@ export class App {
 
         const node = await initializeAudio();
         // @ts-ignore
-        this.playbackEngine.tracks.initializeAudio();
+        this.daw.initializeAudio();
         // @ts-ignore
         this.workletState.workletInitialized(node);
 

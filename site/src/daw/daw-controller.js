@@ -1,21 +1,10 @@
-import { UndoManager } from "../app/undo-manager.js";
+import { AppTransaction, UndoManager } from "../app/undo-manager.js";
+import { processorDetails, ProcessorKind } from "../audio/audio-constants.js";
 import { getAudioWorkletNode } from "../audio/audio.js";
 import { Track } from "../audio/track.js";
 import { WorkletMessageType } from "../audio/worklet-message.js";
 import { WasmContainer } from "../core/wasm.js";
 import { DawEvent } from "./daw-constants.js";
-
-export class TrackWrapper {
-    /** @type {Track} */
-    track;
-
-    /**
-     * @param {Track} track 
-     */
-    constructor(track) {
-        this.track = track;
-    }
-}
 
 export class DawController {
     /** @type {WasmContainer} */
@@ -24,7 +13,7 @@ export class DawController {
     /** @type {UndoManager} */
     undoManager;    
 
-    /** @type {TrackWrapper[]} */
+    /** @type {Track[]} */
     tracks = [];
 
     /** @type {null | number} */
@@ -61,11 +50,124 @@ export class DawController {
         }
     }
 
+    // --Track--
+
+    updateTrackIndices() {
+        for (let i = 0; i < this.tracks.length; i++) {
+            this.tracks[i].index = i;
+        }
+    }
+
+    /**
+     * @param {number} trackIndex 
+     * @param {ProcessorKind} processorKind
+     */
+    addInstrument(trackIndex, processorKind) {
+        if (trackIndex < 0) {
+            trackIndex = this.tracks.length;
+        }
+
+        const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
+        node.port.postMessage({
+            type: WorkletMessageType.addInstrument,
+            context: {
+                trackIndex,
+                processorKind,
+            },
+        });
+    }
+
     /**
      * @param {MessageEvent} ev 
      */
     insertTrackCallback(ev) {
-        console.log("[DawController.insertTrackCallback]: TODO", ev);
+        if (ev.data.success !== true) {
+            console.error("Failed to add track.", ev);
+            return;
+        }
+
+        const data = ev.data.data;
+        const trackSpec = JSON.parse(data.spec);
+        const processorKind = /** @type {ProcessorKind} */ (data.context.processorKind);
+        const trackIndex = data.context.trackIndex;
+        console.log("[insertTrackCallback] context:", data.context, "\n spec:", trackSpec);
+
+        const details = processorDetails[processorKind];
+        const track = new Track(this.wasm, trackIndex, details.name, trackSpec);
+
+        this.tracks.splice(trackIndex, 0, track);
+        this.updateTrackIndices();
+        this.selectedTrackIndex = track.index;
+
+        console.log("[insertTrackCallback] Added track:", track);
+
+        // TODO: Add to UndoManager
+        // this.undoManager.push(new AppTransaction(
+        //     UNDO_ID,
+        //     UndoType.addInstrument,
+        //     track.serialize(),
+        // ));
+
+        this.notifyListeners(DawEvent.TrackInserted, {idx: track.index});
+        this.notifyListeners(DawEvent.TrackSelected, {idx: track.index});
+    }
+
+    /**
+     * @param {number} trackIndex
+     * @param {boolean} addToUndo
+     */
+    removeTrack(trackIndex, addToUndo = true) {
+        const removedTrack = this.tracks.splice(trackIndex, 1)[0];
+        removedTrack.deinit();
+        this.updateTrackIndices();
+
+        const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
+        node.port.postMessage({
+            type: WorkletMessageType.removeTrack,
+            instrumentIndex: trackIndex,
+        });
+
+        if (this.selectedTrackIndex !== null && this.selectedTrackIndex >= trackIndex) {
+            if (this.tracks.length === 0)
+                this.selectedTrackIndex = null;
+            else
+                this.selectedTrackIndex = Math.max(0, this.selectedTrackIndex - 1);
+        }
+
+        // if (addToUndo) {
+        //     this.undoManager.push(new AppTransaction(
+        //         UNDO_ID,
+        //         UndoType.removeInstrument,
+        //         removedTrack.serialize(),
+        //     ));
+        // }
+
+        this.notifyListeners(DawEvent.TrackSelected, {idx: trackIndex});
+        this.notifyListeners(DawEvent.TrackRemoved, {idx: trackIndex});
+    }
+
+    /**
+     * @param {number} index 
+     * @return {Track}
+     */
+    trackAt(index) {
+        return this.tracks[index];
+    }
+
+    /**
+     * @param {number} index 
+     */
+    selectTrack(index) {
+        if (this.selectedTrackIndex === index) return;
+
+        this.selectedTrackIndex = index;
+        this.notifyListeners(DawEvent.TrackSelected, {idx: index});
+    }
+
+    getSelectedTrack() {
+        if (this.selectedTrackIndex === null)
+            return null;
+        return this.tracks[this.selectedTrackIndex];
     }
 
     // --Listeners--

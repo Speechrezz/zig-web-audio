@@ -1,10 +1,11 @@
 import { Config } from "../app/config.js";
-import { Track, TracksContainer } from "./track.js";
+import { Track } from "./track.js";
 import { sendMidiMessageSeconds, sendMidiMessageSamples, sendStopAllNotes, MidiEventType, MidiEvent } from "./midi.js"
 import { getAudioContext, getContextTime, getBlockSize, isAudioContextRunning, toAudibleTime } from "./audio.js"
 import { AudioEvent } from "./audio-constants.js";
 import { Note, NoteEvent } from "./note.js";
 import { MoreMath } from "../core/math.js";
+import { DawController } from "../daw/daw-controller.js";
 
 export class PlayHead {
     /** @type {Config} */
@@ -77,8 +78,8 @@ export class PlaybackEngine {
     /** @type {PlayHead} */
     playHead;
 
-    /** @type {TracksContainer} */
-    tracks;
+    /** @type {DawController} */
+    daw;
 
     /** @type {(() => void)[][]} */
     audioEventListeners = [];
@@ -91,12 +92,12 @@ export class PlaybackEngine {
 
     /**
      * @param {Config} config 
-     * @param {TracksContainer} tracks 
+     * @param {DawController} daw 
      */
-    constructor(config, tracks) {
+    constructor(config, daw) {
         this.config = config;
         this.playHead = new PlayHead(config);
-        this.tracks = tracks;
+        this.daw = daw;
 
         // Initialize listeners list
         for (const key of Object.keys(AudioEvent)) {
@@ -257,7 +258,7 @@ export class PlaybackEngine {
         const positionInPpq = this.config.beatsToPpqPrecise(playHead.positionInBeats);
         const nextPositionInPpq = this.config.beatsToPpqPrecise(nextPositionInBeats);
 
-        for (const track of this.tracks.getList()) {
+        for (const track of this.daw.tracks) {
             const noteStartEvents = this.getNoteStartInInterval(track, positionInPpq, nextPositionInPpq);
             const noteEvents = this.getNoteStopInInterval(track, positionInPpq, nextPositionInPpq);
             noteEvents.push(...noteStartEvents);
@@ -275,7 +276,7 @@ export class PlaybackEngine {
     }
 
     sendStopAllNotes() {
-        for (const track of this.tracks.getList()) {
+        for (const track of this.daw.tracks) {
             track.activeNotes.length = 0;
             track.queuedNoteEvents.length = 0;
         }
@@ -392,7 +393,7 @@ export class PlaybackEngine {
         if (!isAudioContextRunning()) return;
         const audioContext = /** @type {AudioContext} */ (getAudioContext());
 
-        const track = this.tracks.getSelected();
+        const track = this.daw.getSelectedTrack();
         if (track === null) return;
 
         if (timestampMs !== undefined) {
@@ -424,7 +425,7 @@ export class PlaybackEngine {
     sendPreviewMidiNote(noteNumber) {
         if (!isAudioContextRunning() || this.playHead.isPlaying) return;
 
-        const track = this.tracks.getSelected();
+        const track = this.daw.getSelectedTrack();
         if (track === null) return;
 
         const noteOnEvent  = MidiEvent.newNote(MidiEventType.NoteOn,  noteNumber, 60, 0);
