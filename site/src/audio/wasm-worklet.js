@@ -44,30 +44,26 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
 
                 // --Track--
                 case WorkletMessageType.addInstrument: {
-                    const kindSlice = this.allocAndCopyToWasmString(msg.context.processorKind);
-                    const success = Boolean(this.exports.addInstrument(msg.context.trackIndex, kindSlice.ptr, kindSlice.len));
+                    const kindSlice = this.allocAndCopyToWasmString(msg.ctx.processorKind);
+                    const success = Boolean(this.exports.addInstrument(msg.ctx.trackIndex, kindSlice.ptr, kindSlice.len));
                     this.freeWasmString(kindSlice);
 
                     if (success === false) {
-                        this.port.postMessage({type: WorkletMessageType.addInstrument, success: false});
+                        this.port.postMessage({type: WorkletMessageType.insertTrack, success: false});
                         break;
                     }
 
-                    const specString = this.wasmSliceToString(this.exports.getTrackSpec(msg.context.trackIndex));
-
-                    const data = {
-                        spec: specString,
-                        context: msg.context,
-                    }
-
-                    this.port.postMessage({ type: WorkletMessageType.insertTrack, success: true, data });
+                    const specString = this.wasmSliceToString(this.exports.getTrackSpec(msg.ctx.trackIndex));
+                    this.port.postMessage({ type: WorkletMessageType.insertTrack, success: true, ctx: msg.ctx, spec: specString });
                     break;
                 }
                 case WorkletMessageType.removeTrack:
-                    this.exports.removeTrack(msg.instrumentIndex);
+                    this.exports.removeTrack(msg.ctx.trackIndex);
+                    this.port.postMessage({ type: WorkletMessageType.removeTrack, success: true, ctx: msg.ctx });
                     break;
                 case WorkletMessageType.clearTracks:
                     this.exports.clearTracks();
+                    this.port.postMessage({ type: WorkletMessageType.clearTracks, success: true });
                     break;
 
                 case WorkletMessageType.saveTrackState: {

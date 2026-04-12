@@ -47,6 +47,9 @@ export class DawController {
             case WorkletMessageType.insertTrack:
                 this.insertTrackCallback(ev);
                 break;
+            case WorkletMessageType.removeTrack:
+                this.removeTrackCallback(ev);
+                break;
         }
     }
 
@@ -67,12 +70,15 @@ export class DawController {
             trackIndex = this.tracks.length;
         }
 
+        const trackName = processorDetails[processorKind].name;
+
         const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
         node.port.postMessage({
             type: WorkletMessageType.addInstrument,
-            context: {
+            ctx: {
                 trackIndex,
                 processorKind,
+                name: trackName,
             },
         });
     }
@@ -86,14 +92,12 @@ export class DawController {
             return;
         }
 
-        const data = ev.data.data;
-        const trackSpec = JSON.parse(data.spec);
-        const processorKind = /** @type {ProcessorKind} */ (data.context.processorKind);
-        const trackIndex = data.context.trackIndex;
-        console.log("[insertTrackCallback] context:", data.context, "\n spec:", trackSpec);
+        const trackSpec = JSON.parse(ev.data.spec);
+        const trackName = ev.data.ctx.name;
+        const trackIndex = ev.data.ctx.trackIndex;
+        console.log("[insertTrackCallback] spec:", trackSpec);
 
-        const details = processorDetails[processorKind];
-        const track = new Track(this.wasm, trackIndex, details.name, trackSpec);
+        const track = new Track(this.wasm, trackIndex, trackName, trackSpec);
 
         this.tracks.splice(trackIndex, 0, track);
         this.updateTrackIndices();
@@ -124,7 +128,9 @@ export class DawController {
         const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
         node.port.postMessage({
             type: WorkletMessageType.removeTrack,
-            instrumentIndex: trackIndex,
+            ctx: {
+                trackIndex,
+            },
         });
 
         if (this.selectedTrackIndex !== null && this.selectedTrackIndex >= trackIndex) {
@@ -144,6 +150,16 @@ export class DawController {
 
         this.notifyListeners(DawEvent.TrackSelected, {idx: trackIndex});
         this.notifyListeners(DawEvent.TrackRemoved, {idx: trackIndex});
+    }
+
+    /**
+     * @param {MessageEvent} ev 
+     */
+    removeTrackCallback(ev) {
+        if (ev.data.success !== true) {
+            console.error("Failed to remove track.", ev);
+            return;
+        }
     }
 
     /**
