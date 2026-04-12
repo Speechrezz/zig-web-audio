@@ -5,11 +5,17 @@ export class AudioProcessor {
     /** @type {WasmContainer} */
     wasm;
 
-    /** @type {AudioProcessorSpec} */
-    spec;
-
     /** @type {ParameterContainer} */
     params;
+
+    /** @type {number} */
+    id;
+
+    /** @type {string} */
+    kind;
+
+    /** @type {string} */
+    name;
 
     /**
      * @param {WasmContainer} wasm 
@@ -17,8 +23,11 @@ export class AudioProcessor {
      */
     constructor(wasm, spec) {
         this.wasm = wasm;
-        this.spec = spec;
 
-        this.params = ParameterContainer.initFromSpec(wasm, this.spec.parameters);
+        this.id = spec.id;
+        this.kind = spec.kind;
+        this.name = spec.name;
+
+        this.params = ParameterContainer.initFromSpec(wasm, spec.parameters);
     }
 }

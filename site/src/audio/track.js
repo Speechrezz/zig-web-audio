@@ -75,8 +75,6 @@ export class Track extends AudioProcessor {
         this.index = index;
         this.name = name;
 
-        this.params = ParameterContainer.initFromSpec(wasm, this.spec.parameters);
-
         if (spec.generator !== null) {
             this.generatorDevice = new Device(wasm, spec.generator);
         }
@@ -122,29 +120,19 @@ export class Track extends AudioProcessor {
         return this.noteIdCounter - 1;
     }
 
-    serialize() {
-        return {
-            index: this.index,
-            name: this.name,
-            spec: this.spec,
-            notes: this.notes,
-            noteIdCounter: this.noteIdCounter,
-        };
-    }
-
     /**
      * @param {WasmContainer} wasm 
      * @param {AudioProcessorSpec} trackSpec 
      * @param {any} json 
      */
     static deserialize(wasm, trackSpec, json) {
-        const track = new Track(wasm, json.index, json.name, trackSpec);
-        track.noteIdCounter = json.noteIdCounter;
+        // const track = new Track(wasm, json.index, json.name, trackSpec);
+        // track.noteIdCounter = json.noteIdCounter;
 
-        for (const note of json.notes) {
-            track.notes.push(Note.deserialize(note));
-        }
+        // for (const note of json.notes) {
+        //     track.notes.push(Note.deserialize(note));
+        // }
 
-        return track;
+        // return track;
     }
 }

@@ -65,7 +65,7 @@ export class DeviceWrapper extends Component {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.font = "16px system-ui";
-        ctx.fillText(this.device.spec.name, 0, 0);
+        ctx.fillText(this.device.name, 0, 0);
 
         ctx.restore();
 

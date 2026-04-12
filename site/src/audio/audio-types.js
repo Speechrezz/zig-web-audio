@@ -19,8 +19,9 @@
 /**
  * @typedef {{
  *   ptr: number,
- *   id: string,
+ *   kind: string,
  *   name: string,
+ *   id: number,
  *   parameters: any,
  * } & Object<string, any>} AudioProcessorSpec
  */
