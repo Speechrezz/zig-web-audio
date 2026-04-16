@@ -33,29 +33,27 @@ pub fn deinit(self: *@This(), allocator: std.mem.Allocator) void {
 pub fn prepare(self: *@This(), allocator: std.mem.Allocator, spec: audio.ProcessSpec) bool {
     self.process_spec = spec;
 
-    self.audio_buffer.resize(
-        allocator,
-        spec.num_channels,
-        spec.block_size,
-    ) catch |err| {
+    self.prepareImpl(allocator, spec) catch |err| {
         framework.logging.logDebug(
-            "[WASM] Error in {s}(): Unable to allocate audio buffer, {}",
+            "[WASM] Error in {s}(): Unable to prepare, {}",
             .{ @src().fn_name, err },
         );
         return false;
     };
 
-    for (self.track_list.items) |track| {
-        track.prepare(allocator, spec) catch |err| {
-            framework.logging.logDebug(
-                "[WASM] Error in {s}(): Unable to prepare track, {}",
-                .{ @src().fn_name, err },
-            );
-            return false;
-        };
-    }
-
     return true;
+}
+
+fn prepareImpl(self: *@This(), allocator: std.mem.Allocator, spec: audio.ProcessSpec) !void {
+    try self.audio_buffer.resize(
+        allocator,
+        spec.num_channels,
+        spec.block_size,
+    );
+
+    for (self.track_list.items) |track| {
+        try track.prepare(allocator, spec);
+    }
 }
 
 pub fn process(self: *@This(), allocator: std.mem.Allocator, block_size: usize) bool {
@@ -197,6 +195,10 @@ pub fn load(self: *@This(), allocator: std.mem.Allocator, ctx: *anyopaque, parse
         }
         try track.load(allocator, ctx, track_json);
         try self.track_list.append(allocator, track);
+    }
+
+    if (self.process_spec) |spec| {
+        try self.prepareImpl(allocator, spec);
     }
 }
 
