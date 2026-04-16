@@ -79,9 +79,9 @@ export fn stopAllNotes(allow_tail_off: bool) void {
 
 // --Global--
 
-export fn getSpec(track_index: usize) u64 {
+export fn getSpec() u64 {
     if (enableDebugPrint) {
-        logging.logDebug("[WASM] {s}({})", .{ @src().fn_name, track_index });
+        logging.logDebug("[WASM] {s}()", .{@src().fn_name});
     }
 
     const web_string = web.string.toJsonString(

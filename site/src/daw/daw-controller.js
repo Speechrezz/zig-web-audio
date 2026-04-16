@@ -90,14 +90,12 @@ export class DawController {
      * @param {any} ctx 
      */
     loadState(state, callback, ctx = {}) {
-        console.log("[loadState]");
         this.storage.pushRequest({storageFn: () => this.loadStateImpl(state), entry: {callback, ctx}})
     }
     /**
      * @param {any} state 
      */
     loadStateImpl(state) {
-        console.log("[loadStateImpl]");
         postWorkletMessage({
             type: WorkletMessageType.loadState,
             state,
@@ -107,8 +105,21 @@ export class DawController {
      * @param {MessageEvent} ev 
      */
     loadStateCallback(ev) {
-        console.log("[loadStateCallback]");
-        this.storage.finishedLoad(Boolean(ev.data.success));
+        const spec = JSON.parse(ev.data.spec);
+        console.log("[loadStateCallback]", spec);
+
+        this.tracks.length = 0;
+        for (const trackSpec of spec.tracks) {
+            const track = new Track(this.wasm, 0, trackSpec.name, trackSpec);
+            this.tracks.push(track);
+        }
+        this.updateTrackIndices();
+
+        this.storage.finishedLoad(ev.data.success);
+        
+        this.selectedTrackIndex = this.tracks.length > 0 ? 0 : null;
+        this.notifyListeners(DawEvent.ProjectLoaded, {});
+        this.notifyListeners(DawEvent.TrackSelected, {idx: this.selectedTrackIndex});
     }
 
     // --Track--

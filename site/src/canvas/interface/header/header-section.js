@@ -42,9 +42,9 @@ export class HeaderSection extends Component {
             pickTextFile().then((text) => {
                 if (text !== null) {
                     const state = JSON.parse(text);
-                    console.log("loadButton:", state);
+                    console.log("[loadButton] state:", state);
                     this.context.daw.loadState(state, (success) => {
-                        console.log("success:", success);
+                        console.log("[loadButton] success:", success);
                     });
                 }
             });

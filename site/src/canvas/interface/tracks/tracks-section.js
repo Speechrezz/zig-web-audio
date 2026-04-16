@@ -90,6 +90,10 @@ export class TracksSection extends Component {
      */
     dawEventCallback(ev, ctx) {
         switch (ev) {
+            case DawEvent.ProjectLoaded:
+                this.tracksChanged();
+                break;
+
             case DawEvent.TrackSelected:
                 this.updateSelectedTrack();
                 break;

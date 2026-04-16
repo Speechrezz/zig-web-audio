@@ -3,8 +3,11 @@
  * @enum {number}
  */
 export const DawEvent = Object.freeze({
+    // --Global--
+    ProjectLoaded: 0,
+
     // --Track--
-    TrackSelected: 0,
-    TrackInserted: 1,
-    TrackRemoved: 2, 
+    TrackSelected: 10,
+    TrackInserted: 11,
+    TrackRemoved: 12, 
 });
