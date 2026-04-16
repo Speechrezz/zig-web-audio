@@ -85,11 +85,11 @@ export class DawController {
     }
 
     /**
+     * @param {any} state 
      * @param {StorageLoadCallback} callback 
      * @param {any} ctx 
-     * @param {any} state 
      */
-    loadState(callback, ctx = {}, state) {
+    loadState(state, callback, ctx = {}) {
         console.log("[loadState]");
         this.storage.pushRequest({storageFn: () => this.loadStateImpl(state), entry: {callback, ctx}})
     }
@@ -108,7 +108,7 @@ export class DawController {
      */
     loadStateCallback(ev) {
         console.log("[loadStateCallback]");
-        this.storage.finishedLoad(ev.data.success);
+        this.storage.finishedLoad(Boolean(ev.data.success));
     }
 
     // --Track--

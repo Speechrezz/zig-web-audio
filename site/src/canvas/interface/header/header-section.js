@@ -1,7 +1,6 @@
 import { AppContext } from "../../../app/app-context.js";
 import { AudioEvent } from "../../../audio/audio-constants.js";
-import { postWorkletMessage } from "../../../audio/audio.js";
-import { WorkletMessageType } from "../../../audio/worklet-message.js";
+import { downloadJsonFile, pickTextFile } from "../../../state/file-actions.js";
 import { Component } from "../../framework/component.js";
 import { Button } from "../../framework/components/button.js";
 import { NumberBox } from "../../framework/components/number-box.js";
@@ -16,6 +15,7 @@ export class HeaderSection extends Component {
     tempoBox = new NumberBox;
 
     saveButton = new Button("Save"); // TEMP
+    loadButton = new Button("Load"); // TEMP
 
     /**
      * @param {AppContext} context 
@@ -27,12 +27,27 @@ export class HeaderSection extends Component {
         this.addChildComponent(this.playButton);
         this.addChildComponent(this.stopButton);
         this.addChildComponent(this.saveButton);
+        this.addChildComponent(this.loadButton);
         this.addChildComponent(this.tempoBox);
 
         this.playButton.onClick = () => this.context.playbackEngine.playPause();
         this.stopButton.onClick = () => this.context.playbackEngine.stop();
         this.saveButton.onClick = () => {
-            this.context.daw.saveState((state) => console.log("state:", state));
+            this.context.daw.saveState((state) => {
+                console.log("state:", state);
+                downloadJsonFile("save-test.json", JSON.stringify(state, null, '\t'));
+            });
+        };
+        this.loadButton.onClick = () => {
+            pickTextFile().then((text) => {
+                if (text !== null) {
+                    const state = JSON.parse(text);
+                    console.log("loadButton:", state);
+                    this.context.daw.loadState(state, (success) => {
+                        console.log("success:", success);
+                    });
+                }
+            });
         };
 
         this.context.playbackEngine.addListener(AudioEvent.PlayStop, () => {
@@ -96,6 +111,8 @@ export class HeaderSection extends Component {
 
         const rightBounds = this.getLocalBounds().removeFromRight(200).withSizeKeepingCenter(200, buttonHeight);
         rightBounds.removeFromRight(16);
+        this.loadButton.setBounds(rightBounds.removeFromRight(buttonWidth));
+        rightBounds.removeFromRight(8);
         this.saveButton.setBounds(rightBounds.removeFromRight(buttonWidth));
     }
 
