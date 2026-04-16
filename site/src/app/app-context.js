@@ -3,7 +3,6 @@ import { PlaybackEngine } from "../audio/playback-engine.js";
 import { AppEventRouter } from "./app-event-router.js";
 import { ClipboardManager } from "./clipboard-manager.js";
 import { UndoManager } from "./undo-manager.js";
-import { WorkletState } from "../state/worklet-state.js";
 import { DawController } from "../daw/daw-controller.js";
 
 export class AppContext {
@@ -25,9 +24,6 @@ export class AppContext {
     /** @type {ClipboardManager} */
     clipboardManager;
 
-    /** @type {WorkletState} */
-    workletState;
-
     /**
      * @param {Config} config
      * @param {PlaybackEngine} playbackEngine
@@ -35,15 +31,13 @@ export class AppContext {
      * @param {UndoManager} undoManager
      * @param {AppEventRouter} eventRouter
      * @param {ClipboardManager} clipboardManager
-     * @param {WorkletState} workletState
      */
-    constructor(config, playbackEngine, daw, undoManager, eventRouter, clipboardManager, workletState) {
+    constructor(config, playbackEngine, daw, undoManager, eventRouter, clipboardManager) {
         this.config = config;
         this.playbackEngine = playbackEngine;
         this.daw = daw;
         this.undoManager = undoManager;
         this.eventRouter = eventRouter;
         this.clipboardManager = clipboardManager;
-        this.workletState = workletState;
     }
 } 

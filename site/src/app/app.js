@@ -10,8 +10,6 @@ import { ClipboardManager } from "./clipboard-manager.js"
 import { UndoManager } from "./undo-manager.js"
 import { DawController } from "../daw/daw-controller.js"
 import { WasmContainer } from "../core/wasm.js"
-import { WorkletState } from "../state/worklet-state.js"
-import { AppState } from "../state/app-state.js"
 
 export class App {
     /** @type {WasmContainer} */
@@ -41,12 +39,6 @@ export class App {
     /** @type {KeyboardListener | undefined} */
     keyboardListener = undefined;
 
-    /** @type {WorkletState | undefined} */
-    workletState = undefined;
-
-    /** @type {AppState | undefined} */
-    appState = undefined;
-
     /** @type {Config} */
     config = new Config();
 
@@ -64,8 +56,6 @@ export class App {
         this.playbackEngine = new PlaybackEngine(this.config, this.daw);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.keyboardListener = new KeyboardListener(this.eventRouter);
-        this.workletState = new WorkletState();
-        this.appState = new AppState(this.workletState, this.playbackEngine);
 
         const appContext = new AppContext(
             this.config, 
@@ -74,7 +64,6 @@ export class App {
             this.undoManager,
             this.eventRouter,
             this.clipboardManager,
-            this.workletState,
         );
 
         this.appInterface = new AppInterface(appContext, this.canvasElement);
@@ -130,9 +119,7 @@ export class App {
 
         const node = await initializeAudio();
         // @ts-ignore
-        this.daw.initializeAudio();
-        // @ts-ignore
-        this.workletState.workletInitialized(node);
+        this.daw.initializeAudio(node);
 
         startContainer.style.display = "none";
     }

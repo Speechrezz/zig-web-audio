@@ -17,3 +17,13 @@
  * @property {StorageLoadCallback} callback
  * @property {any} ctx
  */
+
+/**
+ * @typedef {StorageSaveCallback | StorageLoadCallback} StorageCallback
+ */
+
+/**
+ * @typedef {object} StorageEntry
+ * @property {StorageCallback} callback
+ * @property {any} ctx
+ */

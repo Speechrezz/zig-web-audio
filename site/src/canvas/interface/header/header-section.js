@@ -32,7 +32,7 @@ export class HeaderSection extends Component {
         this.playButton.onClick = () => this.context.playbackEngine.playPause();
         this.stopButton.onClick = () => this.context.playbackEngine.stop();
         this.saveButton.onClick = () => {
-            this.context.workletState.saveState((state) => console.log("state:", state));
+            this.context.daw.saveState((state) => console.log("state:", state));
         };
 
         this.context.playbackEngine.addListener(AudioEvent.PlayStop, () => {

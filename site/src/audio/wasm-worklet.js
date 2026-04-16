@@ -41,6 +41,16 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                     });
                     break;
                 }
+                case WorkletMessageType.loadState: {
+                    const stateSlice = this.allocAndCopyToWasmString(msg.state);
+                    const success = this.exports.loadState(stateSlice.ptr, stateSlice.len);
+
+                    this.port.postMessage({
+                        type: WorkletMessageType.loadState,
+                        success,
+                    });
+                    break;
+                }
 
                 // --Track--
                 case WorkletMessageType.addInstrument: {

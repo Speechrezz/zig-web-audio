@@ -1,10 +1,11 @@
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { processorDetails, ProcessorKind } from "../audio/audio-constants.js";
-import { getAudioWorkletNode } from "../audio/audio.js";
+import { getAudioWorkletNode, postWorkletMessage } from "../audio/audio.js";
 import { Track } from "../audio/track.js";
 import { WorkletMessageType } from "../audio/worklet-message.js";
 import { WasmContainer } from "../core/wasm.js";
 import { DawEvent } from "./daw-constants.js";
+import { DawStorage } from "./daw-storage.js";
 
 export class DawController {
     /** @type {WasmContainer} */
@@ -22,6 +23,9 @@ export class DawController {
     /** @type {DawEventListener[]} */
     dawEventListeners = [];
 
+    /** @type {DawStorage} */
+    storage = new DawStorage;
+
     /**
      * @param {WasmContainer} wasm 
      * @param {UndoManager} undoManager 
@@ -33,9 +37,10 @@ export class DawController {
 
     // --AudioWorklet--
 
-    initializeAudio() {
-        // Listen to audio worklet
-        const node = /** @type {AudioWorkletNode} */ (getAudioWorkletNode());
+    /**
+     * @param {AudioWorkletNode} node 
+     */
+    initializeAudio(node) {
         node.port.addEventListener("message", (ev) => this.audioWorkletCallback(ev));
     }
 
@@ -44,6 +49,12 @@ export class DawController {
      */
     audioWorkletCallback(ev) {
         switch (ev.data.type) {
+            case WorkletMessageType.saveState:
+                this.saveStateCallback(ev);
+                break;
+            case WorkletMessageType.loadState:
+                this.loadStateCallback(ev);
+                break;
             case WorkletMessageType.insertTrack:
                 this.insertTrackCallback(ev);
                 break;
@@ -51,6 +62,53 @@ export class DawController {
                 this.removeTrackCallback(ev);
                 break;
         }
+    }
+
+    // --Global--
+
+    /**
+     * @param {StorageSaveCallback} callback 
+     * @param {any} ctx 
+     */
+    saveState(callback, ctx = {}) {
+        this.storage.pushRequest({storageFn: () => this.saveStateImpl(), entry: {callback, ctx}})
+    }
+    saveStateImpl() {
+        postWorkletMessage({type: WorkletMessageType.saveState});
+    }
+    /**
+     * @param {MessageEvent} ev 
+     */
+    saveStateCallback(ev) {
+        const state = JSON.parse(ev.data.stateString);
+        this.storage.finishedSave(state);
+    }
+
+    /**
+     * @param {StorageLoadCallback} callback 
+     * @param {any} ctx 
+     * @param {any} state 
+     */
+    loadState(callback, ctx = {}, state) {
+        console.log("[loadState]");
+        this.storage.pushRequest({storageFn: () => this.loadStateImpl(state), entry: {callback, ctx}})
+    }
+    /**
+     * @param {any} state 
+     */
+    loadStateImpl(state) {
+        console.log("[loadStateImpl]");
+        postWorkletMessage({
+            type: WorkletMessageType.loadState,
+            state,
+        });
+    }
+    /**
+     * @param {MessageEvent} ev 
+     */
+    loadStateCallback(ev) {
+        console.log("[loadStateCallback]");
+        this.storage.finishedLoad(ev.data.success);
     }
 
     // --Track--
