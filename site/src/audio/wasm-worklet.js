@@ -43,7 +43,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                 }
                 case WorkletMessageType.loadState: {
                     // Forward JSON to WASM audio processor
-                    const stateSlice = this.allocAndCopyToWasmString(JSON.stringify(msg.state));
+                    const stateSlice = this.allocAndCopyToWasmString(JSON.stringify(msg.state.audio));
                     const success = Boolean(this.exports.loadState(stateSlice.ptr, stateSlice.len));
                     this.freeWasmString(stateSlice);
 
@@ -58,6 +58,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                         type: WorkletMessageType.loadState,
                         success: true,
                         spec: specString,
+                        state: msg.state,
                     });
                     break;
                 }

@@ -30,4 +30,22 @@ export class AudioProcessor {
 
         this.params = ParameterContainer.initFromSpec(wasm, spec.parameters);
     }
+
+    /**
+     * @param {any} serializationContext 
+     */
+    save(serializationContext) {
+        return {
+            name: this.name,
+        };
+    }
+
+    /**
+     * @param {any} serializationContext 
+     * @param {any} mainState 
+     * @param {any} audioState 
+     */
+    load(serializationContext, mainState, audioState) {
+        this.name = mainState.name;
+    }
 }

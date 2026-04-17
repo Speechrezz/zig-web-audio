@@ -52,7 +52,7 @@ export class App {
         await this.initializeWasm();
 
         this.undoManager = new UndoManager(this.eventRouter);
-        this.daw = new DawController(this.wasm, this.undoManager);
+        this.daw = new DawController(this.wasm, this.config, this.undoManager);
         this.playbackEngine = new PlaybackEngine(this.config, this.daw);
         this.midiInput = new MidiInput(this.playbackEngine);
         this.keyboardListener = new KeyboardListener(this.eventRouter);

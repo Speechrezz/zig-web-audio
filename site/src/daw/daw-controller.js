@@ -1,3 +1,4 @@
+import { Config } from "../app/config.js";
 import { AppTransaction, UndoManager } from "../app/undo-manager.js";
 import { processorDetails, ProcessorKind } from "../audio/audio-constants.js";
 import { getAudioWorkletNode, postWorkletMessage } from "../audio/audio.js";
@@ -10,6 +11,9 @@ import { DawStorage } from "./daw-storage.js";
 export class DawController {
     /** @type {WasmContainer} */
     wasm;
+
+    /** @type {Config} */
+    config;
 
     /** @type {UndoManager} */
     undoManager;    
@@ -28,10 +32,12 @@ export class DawController {
 
     /**
      * @param {WasmContainer} wasm 
+     * @param {Config} config 
      * @param {UndoManager} undoManager 
      */
-    constructor(wasm, undoManager) {
+    constructor(wasm, config, undoManager) {
         this.wasm = wasm;
+        this.config = config;
         this.undoManager = undoManager;
     }
 
@@ -80,8 +86,20 @@ export class DawController {
      * @param {MessageEvent} ev 
      */
     saveStateCallback(ev) {
-        const state = JSON.parse(ev.data.stateString);
-        this.storage.finishedSave(state);
+        const audioState = JSON.parse(ev.data.stateString);
+
+        const mainState = {
+            bpm: this.config.bpm,
+
+            /** @type {any[]} */
+            tracks: []
+        };
+
+        for (const track of this.tracks) {
+            mainState.tracks.push(track.save({}))
+        }
+
+        this.storage.finishedSave({audio: audioState, main: mainState});
     }
 
     /**
@@ -106,11 +124,15 @@ export class DawController {
      */
     loadStateCallback(ev) {
         const spec = JSON.parse(ev.data.spec);
-        console.log("[loadStateCallback]", spec);
+        const audioState = ev.data.state.audio;
+        const mainState = ev.data.state.main;
+        console.log("[loadStateCallback]", spec, ev.data.state);
 
         this.tracks.length = 0;
-        for (const trackSpec of spec.tracks) {
+        for (let i = 0; i < spec.tracks.length; i++) {
+            const trackSpec = spec.tracks[i];
             const track = new Track(this.wasm, 0, trackSpec.name, trackSpec);
+            track.load({}, mainState?.tracks[i], audioState?.tracks[i]);
             this.tracks.push(track);
         }
         this.updateTrackIndices();

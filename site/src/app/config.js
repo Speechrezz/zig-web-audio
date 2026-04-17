@@ -23,6 +23,8 @@ export class Config {
     snapInBeats = 1;
     snapInPpq = 0;
 
+    bpm = 120;
+
     zoomLevelX = 1;
     zoomLevelY = 1;
 
