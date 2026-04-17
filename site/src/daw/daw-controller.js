@@ -128,6 +128,8 @@ export class DawController {
         const mainState = ev.data.state.main;
         console.log("[loadStateCallback]", spec, ev.data.state);
 
+        this.undoManager.reset();
+
         this.tracks.length = 0;
         for (let i = 0; i < spec.tracks.length; i++) {
             const trackSpec = spec.tracks[i];

@@ -50,7 +50,7 @@ export class Track extends AudioProcessor {
      * Counts note IDs to ensure unique IDs
      * @type {number}
      */
-    noteIdCounter = 0;
+    nextNoteId = 0;
 
     /**
      * Currently playing notes
@@ -116,23 +116,32 @@ export class Track extends AudioProcessor {
     }
 
     getNextNoteId() {
-        this.noteIdCounter++;
-        return this.noteIdCounter - 1;
+        this.nextNoteId++;
+        return this.nextNoteId - 1;
     }
 
     /**
-     * @param {WasmContainer} wasm 
-     * @param {AudioProcessorSpec} trackSpec 
-     * @param {any} json 
+     * @param {any} serializationContext 
      */
-    static deserialize(wasm, trackSpec, json) {
-        // const track = new Track(wasm, json.index, json.name, trackSpec);
-        // track.noteIdCounter = json.noteIdCounter;
+    save(serializationContext) {
+        /** @type {any} */
+        const json = super.save(serializationContext);
 
-        // for (const note of json.notes) {
-        //     track.notes.push(Note.deserialize(note));
-        // }
+        json.nextNoteId = this.nextNoteId;
+        json.notes = this.notes.slice();
 
-        // return track;
+        return json;
+    }
+
+    /**
+     * @param {any} serializationContext 
+     * @param {any} mainState 
+     * @param {any} audioState 
+     */
+    load(serializationContext, mainState, audioState) {
+        super.load(serializationContext, mainState, audioState);
+
+        this.nextNoteId = mainState.nextNodeId || 0;
+        this.notes = mainState.notes?.slice() || [];
     }
 }

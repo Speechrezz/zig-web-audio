@@ -78,6 +78,11 @@ export class UndoManager {
         this.writeIndex++;
     }
 
+    reset() {
+        this.transactions.length = 0;
+        this.writeIndex = 0;
+    }
+
     undo() {
         const index = this.writeIndex - 1;
         if (index < 0) return;
