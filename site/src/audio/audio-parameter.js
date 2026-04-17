@@ -23,20 +23,13 @@ export class AudioParameter {
     /**
      * @param {WasmContainer} wasm 
      * @param {ParameterSpecFull} specJson 
-     * @param {undefined | number} valueNormalized 
      */
-    constructor(wasm, specJson, valueNormalized = undefined) {
+    constructor(wasm, specJson) {
         this.specJson = specJson;
         this.spec = ParameterSpec.createFromSpec(wasm, specJson.spec);
 
-        if (valueNormalized === undefined) {
-            this.value = this.specJson.value_default;
-            this.valueNormalized = this.convertToNormalized(this.specJson.value_default);
-        }
-        else {
-            this.value = this.convertFromNormalized(valueNormalized);
-            this.valueNormalized = valueNormalized;
-        }
+        this.value = this.specJson.value;
+        this.valueNormalized = this.specJson.value_normalized;
 
         // console.log("[AudioParameter.constructor()] state:", this);
     }

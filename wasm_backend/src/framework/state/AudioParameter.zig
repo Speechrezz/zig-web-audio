@@ -106,6 +106,12 @@ pub fn toJsonSpec(self: *const @This(), write_stream: *std.json.Stringify, index
     try self.spec.save(write_stream);
     try write_stream.endObject();
 
+    try write_stream.objectField("value");
+    try write_stream.write(self.getValue());
+
+    try write_stream.objectField("value_normalized");
+    try write_stream.write(self.getValueNormalized());
+
     try write_stream.objectField("value_default");
     try write_stream.write(self.value_default);
 

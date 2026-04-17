@@ -6,6 +6,8 @@
  * @property {string} id
  * @property {string} name
  * @property {{formatter: any, range: any}} spec
+ * @property {number} value
+ * @property {number} value_normalized
  * @property {number} value_default
  */
 
