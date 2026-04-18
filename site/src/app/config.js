@@ -1,3 +1,5 @@
+import { ObservableNumber } from "../state/observable-number.js";
+
 const PITCH_MIN = 21;  // A0
 const PITCH_MAX = 108; // C8
 const NUM_PITCHES = PITCH_MAX - PITCH_MIN + 1;
@@ -23,7 +25,7 @@ export class Config {
     snapInBeats = 1;
     snapInPpq = 0;
 
-    bpm = 120;
+    bpm = new ObservableNumber(120);
 
     zoomLevelX = 1;
     zoomLevelY = 1;
@@ -186,5 +188,18 @@ export class Config {
      */
     beatsToPpqPrecise(beats) {
         return this.ppqResolution * beats;
+    }
+
+    save() {
+        return {
+            bpm: this.bpm,
+        };
+    }
+
+    /**
+     * @param {any} state 
+     */
+    load(state) {
+        this.bpm.setValue(state?.bpm || 120);
     }
 }

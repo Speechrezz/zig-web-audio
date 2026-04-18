@@ -12,7 +12,6 @@ export class PlayHead {
     config;
 
     // ---Project info---
-    bpm = 120;
     isPlaying = false;
 
     // ---Position info---
@@ -55,7 +54,7 @@ export class PlayHead {
      * @returns {number} Time in seconds
      */
     beatsToSeconds(beats) {
-        return beats * 60.0 / this.bpm;
+        return beats * 60.0 / this.config.bpm.value;
     }
 
     /**
@@ -63,7 +62,7 @@ export class PlayHead {
      * @returns {number} Number of beats
      */
     secondsToBeats(seconds) {
-        return seconds * this.bpm / 60.0;
+        return seconds * this.config.bpm.value / 60.0;
     }
 
     getBeatsPerStep() {
@@ -98,6 +97,8 @@ export class PlaybackEngine {
         this.config = config;
         this.playHead = new PlayHead(config);
         this.daw = daw;
+
+        this.config.bpm.addListener((value) => this.tempoChanged(value));
 
         // Initialize listeners list
         for (const key of Object.keys(AudioEvent)) {
@@ -136,14 +137,9 @@ export class PlaybackEngine {
     /**
      * @param {number} bpm 
      */
-    setTempo(bpm) {
-        bpm = MoreMath.clamp(bpm, 60, 600);
-        if (bpm === this.playHead.bpm) return;
-
+    tempoChanged(bpm) {
         this.playHead.anchorInSec = this.playHead.timePassedSec;
         this.playHead.anchorInBeats = this.playHead.positionInBeats;
-
-        this.playHead.bpm = bpm;
     }
 
     /**

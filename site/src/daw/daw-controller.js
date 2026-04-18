@@ -89,7 +89,7 @@ export class DawController {
         const audioState = JSON.parse(ev.data.stateString);
 
         const mainState = {
-            bpm: this.config.bpm,
+            config: this.config.save(),
 
             /** @type {any[]} */
             tracks: []
@@ -129,6 +129,8 @@ export class DawController {
         console.log("[loadStateCallback]", spec, ev.data.state);
 
         this.undoManager.reset();
+
+        this.config.load(mainState.config);
 
         this.tracks.length = 0;
         for (let i = 0; i < spec.tracks.length; i++) {

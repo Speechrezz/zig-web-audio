@@ -139,6 +139,13 @@ export class HeaderSection extends Component {
 
         this.tempoBox.dragCoefficient *= 0.2;
         this.tempoBox.scrollWheelScale *= 0.05;
-        this.tempoBox.onChange = () => this.context.playbackEngine.setTempo(this.tempoBox.proxy.value);
+        this.tempoBox.onChange = () => this.context.config.bpm.setValue(this.tempoBox.proxy.value);
+
+        this.context.config.bpm.addListener((bpm) => {
+            if (proxy.value !== bpm) {
+                proxy.value = bpm;
+                proxy.valueNormalized = proxy.toNormalizedValue(bpm);
+            }
+        });
     }
 }
