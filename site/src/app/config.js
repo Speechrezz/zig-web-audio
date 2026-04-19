@@ -192,7 +192,7 @@ export class Config {
 
     save() {
         return {
-            bpm: this.bpm,
+            bpm: this.bpm.value,
         };
     }
 
