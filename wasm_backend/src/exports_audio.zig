@@ -13,7 +13,7 @@ const createProcessorFromKindLogging = ProcessorRegistry.createProcessorFromKind
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
-const enableDebugPrint = true;
+const enableDebugPrint = false;
 
 var processor: chordic.ChordicProcessor = undefined;
 var serialization_context: chordic.SerializationContext = undefined;
