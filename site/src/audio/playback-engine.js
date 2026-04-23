@@ -300,7 +300,7 @@ export class PlaybackEngine {
             track.noteStop(noteEvent.noteNumber, noteEvent.channel);
         }
 
-        sendMidiMessageSeconds(track.index, midiEvent, eventTimeSec);
+        sendMidiMessageSeconds(track.ptr, midiEvent, eventTimeSec);
     }
 
     /**
@@ -397,11 +397,11 @@ export class PlaybackEngine {
             const audibleTimeSec = toAudibleTime(timestampMs);
             const blockSize = getBlockSize();
             const adjustedTimestamp = Math.max(0, blockSize + Math.floor(audibleTimeSec * sampleRate));
-            sendMidiMessageSamples(track.index, midiEvent, adjustedTimestamp);
+            sendMidiMessageSamples(track.ptr, midiEvent, adjustedTimestamp);
         }
         else {
             const adjustedTimestamp = getContextTime() + this.lookAheadSec;
-            sendMidiMessageSeconds(track.index, midiEvent, adjustedTimestamp);
+            sendMidiMessageSeconds(track.ptr, midiEvent, adjustedTimestamp);
         }
 
         if (midiEvent.isNoteOn()) {
@@ -433,7 +433,7 @@ export class PlaybackEngine {
         const noteOnTime = playHeadTimeSec;
         const noteOffTime = noteOnTime + lengthInSec;
 
-        sendMidiMessageSeconds(track.index, noteOnEvent,  noteOnTime);
-        sendMidiMessageSeconds(track.index, noteOffEvent, noteOffTime);
+        sendMidiMessageSeconds(track.ptr, noteOnEvent,  noteOnTime);
+        sendMidiMessageSeconds(track.ptr, noteOffEvent, noteOffTime);
     }
 }

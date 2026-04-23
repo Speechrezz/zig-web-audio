@@ -5,6 +5,9 @@ export class AudioProcessor {
     /** @type {WasmContainer} */
     wasm;
 
+    /** @type {number} */
+    ptr;
+
     /** @type {ParameterContainer} */
     params;
 
@@ -24,6 +27,7 @@ export class AudioProcessor {
     constructor(wasm, spec) {
         this.wasm = wasm;
 
+        this.ptr = spec.ptr;
         this.id = spec.id;
         this.kind = spec.kind;
         this.name = spec.name;

@@ -1,5 +1,4 @@
 import { Note, NoteEvent } from "./note.js";
-import { ParameterContainer } from "./audio-parameter.js"
 import { WasmContainer } from "../core/wasm.js";
 import { AudioProcessor } from "./audio-processor.js";
 import { Device } from "./device.js";

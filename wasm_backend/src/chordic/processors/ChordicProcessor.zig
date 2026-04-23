@@ -79,8 +79,8 @@ pub fn process(self: *@This(), allocator: std.mem.Allocator, block_size: usize) 
     return true;
 }
 
-pub fn sendMidiMessage(self: *@This(), track_index: usize, packed_event: u32, sample_position: i64) void {
-    const track = self.track_list.items[track_index];
+pub fn sendMidiMessage(self: *@This(), track: *TrackProcessor, packed_event: u32, sample_position: i64) void {
+    _ = self;
     track.midi_buffer.appendPacked(packed_event, sample_position);
 }
 

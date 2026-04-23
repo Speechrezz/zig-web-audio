@@ -5,13 +5,15 @@ const math = framework.math;
 const std = @import("std");
 const state = framework.state;
 const web = framework.web;
+
 const chordic = @import("chordic");
 const ProcessorRegistry = chordic.ProcessorRegistry;
+const TrackProcessor = chordic.processors.TrackProcessor;
 const createProcessorFromKindLogging = ProcessorRegistry.createProcessorFromKindLogging;
 
 const wasm_allocator = @import("framework").wasm_allocator;
 
-const enableDebugPrint = false;
+const enableDebugPrint = true;
 
 var processor: chordic.ChordicProcessor = undefined;
 var serialization_context: chordic.SerializationContext = undefined;
@@ -57,13 +59,13 @@ export fn getOutputChannel(channel_index: usize) [*]f32 {
 
 // --MIDI--
 
-export fn sendMidiEvent(track_index: usize, packed_event: u32, sample_position: i64) void {
+export fn sendMidiEvent(track: *TrackProcessor, packed_event: u32, sample_position: i64) void {
     if (enableDebugPrint) {
-        logging.logDebug("[WASM] {s}(idx={}, ev={}, pos={})", .{ @src().fn_name, track_index, packed_event, sample_position });
+        logging.logDebug("[WASM] {s}(track={}, ev={}, pos={})", .{ @src().fn_name, @intFromPtr(track), packed_event, sample_position });
     }
 
     processor.sendMidiMessage(
-        track_index,
+        track,
         packed_event,
         sample_position,
     );
@@ -142,13 +144,13 @@ export fn addInstrument(track_index: usize, kind_ptr: [*]const u8, kind_len: usi
         logging.logDebug("[WASM] {s}(idx={}, kind={s})", .{ @src().fn_name, track_index, kind_slice });
     }
 
-    const track = chordic.processors.TrackProcessor.create(wasm_allocator) catch |err| {
+    const track = TrackProcessor.create(wasm_allocator) catch |err| {
         logging.logDebug("[WASM] Error in {s}: Unable to create track, {}", .{ @src().fn_name, err });
         return false;
     };
 
     const generator_proc = createProcessorFromKindLogging(wasm_allocator, kind_slice) orelse return false;
-    track.generator_device = chordic.processors.TrackProcessor.Device.init(generator_proc);
+    track.generator_device = TrackProcessor.Device.init(generator_proc);
 
     track.processor.id = serialization_context.getNextId();
     track.generator_device.?.processor.id = serialization_context.getNextId();
@@ -181,7 +183,7 @@ export fn getTrackSpec(track_index: usize) u64 {
     const web_string = web.string.toJsonString(
         wasm_allocator,
         track,
-        chordic.processors.TrackProcessor.toJsonSpec,
+        TrackProcessor.toJsonSpec,
     );
 
     return @bitCast(web_string);
@@ -197,7 +199,7 @@ export fn saveTrackState(track_index: usize) u64 {
         wasm_allocator,
         track,
         &serialization_context,
-        chordic.processors.TrackProcessor.save,
+        TrackProcessor.save,
     );
 
     return @bitCast(web_string);

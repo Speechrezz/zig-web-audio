@@ -23,7 +23,7 @@ class WasmWorkletProcessor extends AudioWorkletProcessor {
                 
                 // --MIDI--
                 case WorkletMessageType.midi:
-                    this.exports.sendMidiEvent(msg.instrumentIndex, msg.data, msg.time);
+                    this.exports.sendMidiEvent(msg.trackPtr, msg.data, msg.time);
                     break;
                 case WorkletMessageType.stopAllNotes:
                     this.exports.stopAllNotes(msg.allowTailOff);
