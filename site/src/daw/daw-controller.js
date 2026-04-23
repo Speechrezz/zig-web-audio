@@ -7,6 +7,7 @@ import { WorkletMessageType } from "../audio/worklet-message.js";
 import { WasmContainer } from "../core/wasm.js";
 import { DawEvent } from "./daw-constants.js";
 import { DawStorage } from "./daw-storage.js";
+import { NotesController } from "./notes-controller.js";
 
 export class DawController {
     /** @type {WasmContainer} */
@@ -24,6 +25,9 @@ export class DawController {
     /** @type {null | number} */
     selectedTrackIndex = null;
 
+    /** @type {NotesController} */
+    notes;
+
     /** @type {DawEventListener[]} */
     dawEventListeners = [];
 
@@ -39,6 +43,8 @@ export class DawController {
         this.wasm = wasm;
         this.config = config;
         this.undoManager = undoManager;
+
+        this.notes = new NotesController(undoManager, (idx) => this.trackAt(idx));
     }
 
     // --AudioWorklet--

@@ -3,7 +3,7 @@ import { Rectangle } from "../../framework/rectangle.js";
 import { Point } from "../../framework/point.js";
 import { CursorStyle, setCursorStyle } from "../../framework/cursor-style.js"
 import { AppContext } from "../../../app/app-context.js"
-import { cloneNotes, NotesManager } from "../../../audio/notes-manager.js";
+import { cloneNotes, NotesController } from "../../../daw/notes-controller.js";
 import { NoteComponent } from "./note-component.js";
 import { DawEvent } from "../../../daw/daw-constants.js";
 import { MouseAction, MouseActionPolicy, MouseEvent } from "../../framework/mouse-event.js";
@@ -33,7 +33,7 @@ export class PianoRoll extends Component {
     /** @type {Point} */
     viewOffset = new Point();
 
-    /** @type {NotesManager} */
+    /** @type {NotesController} */
     notesManager;
 
     /** @type {NoteComponent[]} */
@@ -74,7 +74,7 @@ export class PianoRoll extends Component {
         
         this.context = context;
 
-        this.notesManager = new NotesManager(this.context.undoManager, this.context.daw);
+        this.notesManager = context.daw.notes;
         this.notesManager.pianoRollCallback = () => { this.resetNotes(); this.repaint(); };
 
         this.context.daw.addListener((ev, ctx) => this.trackSelected(ev, ctx));
